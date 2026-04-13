@@ -47,7 +47,7 @@ function walk(dir: string, slug: string[]): TreeNode[] {
   const entries = fs.readdirSync(dir, { withFileTypes: true });
   const nodes: TreeNode[] = [];
 
-  for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
+  for (const entry of entries) {
     if (entry.name.startsWith("_") || entry.name.startsWith(".")) continue;
 
     const fullPath = path.join(dir, entry.name);
@@ -88,6 +88,15 @@ function walk(dir: string, slug: string[]): TreeNode[] {
       },
     });
   }
+
+  nodes.sort((a, b) => {
+    const orderA = a.kind === "lesson" ? a.lesson.frontmatter.order : 0;
+    const orderB = b.kind === "lesson" ? b.lesson.frontmatter.order : 0;
+    if (orderA !== orderB) return orderA - orderB;
+    const nameA = a.kind === "lesson" ? a.lesson.frontmatter.title : a.title;
+    const nameB = b.kind === "lesson" ? b.lesson.frontmatter.title : b.title;
+    return nameA.localeCompare(nameB);
+  });
 
   return nodes;
 }
