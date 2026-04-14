@@ -180,6 +180,11 @@ function isPlayable(v: Voicing): boolean {
   return played.length > 0 && played.every((f) => f >= 2) && Math.max(...played) <= 19;
 }
 
+export function shiftVoicingOctave(v: Voicing, semitones: number): Voicing | null {
+  const shifted = shiftVoicing(v, semitones);
+  return isPlayable(shifted) ? shifted : null;
+}
+
 export function voiceLeadingDistance(a: Voicing, b: Voicing): number {
   return a.midi.reduce((sum, p, i) => sum + Math.abs(p - b.midi[i]), 0);
 }

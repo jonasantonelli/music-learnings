@@ -9,6 +9,7 @@ import {
   INTERVAL_LABELS,
   computeDrop2Voicing,
   findBestVoiceLeading,
+  shiftVoicingOctave,
   chordLabel,
   getMajor251,
   getMinor251,
@@ -69,32 +70,56 @@ export function Drop2Progression() {
   );
 
   const paths = useMemo(() => {
-    return [0, 1, 2, 3]
-      .map((startInv) => {
-        const ii = computeDrop2Voicing(
+    const buildPath = (ii: Voicing): [Voicing, Voicing, Voicing] => {
+      const v = findBestVoiceLeading(
+        ii,
+        progression[1].root,
+        progression[1].quality,
+        stringSet,
+      );
+      const i = findBestVoiceLeading(
+        v,
+        progression[2].root,
+        progression[2].quality,
+        stringSet,
+      );
+      return [ii, v, i];
+    };
+
+    const raw = [0, 1, 2, 3].map((startInv) =>
+      buildPath(
+        computeDrop2Voicing(
           progression[0].root,
           progression[0].quality,
           startInv,
           stringSet,
-        );
-        const v = findBestVoiceLeading(
-          ii,
-          progression[1].root,
-          progression[1].quality,
-          stringSet,
-        );
-        const i = findBestVoiceLeading(
-          v,
-          progression[2].root,
-          progression[2].quality,
-          stringSet,
-        );
-        return [ii, v, i] as const;
-      })
-      .sort(
-        (a, b) =>
-          a[0].midi[a[0].midi.length - 1] - b[0].midi[b[0].midi.length - 1],
-      );
+        ),
+      ),
+    );
+
+    // Dedupe: when two paths share the same V and I voicings, voice-leading has
+    // collapsed them. Shift the lower-topped ii up an octave and rebuild so each
+    // row shows a distinct chain.
+    const fretKey = (v: Voicing) => v.frets.join(",");
+    const topMidi = (v: Voicing) => v.midi[v.midi.length - 1];
+    const order = [0, 1, 2, 3].sort(
+      (a, b) => topMidi(raw[a][0]) - topMidi(raw[b][0]),
+    );
+    for (let a = 0; a < order.length; a++) {
+      for (let b = a + 1; b < order.length; b++) {
+        const lo = raw[order[a]];
+        const hi = raw[order[b]];
+        if (
+          fretKey(lo[1]) === fretKey(hi[1]) &&
+          fretKey(lo[2]) === fretKey(hi[2])
+        ) {
+          const shifted = shiftVoicingOctave(lo[0], 12);
+          if (shifted) raw[order[a]] = buildPath(shifted);
+        }
+      }
+    }
+
+    return raw.sort((a, b) => topMidi(a[0]) - topMidi(b[0]));
   }, [progression, stringSet]);
 
   return (
