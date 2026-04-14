@@ -35,9 +35,9 @@ export default async function LessonPage({
   const components = useMDXComponents({});
 
   return (
-    <article className="mx-auto w-full max-w-5xl px-8 py-12">
+    <article className="mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
       <header className="mb-8">
-        <h1 className="text-3xl font-semibold tracking-tight">
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
           {lesson.frontmatter.title}
         </h1>
         <p className="mt-2 text-muted-foreground">

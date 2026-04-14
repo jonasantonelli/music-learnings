@@ -26,8 +26,8 @@ export default function LessonsIndex() {
   const sections = getTopSections();
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-8 py-12">
-      <h1 className="text-3xl font-semibold tracking-tight">Lessons</h1>
+    <div className="mx-auto w-full max-w-3xl px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+      <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Lessons</h1>
       <p className="mt-2 text-muted-foreground">
         Browse all lessons by section, or use the sidebar to jump to a specific
         topic.

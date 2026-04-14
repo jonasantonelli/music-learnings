@@ -30,20 +30,20 @@ export default function Home() {
   return (
     <>
       <SiteHeader />
-      <main className="mx-auto w-full max-w-3xl px-6 py-16">
+      <main className="mx-auto w-full max-w-3xl px-4 sm:px-6 py-10 sm:py-16">
         <div className="inline-flex items-center gap-2 rounded-full border border-border bg-accent-3 px-3 py-1 text-xs font-medium text-accent-11">
           <span className="h-1.5 w-1.5 rounded-full bg-accent-9" />
           Personal knowledge base
         </div>
-        <h1 className="mt-5 text-4xl font-semibold tracking-tight">
+        <h1 className="mt-5 text-3xl sm:text-4xl font-semibold tracking-tight">
           Music <span className="text-accent-11">Learnings</span>
         </h1>
-        <p className="mt-4 text-lg text-muted-foreground">
+        <p className="mt-4 text-base sm:text-lg text-muted-foreground">
           A growing collection of notes and lessons from my music studies,
           focused on guitar harmony and voicings.
         </p>
 
-        <div className="mt-12 grid gap-4 sm:grid-cols-2">
+        <div className="mt-10 sm:mt-12 grid gap-4 sm:grid-cols-2">
           {sections.map((section) => {
             const first = findFirstLessonHref(section);
             const count = countLessons(section);

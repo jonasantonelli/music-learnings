@@ -103,6 +103,7 @@ function drawWheel(
 }
 
 export function NoteWheel() {
+  const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [rotation, setRotation] = useState(0);
   const [spinning, setSpinning] = useState(false);
@@ -110,6 +111,7 @@ export function NoteWheel() {
   const [mounted, setMounted] = useState(false);
   const animFrameRef = useRef<number>(0);
   const sizeRef = useRef(360);
+  const rotationRef = useRef(0);
 
   const getAccentColor = useCallback(() => {
     if (typeof window === "undefined") return "#6e56cf";
@@ -130,38 +132,57 @@ export function NoteWheel() {
     [getAccentColor],
   );
 
-  // Mount: set up canvas DPR and restore state
+  // Resize canvas to its container, supporting DPR. Re-runs on container resize.
+  const resizeCanvas = useCallback(
+    (rot: number) => {
+      const canvas = canvasRef.current;
+      const container = containerRef.current;
+      if (!canvas || !container) return;
+      const available = container.clientWidth;
+      const size = Math.max(220, Math.min(360, Math.floor(available)));
+      sizeRef.current = size;
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = size * dpr;
+      canvas.height = size * dpr;
+      canvas.style.width = `${size}px`;
+      canvas.style.height = `${size}px`;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      drawWheel(ctx, size, rot, getAccentColor());
+    },
+    [getAccentColor],
+  );
+
+  // Mount: set up canvas and restore state
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const size = sizeRef.current;
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = size * dpr;
-    canvas.height = size * dpr;
-    canvas.style.width = `${size}px`;
-    canvas.style.height = `${size}px`;
-    const ctx = canvas.getContext("2d");
-    if (ctx) ctx.scale(dpr, dpr);
-
-    // Restore from localStorage
+    let initialRotation = 0;
+    let initialResult: string | null = null;
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const stored: StoredSpin = JSON.parse(raw);
-        setRotation(stored.rotation);
-        setResult(stored.note);
-        drawWheel(ctx!, size, stored.rotation, getAccentColor());
-        setMounted(true);
-        return;
+        initialRotation = stored.rotation;
+        initialResult = stored.note;
       }
     } catch {
       // ignore
     }
 
-    drawWheel(ctx!, size, 0, getAccentColor());
+    rotationRef.current = initialRotation;
+    setRotation(initialRotation);
+    setResult(initialResult);
+    resizeCanvas(initialRotation);
     setMounted(true);
-  }, [getAccentColor]);
+
+    const container = containerRef.current;
+    if (!container) return;
+    const observer = new ResizeObserver(() => {
+      resizeCanvas(rotationRef.current);
+    });
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [resizeCanvas]);
 
   // Repaint on theme change
   useEffect(() => {
@@ -195,6 +216,7 @@ export function NoteWheel() {
       const current = startRotation + (targetRotation - startRotation) * eased;
 
       paint(current);
+      rotationRef.current = current;
       setRotation(current);
 
       if (t < 1) {
@@ -232,18 +254,23 @@ export function NoteWheel() {
   const canSpin = mounted && !spinning;
 
   return (
-    <div className="flex flex-col items-center gap-8">
-      <canvas
-        ref={canvasRef}
-        onClick={canSpin ? spin : undefined}
-        className={canSpin ? "cursor-pointer" : "cursor-default"}
-        role="img"
-        aria-label={
-          result
-            ? `Spinning wheel landed on ${result}`
-            : "Spinning wheel with 12 musical notes. Click to spin."
-        }
-      />
+    <div className="flex flex-col items-center gap-6 sm:gap-8">
+      <div
+        ref={containerRef}
+        className="w-full max-w-[360px] flex justify-center"
+      >
+        <canvas
+          ref={canvasRef}
+          onClick={canSpin ? spin : undefined}
+          className={canSpin ? "cursor-pointer touch-manipulation" : "cursor-default"}
+          role="img"
+          aria-label={
+            result
+              ? `Spinning wheel landed on ${result}`
+              : "Spinning wheel with 12 musical notes. Click to spin."
+          }
+        />
+      </div>
 
       <div className="text-center" aria-live="polite">
         {result ? (
@@ -251,7 +278,7 @@ export function NoteWheel() {
             <p className="text-sm font-medium uppercase tracking-widest text-muted-foreground">
               Practice note
             </p>
-            <p className="mt-2 text-6xl font-bold text-accent-11">{result}</p>
+            <p className="mt-2 text-5xl sm:text-6xl font-bold text-accent-11">{result}</p>
             <p className="mt-3 text-sm text-muted-foreground">
               Tap the wheel to spin again
             </p>

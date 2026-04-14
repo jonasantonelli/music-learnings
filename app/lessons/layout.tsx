@@ -9,9 +9,9 @@ export default function LessonsLayout({
   return (
     <>
       <SiteHeader />
-      <div className="flex flex-1">
+      <div className="flex flex-1 flex-col md:flex-row">
         <Sidebar />
-        <div className="flex-1 overflow-x-auto">{children}</div>
+        <div className="flex-1 min-w-0 overflow-x-auto">{children}</div>
       </div>
     </>
   );
