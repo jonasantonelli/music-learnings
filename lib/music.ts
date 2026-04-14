@@ -124,9 +124,11 @@ export function computeDrop2Voicing(
     candidates.push(voiceCandidates);
   }
 
-  // Pick combination with ascending pitches and smallest fret span
+  // Pick combination with ascending pitches and smallest fret span.
+  // Near-nut shapes (min fret < 2) are penalized so the movable 12th-fret
+  // version is preferred when one exists.
   let best: VoiceCandidate[] | null = null;
-  let bestSpan = Infinity;
+  let bestCost = Infinity;
 
   for (const c0 of candidates[0]) {
     for (const c1 of candidates[1]) {
@@ -137,8 +139,10 @@ export function computeDrop2Voicing(
           if (c3.pitch <= c2.pitch) continue;
           const allFrets = [c0.fret, c1.fret, c2.fret, c3.fret];
           const span = Math.max(...allFrets) - Math.min(...allFrets);
-          if (span < bestSpan) {
-            bestSpan = span;
+          const minFret = Math.min(...allFrets);
+          const cost = span + (minFret < 2 ? 1000 : 0);
+          if (cost < bestCost) {
+            bestCost = cost;
             best = [c0, c1, c2, c3];
           }
         }
@@ -173,7 +177,7 @@ function shiftVoicing(v: Voicing, fretShift: number): Voicing {
 
 function isPlayable(v: Voicing): boolean {
   const played = v.frets.filter((f): f is number => f !== null);
-  return played.length > 0 && played.every((f) => f > 0) && Math.max(...played) <= 19;
+  return played.length > 0 && played.every((f) => f >= 2) && Math.max(...played) <= 19;
 }
 
 export function voiceLeadingDistance(a: Voicing, b: Voicing): number {
