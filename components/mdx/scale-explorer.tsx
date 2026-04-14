@@ -65,11 +65,16 @@ export function ScaleExplorer({ scale: scaleSlug }: ScaleExplorerProps) {
     caption = `${noteName(root, root)} ${definition.name} — position ${position} (3NPS)`;
   }
 
-  const fretboardMarkers = scaleMarkers.map((m) => ({
-    string: m.string,
-    fret: m.fret,
-    label: labelFor(m),
-  }));
+  const fretboardMarkers = scaleMarkers.map((m) => {
+    const isRoot = m.intervalPc === 0;
+    return {
+      string: m.string,
+      fret: m.fret,
+      label: labelFor(m),
+      color: isRoot ? "var(--accent-9)" : undefined,
+      labelColor: isRoot ? "var(--accent-contrast)" : undefined,
+    };
+  });
 
   return (
     <div className="my-8">

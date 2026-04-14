@@ -5,6 +5,7 @@ type Marker = {
   fret: number; // 1-based; 0 = open (not rendered as dot)
   label?: string;
   color?: string;
+  labelColor?: string;
 };
 
 type FretboardProps = {
@@ -165,7 +166,7 @@ export function Fretboard({
                   textAnchor="middle"
                   fontSize={10}
                   fontWeight={600}
-                  fill="var(--background)"
+                  fill={m.labelColor ?? "var(--background)"}
                 >
                   {m.label}
                 </text>
