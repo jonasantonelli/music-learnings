@@ -1,0 +1,158 @@
+import { STRING_MIDI } from "./music";
+
+export type ScaleDefinition = {
+  slug: string;
+  name: string;
+  altNames: string[];
+  intervals: number[];
+  degrees: string[];
+  parent?: { slug: string; name: string; degree: number };
+};
+
+export const SCALES: Record<string, ScaleDefinition> = {
+  "melodic-minor": {
+    slug: "melodic-minor",
+    name: "Melodic Minor",
+    altNames: [],
+    intervals: [0, 2, 3, 5, 7, 9, 11],
+    degrees: ["R", "2", "♭3", "4", "5", "6", "7"],
+  },
+  "lydian-b7": {
+    slug: "lydian-b7",
+    name: "Lydian ♭7",
+    altNames: ["Lydian Dominant"],
+    intervals: [0, 2, 4, 6, 7, 9, 10],
+    degrees: ["R", "2", "3", "♯4", "5", "6", "♭7"],
+    parent: { slug: "melodic-minor", name: "Melodic Minor", degree: 4 },
+  },
+  "harmonic-minor": {
+    slug: "harmonic-minor",
+    name: "Harmonic Minor",
+    altNames: [],
+    intervals: [0, 2, 3, 5, 7, 8, 11],
+    degrees: ["R", "2", "♭3", "4", "5", "♭6", "7"],
+  },
+  "mixolydian-b9-b13": {
+    slug: "mixolydian-b9-b13",
+    name: "Mixolydian ♭9 ♭13",
+    altNames: ["Phrygian Dominant"],
+    intervals: [0, 1, 4, 5, 7, 8, 10],
+    degrees: ["R", "♭9", "3", "4", "5", "♭13", "♭7"],
+    parent: { slug: "harmonic-minor", name: "Harmonic Minor", degree: 5 },
+  },
+};
+
+export const SCALE_INTERVAL_LABELS: Record<number, string> = {
+  0: "R",
+  1: "♭9",
+  2: "9",
+  3: "♭3",
+  4: "3",
+  5: "11",
+  6: "♯11",
+  7: "5",
+  8: "♭13",
+  9: "13",
+  10: "♭7",
+  11: "7",
+};
+
+export type ScaleMarker = {
+  string: number;
+  fret: number;
+  intervalPc: number;
+};
+
+function intervalFromRoot(midi: number, rootPc: number): number {
+  return ((midi - rootPc) % 12 + 12) % 12;
+}
+
+export function getFullNeckMarkers(
+  scale: ScaleDefinition,
+  root: number,
+  frets: number,
+  startFret: number = 0,
+): ScaleMarker[] {
+  const pcSet = new Set(scale.intervals.map((i) => (root + i) % 12));
+  const markers: ScaleMarker[] = [];
+  for (let si = 0; si < 6; si++) {
+    const openMidi = STRING_MIDI[si];
+    const displayString = 6 - si;
+    for (let fret = Math.max(1, startFret + 1); fret <= startFret + frets; fret++) {
+      const midi = openMidi + fret;
+      if (pcSet.has(midi % 12)) {
+        markers.push({
+          string: displayString,
+          fret,
+          intervalPc: intervalFromRoot(midi, root),
+        });
+      }
+    }
+  }
+  return markers;
+}
+
+export type NPS3Position = {
+  index: number;
+  markers: ScaleMarker[];
+  minFret: number;
+  maxFret: number;
+};
+
+export function get3NPSPositions(
+  scale: ScaleDefinition,
+  root: number,
+): NPS3Position[] {
+  const n = scale.intervals.length;
+  if (n !== 7) return [];
+
+  const positions: NPS3Position[] = [];
+
+  for (let startDegree = 0; startDegree < n; startDegree++) {
+    // Build ascending sequence of 18 notes as offsets from the starting note.
+    const relOffsets: number[] = [];
+    const startInterval = scale.intervals[startDegree];
+    for (let i = 0; i < 6 * 3; i++) {
+      const deg = (startDegree + i) % n;
+      const octave = Math.floor((startDegree + i) / n);
+      relOffsets.push(scale.intervals[deg] + octave * 12 - startInterval);
+    }
+
+    // Anchor the starting note on the low E string at the lowest fret >= 1.
+    const openLowE = STRING_MIDI[0];
+    const targetPc = (root + startInterval) % 12;
+    let anchorFret = ((targetPc - openLowE) % 12 + 12) % 12;
+    if (anchorFret === 0) anchorFret = 12;
+    const anchorMidi = openLowE + anchorFret;
+
+    const markers: ScaleMarker[] = [];
+    let minFret = Infinity;
+    let maxFret = -Infinity;
+    let playable = true;
+
+    for (let i = 0; i < 18; i++) {
+      const si = Math.floor(i / 3);
+      const displayString = 6 - si;
+      const openMidi = STRING_MIDI[si];
+      const midi = anchorMidi + relOffsets[i];
+      const fret = midi - openMidi;
+      if (fret < 1 || fret > 22) {
+        playable = false;
+        break;
+      }
+      markers.push({
+        string: displayString,
+        fret,
+        intervalPc: intervalFromRoot(midi, root),
+      });
+      if (fret < minFret) minFret = fret;
+      if (fret > maxFret) maxFret = fret;
+    }
+
+    if (playable) {
+      positions.push({ index: startDegree + 1, markers, minFret, maxFret });
+    }
+  }
+
+  return positions;
+}

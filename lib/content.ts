@@ -14,6 +14,7 @@ export type Lesson = {
 
 export type SectionMeta = {
   title?: string;
+  order?: number;
 };
 
 export type TreeNode =
@@ -22,6 +23,7 @@ export type TreeNode =
       kind: "section";
       name: string;
       title: string;
+      order: number;
       slug: string[];
       children: TreeNode[];
     };
@@ -59,6 +61,7 @@ function walk(dir: string, slug: string[]): TreeNode[] {
         kind: "section",
         name: entry.name,
         title: meta.title ?? titleize(entry.name),
+        order: meta.order ?? 999,
         slug: childSlug,
         children: walk(fullPath, childSlug),
       });
@@ -90,8 +93,8 @@ function walk(dir: string, slug: string[]): TreeNode[] {
   }
 
   nodes.sort((a, b) => {
-    const orderA = a.kind === "lesson" ? a.lesson.frontmatter.order : 0;
-    const orderB = b.kind === "lesson" ? b.lesson.frontmatter.order : 0;
+    const orderA = a.kind === "lesson" ? a.lesson.frontmatter.order : a.order;
+    const orderB = b.kind === "lesson" ? b.lesson.frontmatter.order : b.order;
     if (orderA !== orderB) return orderA - orderB;
     const nameA = a.kind === "lesson" ? a.lesson.frontmatter.title : a.title;
     const nameB = b.kind === "lesson" ? b.lesson.frontmatter.title : b.title;
