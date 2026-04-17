@@ -1,4 +1,5 @@
 import type { MDXComponents } from "mdx/types";
+import { ArpeggioExplorer } from "@/components/mdx/arpeggio-explorer";
 import { Fretboard } from "@/components/mdx/fretboard";
 import { ChordDiagram } from "@/components/mdx/chord-diagram";
 import { Drop2Explorer } from "@/components/mdx/drop-2-explorer";
@@ -8,6 +9,7 @@ import { SongChart } from "@/components/mdx/song-chart";
 
 export function useMDXComponents(components: MDXComponents): MDXComponents {
   return {
+    ArpeggioExplorer,
     Fretboard,
     ChordDiagram,
     Drop2Explorer,
