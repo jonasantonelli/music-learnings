@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { getTopSections, type TreeNode } from "@/lib/content";
+import { getAllSongs } from "@/lib/songs";
 
 type Section = Extract<TreeNode, { kind: "section" }>;
 
@@ -27,6 +28,7 @@ function findFirstLessonHref(node: Section): string | undefined {
 
 export default function Home() {
   const sections = getTopSections();
+  const songs = getAllSongs();
   return (
     <>
       <SiteHeader />
@@ -66,6 +68,22 @@ export default function Home() {
               </Link>
             );
           })}
+
+          <Link
+            href="/songs"
+            className="group relative overflow-hidden rounded-3xl border border-border bg-card p-5 transition-colors hover:border-accent-7 hover:bg-card-hover"
+          >
+            <div
+              aria-hidden
+              className="absolute inset-y-0 left-0 w-1 bg-accent-9 opacity-60 transition-opacity group-hover:opacity-100"
+            />
+            <div className="font-medium group-hover:text-accent-11 transition-colors">
+              Songs
+            </div>
+            <div className="mt-1 text-sm text-muted-foreground">
+              {songs.length} chart{songs.length === 1 ? "" : "s"}
+            </div>
+          </Link>
         </div>
       </main>
     </>

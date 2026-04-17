@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 
 const links = [
   { href: "/lessons", label: "Lessons", match: "/lessons" },
+  { href: "/songs", label: "Songs", match: "/songs" },
   { href: "/practice", label: "Practice", match: "/practice" },
 ];
 

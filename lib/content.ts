@@ -51,6 +51,7 @@ function walk(dir: string, slug: string[]): TreeNode[] {
 
   for (const entry of entries) {
     if (entry.name.startsWith("_") || entry.name.startsWith(".")) continue;
+    if (slug.length === 0 && entry.name === "songs") continue;
 
     const fullPath = path.join(dir, entry.name);
 
