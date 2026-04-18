@@ -64,16 +64,21 @@ function buildFretboardMarkers(
 }
 
 export function ArpeggioExplorer({ mode }: ArpeggioExplorerProps) {
-  const practiceNote = usePracticeNote();
-  const [root, setRoot] = useState(0);
+  const [practiceNote, setPracticeNote] = usePracticeNote();
+  const [root, setRootLocal] = useState(0);
   const [quality, setQuality] = useState<ArpeggioQuality>(
     mode === "triads" ? "major" : "maj7",
   );
   const [view, setView] = useState<ViewMode>("full");
   const [showNotes, setShowNotes] = useState(false);
 
+  const setRoot = (n: number) => {
+    setRootLocal(n);
+    setPracticeNote(n);
+  };
+
   useEffect(() => {
-    if (practiceNote !== null) setRoot(practiceNote);
+    if (practiceNote !== null) setRootLocal(practiceNote);
   }, [practiceNote]);
 
   const qualityOptions =

@@ -103,10 +103,6 @@ export type CagedShape = {
   maxFret: number;
 };
 
-const CAGED_NAMES = ["C", "A", "G", "E", "D"];
-
-// CAGED shapes are derived by finding the 5 root positions on the low strings
-// and building an arpeggio shape around each one within a 4-5 fret span.
 export function getCagedShapes(
   quality: ArpeggioQuality,
   root: number,
@@ -114,34 +110,33 @@ export function getCagedShapes(
   const formula = ARPEGGIO_FORMULAS[quality];
   const pcSet = new Set(formula.map((i) => (root + i) % 12));
 
-  // Find root positions on strings 6, 5, 4 (indices 0, 1, 2)
-  const rootFrets: { si: number; fret: number }[] = [];
-  for (let si = 0; si < 3; si++) {
-    const openMidi = STRING_MIDI[si];
-    let baseFret = ((root - (openMidi % 12)) % 12 + 12) % 12;
-    if (baseFret === 0) baseFret = 12;
-    for (let fret = baseFret; fret <= 15; fret += 12) {
-      rootFrets.push({ si, fret });
+  const rootFret = (si: number) =>
+    ((root - (STRING_MIDI[si] % 12)) % 12 + 12) % 12;
+
+  const r6 = rootFret(0) || 12;
+  const r5 = rootFret(1) || 12;
+  const r4 = rootFret(2) || 12;
+
+  const shapeDefs: { name: string; low: number; high: number }[] = [
+    { name: "C", low: r5 - 3, high: r5 + 1 },
+    { name: "A", low: r5, high: r5 + 4 },
+    { name: "G", low: r6 - 3, high: r6 + 1 },
+    { name: "E", low: r6, high: r6 + 4 },
+    { name: "D", low: r4 - 1, high: r4 + 3 },
+  ];
+
+  for (const s of shapeDefs) {
+    if (s.low < 0) {
+      s.low += 12;
+      s.high += 12;
     }
   }
 
-  rootFrets.sort((a, b) => a.fret - b.fret || a.si - b.si);
+  shapeDefs.sort((a, b) => a.low - b.low);
 
-  // Take 5 unique positions by fret region
-  const seen = new Set<number>();
-  const anchors: { si: number; fret: number }[] = [];
-  for (const rf of rootFrets) {
-    const region = Math.floor(rf.fret / 3);
-    if (!seen.has(region) && anchors.length < 5) {
-      seen.add(region);
-      anchors.push(rf);
-    }
-  }
-
-  return anchors.map((anchor, idx): CagedShape => {
-    const centerFret = anchor.fret;
-    const lowFret = Math.max(1, centerFret - 2);
-    const highFret = centerFret + 3;
+  return shapeDefs.map((def): CagedShape => {
+    const lowFret = Math.max(1, def.low);
+    const highFret = def.high;
 
     const markers: ArpeggioMarker[] = [];
     for (let si = 0; si < 6; si++) {
@@ -161,10 +156,10 @@ export function getCagedShapes(
 
     const frets = markers.map((m) => m.fret);
     return {
-      name: CAGED_NAMES[idx % CAGED_NAMES.length],
+      name: def.name,
       markers,
-      minFret: Math.min(...frets),
-      maxFret: Math.max(...frets),
+      minFret: frets.length ? Math.min(...frets) : lowFret,
+      maxFret: frets.length ? Math.max(...frets) : highFret,
     };
   });
 }

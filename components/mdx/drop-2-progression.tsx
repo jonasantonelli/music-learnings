@@ -53,11 +53,16 @@ function buildHighlights(voicing: Voicing, stringSetIndex: number): (boolean | n
 }
 
 export function Drop2Progression() {
-  const practiceNote = usePracticeNote();
-  const [key, setKey] = useState(0);
+  const [practiceNote, setPracticeNote] = usePracticeNote();
+  const [key, setKeyLocal] = useState(0);
+
+  const setKey = (n: number) => {
+    setKeyLocal(n);
+    setPracticeNote(n);
+  };
 
   useEffect(() => {
-    if (practiceNote !== null) setKey(practiceNote);
+    if (practiceNote !== null) setKeyLocal(practiceNote);
   }, [practiceNote]);
   const [stringSet, setStringSet] = useState(1);
   const [mode, setMode] = useState<"major" | "minor">("major");

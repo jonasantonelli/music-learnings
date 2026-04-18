@@ -58,11 +58,16 @@ function buildHighlights(voicing: Voicing, stringSetIndex: number): (boolean | n
 }
 
 export function Drop2Explorer() {
-  const practiceNote = usePracticeNote();
-  const [root, setRoot] = useState(0);
+  const [practiceNote, setPracticeNote] = usePracticeNote();
+  const [root, setRootLocal] = useState(0);
+
+  const setRoot = (n: number) => {
+    setRootLocal(n);
+    setPracticeNote(n);
+  };
 
   useEffect(() => {
-    if (practiceNote !== null) setRoot(practiceNote);
+    if (practiceNote !== null) setRootLocal(practiceNote);
   }, [practiceNote]);
   const [quality, setQuality] = useState<ChordQuality>("maj7");
   const [stringSet, setStringSet] = useState(1);

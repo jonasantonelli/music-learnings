@@ -25,14 +25,19 @@ type ScaleExplorerProps = {
 type ViewMode = "full" | "position";
 
 export function ScaleExplorer({ scale: scaleSlug }: ScaleExplorerProps) {
-  const practiceNote = usePracticeNote();
-  const [root, setRoot] = useState(0);
+  const [practiceNote, setPracticeNote] = usePracticeNote();
+  const [root, setRootLocal] = useState(0);
   const [view, setView] = useState<ViewMode>("full");
   const [position, setPosition] = useState(1);
   const [showNotes, setShowNotes] = useState(false);
 
+  const setRoot = (n: number) => {
+    setRootLocal(n);
+    setPracticeNote(n);
+  };
+
   useEffect(() => {
-    if (practiceNote !== null) setRoot(practiceNote);
+    if (practiceNote !== null) setRootLocal(practiceNote);
   }, [practiceNote]);
 
   const definition = SCALES[scaleSlug];

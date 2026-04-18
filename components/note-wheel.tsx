@@ -184,6 +184,28 @@ export function NoteWheel() {
     return () => observer.disconnect();
   }, [resizeCanvas]);
 
+  useEffect(() => {
+    if (!mounted || spinning) return;
+    const handler = () => {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const stored: StoredSpin = JSON.parse(raw);
+        setResult(stored.note);
+        const segIndex = stored.noteIndex;
+        const targetAngle =
+          -(segIndex * SEGMENT_ANGLE + SEGMENT_ANGLE / 2) - Math.PI / 2;
+        rotationRef.current = targetAngle;
+        setRotation(targetAngle);
+        paint(targetAngle);
+      } catch {
+        // ignore
+      }
+    };
+    window.addEventListener("practice-note-updated", handler);
+    return () => window.removeEventListener("practice-note-updated", handler);
+  }, [mounted, spinning, paint]);
+
   // Repaint on theme change
   useEffect(() => {
     if (!mounted) return;
