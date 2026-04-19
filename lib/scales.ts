@@ -10,6 +10,61 @@ export type ScaleDefinition = {
 };
 
 export const SCALES: Record<string, ScaleDefinition> = {
+  ionian: {
+    slug: "ionian",
+    name: "Ionian",
+    altNames: ["Major Scale"],
+    intervals: [0, 2, 4, 5, 7, 9, 11],
+    degrees: ["R", "2", "3", "4", "5", "6", "7"],
+  },
+  dorian: {
+    slug: "dorian",
+    name: "Dorian",
+    altNames: [],
+    intervals: [0, 2, 3, 5, 7, 9, 10],
+    degrees: ["R", "2", "♭3", "4", "5", "6", "♭7"],
+    parent: { slug: "ionian", name: "Ionian", degree: 2 },
+  },
+  phrygian: {
+    slug: "phrygian",
+    name: "Phrygian",
+    altNames: [],
+    intervals: [0, 1, 3, 5, 7, 8, 10],
+    degrees: ["R", "♭2", "♭3", "4", "5", "♭6", "♭7"],
+    parent: { slug: "ionian", name: "Ionian", degree: 3 },
+  },
+  lydian: {
+    slug: "lydian",
+    name: "Lydian",
+    altNames: [],
+    intervals: [0, 2, 4, 6, 7, 9, 11],
+    degrees: ["R", "2", "3", "♯4", "5", "6", "7"],
+    parent: { slug: "ionian", name: "Ionian", degree: 4 },
+  },
+  mixolydian: {
+    slug: "mixolydian",
+    name: "Mixolydian",
+    altNames: [],
+    intervals: [0, 2, 4, 5, 7, 9, 10],
+    degrees: ["R", "2", "3", "4", "5", "6", "♭7"],
+    parent: { slug: "ionian", name: "Ionian", degree: 5 },
+  },
+  aeolian: {
+    slug: "aeolian",
+    name: "Aeolian",
+    altNames: ["Natural Minor"],
+    intervals: [0, 2, 3, 5, 7, 8, 10],
+    degrees: ["R", "2", "♭3", "4", "5", "♭6", "♭7"],
+    parent: { slug: "ionian", name: "Ionian", degree: 6 },
+  },
+  locrian: {
+    slug: "locrian",
+    name: "Locrian",
+    altNames: [],
+    intervals: [0, 1, 3, 5, 6, 8, 10],
+    degrees: ["R", "♭2", "♭3", "4", "♭5", "♭6", "♭7"],
+    parent: { slug: "ionian", name: "Ionian", degree: 7 },
+  },
   "melodic-minor": {
     slug: "melodic-minor",
     name: "Melodic Minor",
