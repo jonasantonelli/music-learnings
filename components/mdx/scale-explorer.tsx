@@ -7,6 +7,7 @@ import {
   SCALES,
   SCALE_INTERVAL_LABELS,
   get3NPSPositions,
+  getCAGEDScalePositions,
   getFullNeckMarkers,
   type ScaleMarker,
 } from "@/lib/scales";
@@ -22,13 +23,14 @@ type ScaleExplorerProps = {
   scale: string;
 };
 
-type ViewMode = "full" | "position";
+type ViewMode = "full" | "position" | "caged";
 
 export function ScaleExplorer({ scale: scaleSlug }: ScaleExplorerProps) {
   const [practiceNote, setPracticeNote] = usePracticeNote();
   const [root, setRootLocal] = useState(0);
   const [view, setView] = useState<ViewMode>("full");
   const [position, setPosition] = useState(1);
+  const [cagedIndex, setCagedIndex] = useState(0);
   const [showNotes, setShowNotes] = useState(false);
 
   const setRoot = (n: number) => {
@@ -62,6 +64,11 @@ export function ScaleExplorer({ scale: scaleSlug }: ScaleExplorerProps) {
   if (view === "full") {
     scaleMarkers = getFullNeckMarkers(definition, root, 15, 0);
     caption = `${noteName(root, root)} ${definition.name} — full neck`;
+  } else if (view === "caged") {
+    const shapes = getCAGEDScalePositions(definition, root);
+    const chosen = shapes[cagedIndex] ?? shapes[0];
+    scaleMarkers = chosen?.markers ?? [];
+    caption = `${noteName(root, root)} ${definition.name} — ${chosen?.name ?? "C"} shape (CAGED)`;
   } else {
     const positions = get3NPSPositions(definition, root);
     const safeIndex = Math.min(position, positions.length) - 1;
@@ -95,12 +102,26 @@ export function ScaleExplorer({ scale: scaleSlug }: ScaleExplorerProps) {
           label="View"
           options={[
             { label: "Full neck", value: "full" },
-            { label: "3NPS position", value: "position" },
+            { label: "3NPS", value: "position" },
+            { label: "CAGED", value: "caged" },
           ]}
           value={view}
           onChange={setView}
           size="sm"
         />
+
+        {view === "caged" && (
+          <SegmentedControl
+            label="Shape"
+            options={getCAGEDScalePositions(definition, root).map((s, i) => ({
+              label: s.name,
+              value: i,
+            }))}
+            value={cagedIndex}
+            onChange={setCagedIndex}
+            size="sm"
+          />
+        )}
 
         {view === "position" && (
           <SegmentedControl

@@ -87,7 +87,7 @@ export function VoicingDiagram({
           <text
             x={padX + cellW * (strings - 1) + 6}
             y={padTop + cellH * 0.7}
-            fontSize={10}
+            fontSize={8}
             fill="currentColor"
             opacity={0.7}
           >

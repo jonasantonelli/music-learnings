@@ -49,6 +49,11 @@ export function ChordDiagram({
     baseFret === 1 && max > numFrets ? Math.max(1, min - 0) : baseFret;
   const nutVisible = shift === 1;
 
+  const usesSixthString = parsed[0] !== "x" && parsed[0] !== null;
+  const usesFirstString =
+    parsed[strings - 1] !== "x" && parsed[strings - 1] !== null;
+  const labelOnLeft = !usesSixthString && usesFirstString;
+
   return (
     <figure className="my-4 inline-block mx-2 align-top">
       <svg
@@ -83,9 +88,10 @@ export function ChordDiagram({
           />
         ) : (
           <text
-            x={padX + cellW * (strings - 1) + 6}
+            x={labelOnLeft ? padX - 6 : padX + cellW * (strings - 1) + 6}
             y={padTop + cellH * 0.7}
-            fontSize={10}
+            textAnchor={labelOnLeft ? "end" : "start"}
+            fontSize={8}
             fill="currentColor"
             opacity={0.7}
           >

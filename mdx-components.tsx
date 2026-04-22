@@ -6,6 +6,7 @@ import { Drop2Explorer } from "@/components/mdx/drop-2-explorer";
 import { Drop2Progression } from "@/components/mdx/drop-2-progression";
 import { ScaleExplorer } from "@/components/mdx/scale-explorer";
 import { SongChart } from "@/components/mdx/song-chart";
+import { TetradChordExplorer } from "@/components/mdx/tetrad-chord-explorer";
 import { WalkingBassExplorer } from "@/components/mdx/walking-bass-explorer";
 
 export function useMDXComponents(components: MDXComponents): MDXComponents {
@@ -17,6 +18,7 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
     Drop2Progression,
     ScaleExplorer,
     SongChart,
+    TetradChordExplorer,
     WalkingBassExplorer,
     ...components,
   };

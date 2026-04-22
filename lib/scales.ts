@@ -154,6 +154,127 @@ export type NPS3Position = {
   maxFret: number;
 };
 
+export type CAGEDScalePosition = {
+  name: string;
+  markers: ScaleMarker[];
+  minFret: number;
+  maxFret: number;
+};
+
+export function getCAGEDScalePositions(
+  scale: ScaleDefinition,
+  root: number,
+): CAGEDScalePosition[] {
+  const pcSet = new Set(scale.intervals.map((i) => (root + i) % 12));
+
+  const rootFret = (si: number) =>
+    ((root - (STRING_MIDI[si] % 12)) % 12 + 12) % 12;
+
+  const r6 = rootFret(0) || 12;
+  const r5 = rootFret(1) || 12;
+  const r4 = rootFret(2) || 12;
+
+  const shapeDefs: { name: string; center: number }[] = [
+    { name: "C", center: r5 - 1 },
+    { name: "A", center: r5 + 2 },
+    { name: "G", center: r6 - 1 },
+    { name: "E", center: r6 + 2 },
+    { name: "D", center: r4 + 1 },
+  ];
+
+  for (const s of shapeDefs) {
+    if (s.center < 2) s.center += 12;
+  }
+
+  shapeDefs.sort((a, b) => a.center - b.center);
+
+  return shapeDefs.map((def): CAGEDScalePosition => {
+    const baseLow = def.center - 1;
+    const baseHigh = def.center + 2;
+    const stretchLow = baseLow - 2;
+    const stretchHigh = baseHigh + 2;
+
+    type Candidate = { string: number; fret: number; midi: number };
+    const candidates: Candidate[] = [];
+
+    for (let si = 0; si < 6; si++) {
+      const openMidi = STRING_MIDI[si];
+      const displayString = 6 - si;
+      for (let fret = Math.max(1, stretchLow); fret <= stretchHigh; fret++) {
+        const midi = openMidi + fret;
+        if (pcSet.has(midi % 12)) {
+          candidates.push({ string: displayString, fret, midi });
+        }
+      }
+    }
+
+    const byMidi = new Map<number, Candidate[]>();
+    for (const c of candidates) {
+      const arr = byMidi.get(c.midi) ?? [];
+      arr.push(c);
+      byMidi.set(c.midi, arr);
+    }
+
+    const kept = new Set<Candidate>();
+    for (const dupes of byMidi.values()) {
+      if (dupes.length === 1) {
+        kept.add(dupes[0]);
+        continue;
+      }
+      dupes.sort((a, b) => b.string - a.string);
+      kept.add(dupes[0]);
+    }
+
+    const dedupedByString = new Map<number, Candidate[]>();
+    for (const c of candidates) {
+      if (!kept.has(c)) continue;
+      const arr = dedupedByString.get(c.string) ?? [];
+      arr.push(c);
+      dedupedByString.set(c.string, arr);
+    }
+
+    const markers: ScaleMarker[] = [];
+    for (const [, notes] of dedupedByString) {
+      if (notes.length > 3) {
+        notes.sort((a, b) => a.fret - b.fret);
+        let bestStart = 0;
+        let bestSpan = Infinity;
+        for (let i = 0; i <= notes.length - 3; i++) {
+          const span = notes[i + 2].fret - notes[i].fret;
+          if (span < bestSpan || (span === bestSpan && notes[i].fret >= baseLow)) {
+            bestSpan = span;
+            bestStart = i;
+          }
+        }
+        const trimmed = notes.slice(bestStart, bestStart + 3);
+        for (const c of trimmed) {
+          markers.push({
+            string: c.string,
+            fret: c.fret,
+            intervalPc: intervalFromRoot(c.midi, root),
+          });
+        }
+      } else {
+        for (const c of notes) {
+          markers.push({
+            string: c.string,
+            fret: c.fret,
+            intervalPc: intervalFromRoot(c.midi, root),
+          });
+        }
+      }
+    }
+
+    const frets = markers.map((m) => m.fret);
+    return {
+      name: def.name,
+      markers,
+      minFret: frets.length ? Math.min(...frets) : baseLow,
+      maxFret: frets.length ? Math.max(...frets) : baseHigh,
+    };
+  });
+}
+
 export function get3NPSPositions(
   scale: ScaleDefinition,
   root: number,
