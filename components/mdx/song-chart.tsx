@@ -21,6 +21,14 @@ import {
   type ChordQuality,
   type Voicing,
 } from "@/lib/music";
+import {
+  computeTetradVoicing,
+  tetradChordLabel,
+  TETRAD_INTERVAL_LABELS,
+  ROOT_STRING_OPTIONS,
+  type TetradChordQuality,
+  type TetradVoicing,
+} from "@/lib/tetrad-chords";
 import { VoicingDiagram } from "./voicing-diagram";
 
 export type SongBar = {
@@ -288,6 +296,31 @@ type PopoverState = {
   chordSymbol: string;
 } | null;
 
+const TETRAD_ROOT_STRINGS = [0, 1, 2];
+
+function buildTetradLabels(voicing: TetradVoicing): (string | null)[] {
+  const labels: (string | null)[] = [null, null, null, null, null, null];
+  let intervalIdx = 0;
+  for (let si = 0; si < 6; si++) {
+    if (voicing.frets[si] === null) continue;
+    const interval = voicing.intervals[intervalIdx];
+    labels[si] = TETRAD_INTERVAL_LABELS[interval] ?? String(interval);
+    intervalIdx++;
+  }
+  return labels;
+}
+
+function buildTetradHighlights(voicing: TetradVoicing): (boolean | null)[] {
+  const highlights: (boolean | null)[] = [null, null, null, null, null, null];
+  let intervalIdx = 0;
+  for (let si = 0; si < 6; si++) {
+    if (voicing.frets[si] === null) continue;
+    highlights[si] = voicing.intervals[intervalIdx] === 0;
+    intervalIdx++;
+  }
+  return highlights;
+}
+
 function ChordVoicingPopover({
   root,
   quality,
@@ -317,22 +350,31 @@ function ChordVoicingPopover({
     };
   }, [onClose]);
 
-  const voicings = [0, 1, 2, 3]
+  const drop2Voicings = [0, 1, 2, 3]
     .map((inv) => computeDrop2Voicing(root, quality, inv, stringSet))
     .sort((a, b) => a.midi[a.midi.length - 1] - b.midi[b.midi.length - 1]);
 
+  const tetradQuality = quality as TetradChordQuality;
+  const tetradVoicings = TETRAD_ROOT_STRINGS.flatMap((rs) => {
+    const v = computeTetradVoicing(root, tetradQuality, rs);
+    if (!v) return [];
+    const label = ROOT_STRING_OPTIONS.find((o) => o.value === rs)?.label ?? "";
+    return [{ rootString: rs, voicing: v, label }];
+  });
+
   const chordName = `${noteName(root, root)}${QUALITY_LABELS[quality]}`;
+  const tetradName = tetradChordLabel(root, tetradQuality);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div
         ref={ref}
-        className="relative mx-4 max-h-[90vh] overflow-y-auto rounded-xl border border-border bg-background p-4 shadow-xl sm:p-6 max-w-lg w-full"
+        className="relative mx-4 max-h-[90vh] overflow-y-auto rounded-xl border border-border bg-background p-4 shadow-xl sm:p-6 max-w-3xl w-full"
       >
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h3 className="text-base font-semibold">{chordSymbol}</h3>
-            <p className="text-xs text-muted-foreground">Drop-2 voicings</p>
+            <p className="text-xs text-muted-foreground">Tetrad &amp; drop-2 voicings</p>
           </div>
           <button
             onClick={onClose}
@@ -345,38 +387,62 @@ function ChordVoicingPopover({
           </button>
         </div>
 
-        <div className="mb-4 flex items-center gap-2">
-          <span className="text-xs font-medium text-muted-foreground">Strings:</span>
-          <div className="inline-flex rounded-full border border-border bg-muted/40 p-0.5">
-            {STRING_SETS.map((s, i) => (
-              <button
-                key={s.label}
-                onClick={() => setStringSet(i)}
-                className={cn(
-                  "rounded-full px-2.5 py-1 text-xs font-medium transition-colors",
-                  i === stringSet
-                    ? "bg-accent-9 text-accent-contrast shadow-sm"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {s.label}
-              </button>
+        {tetradVoicings.length > 0 && (
+          <section className="mb-6">
+            <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Tetrad
+            </h4>
+            <div className="grid grid-cols-3 gap-2 justify-items-center">
+              {tetradVoicings.map(({ rootString, voicing, label }) => (
+                <VoicingDiagram
+                  key={rootString}
+                  name={tetradName}
+                  subtitle={`${label} string root`}
+                  frets={voicing.frets}
+                  labels={buildTetradLabels(voicing)}
+                  highlights={buildTetradHighlights(voicing)}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+
+        <section>
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Drop-2
+            </h4>
+            <div className="inline-flex rounded-full border border-border bg-muted/40 p-0.5">
+              {STRING_SETS.map((s, i) => (
+                <button
+                  key={s.label}
+                  onClick={() => setStringSet(i)}
+                  className={cn(
+                    "rounded-full px-2.5 py-1 text-xs font-medium transition-colors",
+                    i === stringSet
+                      ? "bg-accent-9 text-accent-contrast shadow-sm"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 justify-items-center">
+            {drop2Voicings.map((v, i) => (
+              <VoicingDiagram
+                key={i}
+                name={chordName}
+                subtitle={INVERSION_NAMES[v.inversionIndex]}
+                frets={v.frets}
+                labels={buildPopoverLabels(v, root, stringSet)}
+                highlights={buildPopoverHighlights(v, stringSet)}
+              />
             ))}
           </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2 justify-items-center">
-          {voicings.map((v, i) => (
-            <VoicingDiagram
-              key={i}
-              name={chordName}
-              subtitle={INVERSION_NAMES[v.inversionIndex]}
-              frets={v.frets}
-              labels={buildPopoverLabels(v, root, stringSet)}
-              highlights={buildPopoverHighlights(v, stringSet)}
-            />
-          ))}
-        </div>
+        </section>
       </div>
     </div>
   );
