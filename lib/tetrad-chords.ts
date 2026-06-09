@@ -15,7 +15,11 @@ export type TetradChordQuality =
   | "7b9"
   | "7(9)"
   | "7sus4"
-  | "dim7";
+  | "dim7"
+  | "sus2"
+  | "7sus2"
+  | "maj7sus2"
+  | "maj7(9)";
 
 export const TETRAD_CHORD_FORMULAS: Record<TetradChordQuality, readonly number[]> = {
   maj7: [0, 4, 7, 11],
@@ -33,6 +37,10 @@ export const TETRAD_CHORD_FORMULAS: Record<TetradChordQuality, readonly number[]
   "7(9)": [0, 4, 10, 14],       // R, 3, b7, 9 (drop 5th)
   "7sus4": [0, 5, 7, 10],
   dim7: [0, 3, 6, 9],
+  sus2: [0, 2, 7, 14],          // R, 2, 5, 9 (sus2 with 9 on top)
+  "7sus2": [0, 2, 7, 10],
+  maj7sus2: [0, 2, 7, 11],
+  "maj7(9)": [0, 4, 11, 14],    // R, 3, 7, 9 (drop 5th)
 };
 
 export const TETRAD_CHORD_LABELS: Record<TetradChordQuality, string> = {
@@ -51,10 +59,15 @@ export const TETRAD_CHORD_LABELS: Record<TetradChordQuality, string> = {
   "7(9)": "7(9)",
   "7sus4": "7sus4",
   dim7: "dim7",
+  sus2: "sus2",
+  "7sus2": "7sus2",
+  maj7sus2: "maj7sus2",
+  "maj7(9)": "maj7(9)",
 };
 
 export const TETRAD_INTERVAL_LABELS: Record<number, string> = {
   0: "R",
+  2: "2",
   3: "♭3",
   4: "3",
   5: "4",
@@ -75,10 +88,11 @@ export type ChordFamily = {
 };
 
 export const CHORD_FAMILIES: ChordFamily[] = [
-  { name: "Major", qualities: ["maj7", "6", "maj7#11"] },
+  { name: "Major", qualities: ["maj7", "6", "maj7#11", "maj7(9)"] },
   { name: "Minor", qualities: ["m7", "m6", "m7b5", "mMaj7", "m9"] },
   { name: "Dominant", qualities: ["7", "7+", "7b5", "7b9", "7(9)", "7sus4"] },
   { name: "Diminished", qualities: ["dim7"] },
+  { name: "Suspended", qualities: ["sus2", "7sus2", "maj7sus2"] },
 ];
 
 export const ROOT_STRING_OPTIONS = [
