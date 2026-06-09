@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 const links = [
   { href: "/lessons", label: "Lessons", match: "/lessons" },
   { href: "/songs", label: "Songs", match: "/songs" },
+  { href: "/chord-id", label: "Chord ID", match: "/chord-id" },
   { href: "/practice", label: "Practice", match: "/practice" },
 ];
 

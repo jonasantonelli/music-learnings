@@ -84,6 +84,22 @@ export default function Home() {
               {songs.length} chart{songs.length === 1 ? "" : "s"}
             </div>
           </Link>
+
+          <Link
+            href="/chord-id"
+            className="group relative overflow-hidden rounded-3xl border border-border bg-card p-5 transition-colors hover:border-accent-7 hover:bg-card-hover"
+          >
+            <div
+              aria-hidden
+              className="absolute inset-y-0 left-0 w-1 bg-accent-9 opacity-60 transition-opacity group-hover:opacity-100"
+            />
+            <div className="font-medium group-hover:text-accent-11 transition-colors">
+              Chord Identifier
+            </div>
+            <div className="mt-1 text-sm text-muted-foreground">
+              Set notes on the fretboard, get the chord name
+            </div>
+          </Link>
         </div>
       </main>
     </>
