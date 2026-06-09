@@ -7,6 +7,14 @@ export type ScaleDefinition = {
   intervals: number[];
   degrees: string[];
   parent?: { slug: string; name: string; degree: number };
+  /**
+   * Pitch classes (semitones from root) that are chromatic passing tones rather
+   * than chord/scale tones — e.g. the added note in a bebop scale. Rendered
+   * with a muted marker in the explorer.
+   */
+  passingTones?: number[];
+  /** Per-pitch-class label overrides, taking precedence over SCALE_INTERVAL_LABELS. */
+  labels?: Record<number, string>;
 };
 
 export const SCALES: Record<string, ScaleDefinition> = {
@@ -94,6 +102,40 @@ export const SCALES: Record<string, ScaleDefinition> = {
     intervals: [0, 1, 4, 5, 7, 8, 10],
     degrees: ["R", "♭9", "3", "4", "5", "♭13", "♭7"],
     parent: { slug: "harmonic-minor", name: "Harmonic Minor", degree: 5 },
+  },
+  "bebop-dominant": {
+    slug: "bebop-dominant",
+    name: "Bebop Dominant",
+    altNames: [],
+    intervals: [0, 2, 4, 5, 7, 9, 10, 11],
+    degrees: ["R", "2", "3", "4", "5", "6", "♭7", "7"],
+    passingTones: [11],
+  },
+  "bebop-major": {
+    slug: "bebop-major",
+    name: "Bebop Major",
+    altNames: [],
+    intervals: [0, 2, 4, 5, 7, 8, 9, 11],
+    degrees: ["R", "2", "3", "4", "5", "♯5", "6", "7"],
+    passingTones: [8],
+    labels: { 8: "♯5" },
+  },
+  "bebop-dorian": {
+    slug: "bebop-dorian",
+    name: "Bebop Dorian",
+    altNames: ["Bebop Minor"],
+    intervals: [0, 2, 3, 4, 5, 7, 9, 10],
+    degrees: ["R", "2", "♭3", "3", "4", "5", "6", "♭7"],
+    passingTones: [4],
+  },
+  "bebop-melodic-minor": {
+    slug: "bebop-melodic-minor",
+    name: "Bebop Melodic Minor",
+    altNames: [],
+    intervals: [0, 2, 3, 5, 7, 8, 9, 11],
+    degrees: ["R", "2", "♭3", "4", "5", "♯5", "6", "7"],
+    passingTones: [8],
+    labels: { 8: "♯5" },
   },
 };
 

@@ -31,7 +31,7 @@ export function ScaleExplorer({ scale: scaleSlug }: ScaleExplorerProps) {
   const [view, setView] = useState<ViewMode>("full");
   const [position, setPosition] = useState(1);
   const [cagedIndex, setCagedIndex] = useState(0);
-  const [showNotes, setShowNotes] = useState(false);
+  const [showNotes, setShowNotes] = useState(true);
 
   const setRoot = (n: number) => {
     setRootLocal(n);
@@ -51,20 +51,31 @@ export function ScaleExplorer({ scale: scaleSlug }: ScaleExplorerProps) {
     );
   }
 
+  // 3NPS is a 7-note construct; bebop and other 8-note scales fall back to
+  // full-neck and CAGED only.
+  const supports3NPS = definition.intervals.length === 7;
+  const passingTones = new Set(definition.passingTones ?? []);
+  const effectiveView: ViewMode =
+    view === "position" && !supports3NPS ? "full" : view;
+
   const labelFor = (marker: ScaleMarker): string => {
     if (showNotes) {
       return noteName((root + marker.intervalPc) % 12, root);
     }
-    return SCALE_INTERVAL_LABELS[marker.intervalPc] ?? String(marker.intervalPc);
+    return (
+      definition.labels?.[marker.intervalPc] ??
+      SCALE_INTERVAL_LABELS[marker.intervalPc] ??
+      String(marker.intervalPc)
+    );
   };
 
   let scaleMarkers: ScaleMarker[];
   let caption: string;
 
-  if (view === "full") {
+  if (effectiveView === "full") {
     scaleMarkers = getFullNeckMarkers(definition, root, 15, 0);
     caption = `${noteName(root, root)} ${definition.name} — full neck`;
-  } else if (view === "caged") {
+  } else if (effectiveView === "caged") {
     const shapes = getCAGEDScalePositions(definition, root);
     const chosen = shapes[cagedIndex] ?? shapes[0];
     scaleMarkers = chosen?.markers ?? [];
@@ -79,12 +90,19 @@ export function ScaleExplorer({ scale: scaleSlug }: ScaleExplorerProps) {
 
   const fretboardMarkers = scaleMarkers.map((m) => {
     const isRoot = m.intervalPc === 0;
+    const isPassing = passingTones.has(m.intervalPc);
     return {
       string: m.string,
       fret: m.fret,
       label: labelFor(m),
-      color: isRoot ? "var(--accent-9)" : undefined,
-      labelColor: isRoot ? "var(--accent-contrast)" : undefined,
+      color: isRoot
+        ? "var(--accent-9)"
+        : isPassing
+          ? "var(--muted-foreground)"
+          : "var(--accent-7)",
+      labelColor: isPassing
+        ? "var(--background)"
+        : "var(--accent-contrast)",
     };
   });
 
@@ -102,15 +120,17 @@ export function ScaleExplorer({ scale: scaleSlug }: ScaleExplorerProps) {
           label="View"
           options={[
             { label: "Full neck", value: "full" },
-            { label: "3NPS", value: "position" },
+            ...(supports3NPS
+              ? [{ label: "3NPS", value: "position" as const }]
+              : []),
             { label: "CAGED", value: "caged" },
           ]}
-          value={view}
+          value={effectiveView}
           onChange={setView}
           size="sm"
         />
 
-        {view === "caged" && (
+        {effectiveView === "caged" && (
           <SegmentedControl
             label="Shape"
             options={getCAGEDScalePositions(definition, root).map((s, i) => ({
@@ -123,7 +143,7 @@ export function ScaleExplorer({ scale: scaleSlug }: ScaleExplorerProps) {
           />
         )}
 
-        {view === "position" && (
+        {effectiveView === "position" && (
           <SegmentedControl
             label="Position"
             options={definition.intervals.map((_, i) => ({
