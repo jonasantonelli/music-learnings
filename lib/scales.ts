@@ -124,9 +124,9 @@ export const SCALES: Record<string, ScaleDefinition> = {
     slug: "bebop-dorian",
     name: "Bebop Dorian",
     altNames: ["Bebop Minor"],
-    intervals: [0, 2, 3, 4, 5, 7, 9, 10],
-    degrees: ["R", "2", "♭3", "3", "4", "5", "6", "♭7"],
-    passingTones: [4],
+    intervals: [0, 2, 3, 5, 7, 9, 10, 11],
+    degrees: ["R", "2", "♭3", "4", "5", "6", "♭7", "7"],
+    passingTones: [11],
   },
   "bebop-melodic-minor": {
     slug: "bebop-melodic-minor",
