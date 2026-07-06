@@ -7,7 +7,7 @@ import {
   QUALITY_LABELS,
   STRING_SETS,
   INVERSION_NAMES,
-  INTERVAL_LABELS,
+  intervalLabel,
   computeDrop2Voicing,
   chordSpeller,
   type DegreeSpeller,
@@ -25,6 +25,7 @@ import {
 
 const QUALITIES: ChordQuality[] = [
   "maj7",
+  "maj13",
   "m7",
   "7",
   "m7b5",
@@ -35,6 +36,7 @@ const QUALITIES: ChordQuality[] = [
 function buildLabels(
   voicing: Voicing,
   speller: DegreeSpeller,
+  quality: ChordQuality,
   stringSetIndex: number,
   showNotes: boolean,
 ): (string | null)[] {
@@ -44,7 +46,7 @@ function buildLabels(
     const si = indices[i];
     labels[si] = showNotes
       ? speller.spell(voicing.intervals[i])
-      : (INTERVAL_LABELS[voicing.intervals[i]] ?? String(voicing.intervals[i]));
+      : intervalLabel(voicing.intervals[i], quality);
   }
   return labels;
 }
@@ -121,7 +123,7 @@ export function Drop2Explorer() {
             name={chordName}
             subtitle={INVERSION_NAMES[v.inversionIndex]}
             frets={v.frets}
-            labels={buildLabels(v, speller, stringSet, showNotes)}
+            labels={buildLabels(v, speller, quality, stringSet, showNotes)}
             highlights={buildHighlights(v, stringSet)}
           />
         ))}
