@@ -95,6 +95,46 @@ body {
   color: var(--accent-12);
 }
 
-.fretboard-cell:hover {
-  fill: var(--accent-3);
+/* Interactive fretboard */
+.fret-cell {
+  cursor: pointer;
+}
+.fret-cell .ghost {
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+.fret-cell:hover .ghost {
+  opacity: 1;
+}
+
+.fret-status {
+  cursor: pointer;
+  outline: none;
+}
+.fret-status .status-bg {
+  fill: var(--card-hover);
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+.fret-status:hover .status-bg,
+.fret-status:focus-visible .status-bg {
+  opacity: 1;
+}
+/* The muted "×" is only a hover/focus affordance; at rest a muted string
+   is simply blank so the resting board stays calm. */
+.fret-status .status-x {
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+.fret-status:hover .status-x,
+.fret-status:focus-visible .status-x {
+  opacity: 0.55;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fret-cell .ghost,
+  .fret-status .status-bg,
+  .fret-status .status-x {
+    transition: none;
+  }
 }

@@ -7,11 +7,21 @@ export const NOTE_NAMES_FLAT = [
 
 const SHARP_KEYS = new Set([0, 2, 4, 7, 9, 11]); // C, D, E, G, A, B
 
-export function noteName(pc: number, key?: number): string {
+/**
+ * Spelling preference: a key's pitch class (sharps for sharp keys, else flats),
+ * or an explicit `"sharp"` / `"flat"` override that ignores the key.
+ */
+export type Spelling = number | "sharp" | "flat";
+
+export function noteName(pc: number, pref?: Spelling): string {
   const n = ((pc % 12) + 12) % 12;
-  return key !== undefined && SHARP_KEYS.has(key)
-    ? NOTE_NAMES_SHARP[n]
-    : NOTE_NAMES_FLAT[n];
+  const useSharp =
+    pref === "sharp"
+      ? true
+      : pref === "flat"
+        ? false
+        : typeof pref === "number" && SHARP_KEYS.has(pref);
+  return useSharp ? NOTE_NAMES_SHARP[n] : NOTE_NAMES_FLAT[n];
 }
 
 export type ChordQuality = "maj7" | "m7" | "7" | "m7b5" | "dim7" | "mMaj7";

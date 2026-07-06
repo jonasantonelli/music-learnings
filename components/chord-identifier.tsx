@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
-import { KEY_OPTIONS, noteName } from "@/lib/music";
+import { noteName, STRING_MIDI, type Spelling } from "@/lib/music";
 import {
   chordName,
   identifyChord,
@@ -13,20 +13,31 @@ import {
 } from "@/lib/chord-identify";
 import { ChordDiagram } from "./mdx/chord-diagram";
 
+type Accidental = Extract<Spelling, "flat" | "sharp">;
+
 const STRINGS = 6;
 const FRETS_SHOWN = 15;
 // index 0 = low E (string 6 visually), index 5 = high e (string 1 visually)
 const STRING_NAMES = ["E", "A", "D", "G", "B", "e"];
 
 const CELL_W = 30;
-const CELL_H = 30;
-const PAD_X = 18;
-const PAD_Y = 18;
-const SVG_W = PAD_X * 2 + CELL_W * FRETS_SHOWN;
-const SVG_H = PAD_Y * 2 + CELL_H * (STRINGS - 1);
+const CELL_H = 34;
+const GUTTER = 66; // string label + open/mute status column, left of the nut
+const PAD_Y = 22;
+const PAD_R = 16; // right padding
+const NUT_X = GUTTER;
+const SVG_W = GUTTER + CELL_W * FRETS_SHOWN + PAD_R;
+const SVG_H = PAD_Y + CELL_H * (STRINGS - 1) + 28;
+const NOTE_R = 12.5;
+const LABEL_X = 15;
+const STATUS_CX = 43;
+const STATUS_R = 11;
 
 const INLAY_FRETS = [3, 5, 7, 9, 15, 17, 19, 21];
 const DOUBLE_INLAY = [12, 24];
+
+const rowY = (row: number) => PAD_Y + row * CELL_H;
+const fretX = (fret: number) => NUT_X + (fret - 0.5) * CELL_W;
 
 function freshFrets(): Fret[] {
   return ["x", "x", "x", "x", "x", "x"];
@@ -34,12 +45,13 @@ function freshFrets(): Fret[] {
 
 export function ChordIdentifier() {
   const [frets, setFrets] = useState<Fret[]>(freshFrets);
-  const [keyCtx, setKeyCtx] = useState<number | undefined>(undefined);
+  const [accidental, setAccidental] = useState<Accidental>("flat");
 
-  const setStringFret = useCallback((stringIdx: number, fret: Fret) => {
+  // Toggle a string between muted and open; a fretted string mutes first.
+  const onStringToggle = useCallback((stringIdx: number) => {
     setFrets((prev) => {
       const next = prev.slice();
-      next[stringIdx] = fret;
+      next[stringIdx] = prev[stringIdx] === "x" ? 0 : "x";
       return next;
     });
   }, []);
@@ -59,50 +71,65 @@ export function ChordIdentifier() {
   return (
     <div className="w-full">
       <Toolbar
-        keyCtx={keyCtx}
-        onKeyChange={setKeyCtx}
+        accidental={accidental}
+        onAccidentalChange={setAccidental}
         onClear={onClear}
       />
 
       <FretboardInput
         frets={frets}
+        spelling={accidental}
         onCellClick={onCellClick}
-        onStringSet={setStringFret}
+        onStringToggle={onStringToggle}
       />
 
-      <ResultPanel result={result} frets={frets} keyCtx={keyCtx} />
+      <ResultPanel result={result} frets={frets} spelling={accidental} />
     </div>
   );
 }
 
 function Toolbar({
-  keyCtx,
-  onKeyChange,
+  accidental,
+  onAccidentalChange,
   onClear,
 }: {
-  keyCtx: number | undefined;
-  onKeyChange: (v: number | undefined) => void;
+  accidental: Accidental;
+  onAccidentalChange: (v: Accidental) => void;
   onClear: () => void;
 }) {
   return (
     <div className="flex flex-wrap items-center gap-3 mb-6">
-      <label className="text-sm flex items-center gap-2">
-        <span className="text-muted-foreground">Song key</span>
-        <select
-          value={keyCtx ?? ""}
-          onChange={(e) =>
-            onKeyChange(e.target.value === "" ? undefined : Number(e.target.value))
-          }
-          className="rounded-md border border-border bg-background px-2 py-1 text-sm"
+      <div className="flex items-center gap-2 text-sm">
+        <span className="text-muted-foreground">Spelling</span>
+        <div
+          role="group"
+          aria-label="Accidental spelling"
+          className="inline-flex rounded-md border border-border bg-muted overflow-hidden"
         >
-          <option value="">Auto (flats)</option>
-          {KEY_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.name}
-            </option>
+          {(
+            [
+              ["flat", "♭ Flats"],
+              ["sharp", "♯ Sharps"],
+            ] as const
+          ).map(([value, label], i) => (
+            <button
+              key={value}
+              type="button"
+              aria-pressed={accidental === value}
+              onClick={() => onAccidentalChange(value)}
+              className={cn(
+                "px-3 py-1.5 text-sm font-medium transition-colors",
+                i > 0 && "border-l border-border",
+                accidental === value
+                  ? "bg-accent-9 text-accent-contrast"
+                  : "text-muted-foreground hover:text-foreground hover:bg-card-hover",
+              )}
+            >
+              {label}
+            </button>
           ))}
-        </select>
-      </label>
+        </div>
+      </div>
       <button
         onClick={onClear}
         className="ml-auto rounded-md border border-border px-3 py-1.5 text-sm hover:bg-card-hover"
@@ -115,146 +142,128 @@ function Toolbar({
 
 function FretboardInput({
   frets,
+  spelling,
   onCellClick,
-  onStringSet,
+  onStringToggle,
 }: {
   frets: Fret[];
+  spelling: Spelling;
   onCellClick: (stringIdx: number, fret: number) => void;
-  onStringSet: (stringIdx: number, v: Fret) => void;
+  onStringToggle: (stringIdx: number) => void;
 }) {
   return (
     <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
-      <div className="flex items-start gap-2 min-w-fit">
-        {/* Per-string side controls */}
-        <div
-          className="grid"
-          style={{
-            gridTemplateRows: `repeat(${STRINGS}, ${CELL_H}px)`,
-            paddingTop: PAD_Y - CELL_H / 2,
-          }}
-        >
-          {Array.from({ length: STRINGS }).map((_, row) => {
-            const stringIdx = STRINGS - 1 - row;
-            const state = frets[stringIdx];
-            return (
-              <div
-                key={row}
-                className="flex items-center gap-1"
-                style={{ height: CELL_H }}
-              >
-                <button
-                  type="button"
-                  onClick={() => onStringSet(stringIdx, "x")}
-                  aria-label={`Mute ${STRING_NAMES[stringIdx]} string`}
-                  className={cn(
-                    "h-6 w-6 rounded text-xs font-medium border border-border flex items-center justify-center",
-                    state === "x"
-                      ? "bg-accent-9 text-accent-contrast border-accent-9"
-                      : "text-muted-foreground hover:bg-card-hover",
-                  )}
-                >
-                  ×
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onStringSet(stringIdx, 0)}
-                  aria-label={`Set ${STRING_NAMES[stringIdx]} string open`}
-                  className={cn(
-                    "h-6 w-6 rounded text-xs font-medium border border-border flex items-center justify-center",
-                    state === 0
-                      ? "bg-accent-9 text-accent-contrast border-accent-9"
-                      : "text-muted-foreground hover:bg-card-hover",
-                  )}
-                >
-                  ○
-                </button>
-                <span className="ml-1 w-3 text-xs text-muted-foreground">
-                  {STRING_NAMES[stringIdx]}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-
-        <FretboardSvg frets={frets} onCellClick={onCellClick} />
+      <div className="min-w-fit">
+        <FretboardSvg
+          frets={frets}
+          spelling={spelling}
+          onCellClick={onCellClick}
+          onStringToggle={onStringToggle}
+        />
       </div>
     </div>
   );
 }
 
+/** Note name at a given string + fret, respecting the ♭/♯ preference. */
+function noteAt(stringIdx: number, fret: number, spelling: Spelling): string {
+  return noteName((STRING_MIDI[stringIdx] + fret) % 12, spelling);
+}
+
 function FretboardSvg({
   frets,
+  spelling,
   onCellClick,
+  onStringToggle,
 }: {
   frets: Fret[];
+  spelling: Spelling;
   onCellClick: (stringIdx: number, fret: number) => void;
+  onStringToggle: (stringIdx: number) => void;
 }) {
+  const boardTop = rowY(0);
+  const boardBottom = rowY(STRINGS - 1);
+
   return (
     <svg
       role="img"
-      aria-label="Interactive guitar fretboard. Click a fret to place a note on that string."
+      aria-label="Interactive guitar fretboard. Click a fret to place a note on that string; click the circle at the left of each string to toggle open or muted."
       viewBox={`0 0 ${SVG_W} ${SVG_H}`}
       width={SVG_W}
       height={SVG_H}
-      className="text-foreground"
+      className="text-foreground select-none"
     >
+      <defs>
+        <filter id="noteShadow" x="-40%" y="-40%" width="180%" height="180%">
+          <feDropShadow
+            dx="0"
+            dy="1"
+            stdDeviation="1.2"
+            floodColor="#000"
+            floodOpacity="0.28"
+          />
+        </filter>
+      </defs>
+
+      {/* Fretboard surface */}
+      <rect
+        x={NUT_X}
+        y={boardTop - CELL_H / 2}
+        width={CELL_W * FRETS_SHOWN}
+        height={CELL_H * (STRINGS - 1) + CELL_H}
+        rx={4}
+        fill="var(--card)"
+      />
+
       {/* Inlays */}
       {INLAY_FRETS.filter((f) => f <= FRETS_SHOWN).map((f) => (
         <circle
           key={`inlay-${f}`}
-          cx={PAD_X + (f - 0.5) * CELL_W}
-          cy={PAD_Y + ((STRINGS - 1) * CELL_H) / 2}
-          r={4}
+          cx={fretX(f)}
+          cy={(boardTop + boardBottom) / 2}
+          r={4.5}
           fill="currentColor"
-          opacity={0.12}
+          opacity={0.1}
         />
       ))}
       {DOUBLE_INLAY.filter((f) => f <= FRETS_SHOWN).map((f) => (
-        <g key={`dinlay-${f}`}>
-          <circle
-            cx={PAD_X + (f - 0.5) * CELL_W}
-            cy={PAD_Y + CELL_H * 0.7}
-            r={4}
-            fill="currentColor"
-            opacity={0.12}
-          />
-          <circle
-            cx={PAD_X + (f - 0.5) * CELL_W}
-            cy={PAD_Y + CELL_H * (STRINGS - 1.7)}
-            r={4}
-            fill="currentColor"
-            opacity={0.12}
-          />
+        <g key={`dinlay-${f}`} fill="currentColor" opacity={0.1}>
+          <circle cx={fretX(f)} cy={rowY(1)} r={4.5} />
+          <circle cx={fretX(f)} cy={rowY(STRINGS - 2)} r={4.5} />
         </g>
       ))}
 
-      {/* Frets */}
+      {/* Frets (fret 0 = the nut) */}
       {Array.from({ length: FRETS_SHOWN + 1 }).map((_, i) => (
         <line
           key={`f-${i}`}
-          x1={PAD_X + i * CELL_W}
-          y1={PAD_Y}
-          x2={PAD_X + i * CELL_W}
-          y2={PAD_Y + CELL_H * (STRINGS - 1)}
-          stroke="currentColor"
-          strokeWidth={i === 0 ? 3.5 : 1}
-          opacity={0.55}
+          x1={NUT_X + i * CELL_W}
+          y1={boardTop - CELL_H / 2 + 1}
+          x2={NUT_X + i * CELL_W}
+          y2={boardBottom + CELL_H / 2 - 1}
+          stroke={i === 0 ? "currentColor" : "var(--border)"}
+          strokeWidth={i === 0 ? 4 : 1.25}
+          strokeLinecap="round"
+          opacity={i === 0 ? 0.85 : 1}
         />
       ))}
 
-      {/* Strings */}
-      {Array.from({ length: STRINGS }).map((_, row) => (
-        <line
-          key={`s-${row}`}
-          x1={PAD_X}
-          y1={PAD_Y + row * CELL_H}
-          x2={PAD_X + CELL_W * FRETS_SHOWN}
-          y2={PAD_Y + row * CELL_H}
-          stroke="currentColor"
-          strokeWidth={1.25}
-          opacity={0.7}
-        />
-      ))}
+      {/* Strings — thinner (high e) to thicker (low E) */}
+      {Array.from({ length: STRINGS }).map((_, row) => {
+        const stringIdx = STRINGS - 1 - row;
+        return (
+          <line
+            key={`s-${row}`}
+            x1={NUT_X}
+            y1={rowY(row)}
+            x2={NUT_X + CELL_W * FRETS_SHOWN}
+            y2={rowY(row)}
+            stroke="currentColor"
+            strokeWidth={0.7 + (5 - stringIdx) * 0.18}
+            opacity={0.28}
+          />
+        );
+      })}
 
       {/* Fret numbers below */}
       {Array.from({ length: FRETS_SHOWN }).map((_, i) => {
@@ -262,47 +271,174 @@ function FretboardSvg({
         return (
           <text
             key={`fn-${fret}`}
-            x={PAD_X + (fret - 0.5) * CELL_W}
-            y={SVG_H - 4}
+            x={fretX(fret)}
+            y={SVG_H - 6}
             textAnchor="middle"
             fontSize={9}
+            fontWeight={INLAY_FRETS.includes(fret) ? 700 : 400}
             fill="currentColor"
-            opacity={0.45}
+            opacity={INLAY_FRETS.includes(fret) ? 0.55 : 0.35}
           >
             {fret}
           </text>
         );
       })}
 
-      {/* Click cells */}
+      {/* Per-string open / mute status + label, in the left gutter */}
+      {Array.from({ length: STRINGS }).map((_, row) => {
+        const stringIdx = STRINGS - 1 - row;
+        const cy = rowY(row);
+        const state = frets[stringIdx];
+        const muted = state === "x";
+        const open = state === 0;
+        const fretted = typeof state === "number" && state > 0;
+        return (
+          <g key={`status-${stringIdx}`}>
+            <text
+              x={LABEL_X}
+              y={cy}
+              textAnchor="middle"
+              dominantBaseline="central"
+              fontSize={12}
+              fontWeight={600}
+              fill="currentColor"
+              opacity={0.5}
+            >
+              {STRING_NAMES[stringIdx]}
+            </text>
+            <g
+              className="fret-status"
+              role="button"
+              tabIndex={0}
+              aria-label={`${STRING_NAMES[stringIdx]} string: ${
+                muted ? "muted" : open ? "open" : `fret ${state}`
+              }. Toggle open or muted.`}
+              onClick={() => onStringToggle(stringIdx)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  onStringToggle(stringIdx);
+                }
+              }}
+            >
+              <circle
+                className="status-bg"
+                cx={STATUS_CX}
+                cy={cy}
+                r={STATUS_R + 3}
+              />
+              {/* Persistent ring — the always-visible string button. Grey
+                  when muted, lime when open. */}
+              {!fretted && (
+                <circle
+                  cx={STATUS_CX}
+                  cy={cy}
+                  r={STATUS_R - 3}
+                  fill="none"
+                  stroke={open ? "var(--accent-9)" : "var(--muted-foreground)"}
+                  strokeWidth={open ? 2 : 1.5}
+                  strokeOpacity={open ? 1 : 0.4}
+                />
+              )}
+              {/* Fretted string sounds — a filled marker. */}
+              {fretted && (
+                <circle cx={STATUS_CX} cy={cy} r={4} fill="var(--accent-9)" />
+              )}
+              {/* The "×" only reveals inside the ring on hover of a muted
+                  string (see .status-x in globals.css). */}
+              {muted && (
+                <g
+                  className="status-x"
+                  stroke="var(--muted-foreground)"
+                  strokeWidth={1.3}
+                  strokeLinecap="round"
+                >
+                  <line
+                    x1={STATUS_CX - 3.2}
+                    y1={cy - 3.2}
+                    x2={STATUS_CX + 3.2}
+                    y2={cy + 3.2}
+                  />
+                  <line
+                    x1={STATUS_CX + 3.2}
+                    y1={cy - 3.2}
+                    x2={STATUS_CX - 3.2}
+                    y2={cy + 3.2}
+                  />
+                </g>
+              )}
+            </g>
+          </g>
+        );
+      })}
+
+      {/* Interactive cells: hover ghost + placed notes */}
       {Array.from({ length: STRINGS }).flatMap((_, row) => {
         const stringIdx = STRINGS - 1 - row;
-        const cy = PAD_Y + row * CELL_H;
+        const cy = rowY(row);
         return Array.from({ length: FRETS_SHOWN }).map((__, i) => {
           const fret = i + 1;
-          const cx = PAD_X + (fret - 0.5) * CELL_W;
+          const cx = fretX(fret);
           const isActive = frets[stringIdx] === fret;
+          const name = noteAt(stringIdx, fret, spelling);
           return (
-            <g key={`cell-${stringIdx}-${fret}`}>
+            <g key={`cell-${stringIdx}-${fret}`} className="fret-cell">
               <rect
-                x={PAD_X + (fret - 1) * CELL_W}
+                x={NUT_X + (fret - 1) * CELL_W}
                 y={cy - CELL_H / 2}
                 width={CELL_W}
                 height={CELL_H}
                 fill="transparent"
-                className="cursor-pointer fretboard-cell"
                 onClick={() => onCellClick(stringIdx, fret)}
-              />
-              {isActive && (
-                <circle
-                  cx={cx}
-                  cy={cy}
-                  r={10}
-                  fill="var(--accent-9)"
-                  className="pointer-events-none"
-                >
-                  <title>{`${STRING_NAMES[stringIdx]} string, fret ${fret}`}</title>
-                </circle>
+              >
+                <title>{`${STRING_NAMES[stringIdx]} string, fret ${fret} — ${name}`}</title>
+              </rect>
+
+              {isActive ? (
+                <g className="pointer-events-none">
+                  <circle
+                    cx={cx}
+                    cy={cy}
+                    r={NOTE_R}
+                    fill="var(--accent-9)"
+                    filter="url(#noteShadow)"
+                  />
+                  <text
+                    x={cx}
+                    y={cy}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    fontSize={name.length > 1 ? 9.5 : 11}
+                    fontWeight={700}
+                    fill="var(--accent-contrast)"
+                  >
+                    {name}
+                  </text>
+                </g>
+              ) : (
+                <g className="ghost pointer-events-none">
+                  <circle
+                    cx={cx}
+                    cy={cy}
+                    r={NOTE_R}
+                    fill="var(--muted-foreground)"
+                    fillOpacity={0.13}
+                    stroke="var(--muted-foreground)"
+                    strokeOpacity={0.4}
+                    strokeWidth={1}
+                  />
+                  <text
+                    x={cx}
+                    y={cy}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    fontSize={name.length > 1 ? 9.5 : 11}
+                    fontWeight={700}
+                    fill="var(--muted-foreground)"
+                  >
+                    {name}
+                  </text>
+                </g>
               )}
             </g>
           );
@@ -315,11 +451,11 @@ function FretboardSvg({
 function ResultPanel({
   result,
   frets,
-  keyCtx,
+  spelling,
 }: {
   result: ReturnType<typeof identifyChord>;
   frets: Fret[];
-  keyCtx: number | undefined;
+  spelling: Spelling;
 }) {
   if (result.midi.length === 0) {
     return (
@@ -330,7 +466,7 @@ function ResultPanel({
   }
 
   if (result.matches.length === 0) {
-    const notes = result.midi.map((m) => noteName(m % 12, keyCtx)).join(" ");
+    const notes = result.midi.map((m) => noteName(m % 12, spelling)).join(" ");
     return (
       <div className="mt-8 rounded-2xl border border-border bg-card p-5 sm:p-6">
         <p className="text-sm uppercase tracking-widest text-muted-foreground">
@@ -348,9 +484,9 @@ function ResultPanel({
   }
 
   const [primary, ...alternates] = result.matches;
-  const primaryName = chordName(primary, keyCtx);
+  const primaryName = chordName(primary, spelling);
   const notesLowToHigh = result.midi
-    .map((m) => noteName(m % 12, keyCtx))
+    .map((m) => noteName(m % 12, spelling))
     .join(" ");
   const intervalLabels = intervalLabelsForMatch(primary).join(" ");
 
@@ -368,9 +504,9 @@ function ResultPanel({
         <p className="mt-2 text-5xl sm:text-6xl font-bold text-accent-11 tracking-tight">
           {primaryName}
         </p>
-        {matchExplanation(primary, keyCtx) && (
+        {matchExplanation(primary, spelling) && (
           <p className="mt-2 text-sm text-muted-foreground">
-            {matchExplanation(primary, keyCtx)}
+            {matchExplanation(primary, spelling)}
           </p>
         )}
 
@@ -388,8 +524,8 @@ function ResultPanel({
             </p>
             <ul className="space-y-1.5">
               {alternates.slice(0, 6).map((m, i) => {
-                const name = chordName(m, keyCtx);
-                const why = matchExplanation(m, keyCtx);
+                const name = chordName(m, spelling);
+                const why = matchExplanation(m, spelling);
                 return (
                   <li
                     key={`${name}-${i}`}
