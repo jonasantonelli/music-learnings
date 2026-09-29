@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { usePracticeNote } from "@/lib/use-practice-note";
-import { KEY_OPTIONS, noteName } from "@/lib/music";
+import { KEY_OPTIONS, type DegreeSpeller } from "@/lib/music";
 import {
   CHORD_FAMILIES,
   ROOT_STRING_OPTIONS,
+  TETRAD_CHORD_LABELS,
   TETRAD_INTERVAL_LABELS,
   computeTetradVoicing,
-  tetradChordLabel,
+  tetradSpeller,
   type TetradChordQuality,
   type TetradVoicing,
 } from "@/lib/tetrad-chords";
@@ -22,7 +23,7 @@ import {
 
 function buildLabels(
   voicing: TetradVoicing,
-  root: number,
+  speller: DegreeSpeller,
   showNotes: boolean,
 ): (string | null)[] {
   const labels: (string | null)[] = [null, null, null, null, null, null];
@@ -31,7 +32,7 @@ function buildLabels(
     if (voicing.frets[si] === null) continue;
     const interval = voicing.intervals[intervalIdx];
     labels[si] = showNotes
-      ? noteName((root + interval) % 12, root)
+      ? speller.spell(interval)
       : (TETRAD_INTERVAL_LABELS[interval] ?? String(interval));
     intervalIdx++;
   }
@@ -132,15 +133,18 @@ function FamilyGroup({
         {familyName}
       </h3>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 justify-items-center">
-        {voicings.map(({ quality, voicing }) => (
-          <VoicingDiagram
-            key={quality}
-            name={tetradChordLabel(root, quality)}
-            frets={voicing.frets}
-            labels={buildLabels(voicing, root, showNotes)}
-            highlights={buildHighlights(voicing)}
-          />
-        ))}
+        {voicings.map(({ quality, voicing }) => {
+          const speller = tetradSpeller(root, quality);
+          return (
+            <VoicingDiagram
+              key={quality}
+              name={speller.root + TETRAD_CHORD_LABELS[quality]}
+              frets={voicing.frets}
+              labels={buildLabels(voicing, speller, showNotes)}
+              highlights={buildHighlights(voicing)}
+            />
+          );
+        })}
       </div>
     </section>
   );

@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { usePracticeNote } from "@/lib/use-practice-note";
-import { KEY_OPTIONS, noteName } from "@/lib/music";
+import { KEY_OPTIONS, type DegreeSpeller } from "@/lib/music";
 import {
   ARPEGGIO_SUFFIXES,
   ARPEGGIO_INTERVAL_LABELS,
+  arpeggioSpeller,
   getFullNeckArpeggio,
   getCagedShapes,
   type ArpeggioQuality,
@@ -46,7 +47,7 @@ function markerLabelColor(intervalPc: number): string | undefined {
 
 function buildFretboardMarkers(
   markers: ArpeggioMarker[],
-  root: number,
+  speller: DegreeSpeller,
   showNotes: boolean,
 ) {
   return markers.map((m) => {
@@ -55,7 +56,7 @@ function buildFretboardMarkers(
       string: m.string,
       fret: m.fret,
       label: showNotes
-        ? noteName((root + m.intervalPc) % 12, root)
+        ? speller.spell(m.intervalPc)
         : ARPEGGIO_INTERVAL_LABELS[m.intervalPc] ?? String(m.intervalPc),
       color: isRoot ? "var(--accent-9)" : "currentColor",
       labelColor: markerLabelColor(m.intervalPc),
@@ -84,7 +85,8 @@ export function ArpeggioExplorer({ mode }: ArpeggioExplorerProps) {
   const qualityOptions =
     mode === "triads" ? TRIAD_OPTIONS : TETRAD_OPTIONS;
 
-  const rootName = noteName(root, root);
+  const speller = arpeggioSpeller(root, quality);
+  const rootName = speller.root;
   const suffix = ARPEGGIO_SUFFIXES[quality];
 
   return (
@@ -128,7 +130,7 @@ export function ArpeggioExplorer({ mode }: ArpeggioExplorerProps) {
           startFret={0}
           markers={buildFretboardMarkers(
             getFullNeckArpeggio(quality, root, 15, 0),
-            root,
+            speller,
             showNotes,
           )}
           caption={`${rootName}${suffix} arpeggio — full neck`}
@@ -145,7 +147,7 @@ export function ArpeggioExplorer({ mode }: ArpeggioExplorerProps) {
                   startFret={displayStart}
                   markers={buildFretboardMarkers(
                     shape.markers,
-                    root,
+                    speller,
                     showNotes,
                   )}
                   caption={`${shape.name} shape`}

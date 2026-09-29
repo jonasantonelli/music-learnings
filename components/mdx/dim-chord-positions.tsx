@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePracticeNote } from "@/lib/use-practice-note";
-import { KEY_OPTIONS, noteName } from "@/lib/music";
+import { KEY_OPTIONS, dominantFlat9Speller } from "@/lib/music";
 import { VoicingDiagram } from "./voicing-diagram";
 import { ControlBar, NoteGrid, SegmentedControl } from "./control-group";
 
@@ -89,7 +89,8 @@ export function DimChordPositions() {
   const bassStringIdx = shape.strings[0];
   const bases = basesForString(root, OPEN_PC[bassStringIdx]);
 
-  const dimRootName = noteName((root + 1) % 12, root);
+  const speller = dominantFlat9Speller(root);
+  const dimRootName = speller.spell(1);
 
   return (
     <div className="my-8">
@@ -112,7 +113,7 @@ export function DimChordPositions() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 justify-items-center">
         {bases.map((base, i) => {
           const v = buildVoicing(root, shape, base);
-          const bassName = noteName(v.bassPc, root);
+          const bassName = speller.spell((v.bassPc - root + 12) % 12);
           return (
             <VoicingDiagram
               key={i}

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePracticeNote } from "@/lib/use-practice-note";
-import { KEY_OPTIONS, noteName } from "@/lib/music";
+import { KEY_OPTIONS, degreeSpeller } from "@/lib/music";
 import {
   SCALES,
   SCALE_INTERVAL_LABELS,
@@ -58,9 +58,18 @@ export function ScaleExplorer({ scale: scaleSlug }: ScaleExplorerProps) {
   const effectiveView: ViewMode =
     view === "position" && !supports3NPS ? "full" : view;
 
+  // Spell notes by scale degree so altered tones keep their letter
+  // (C Dorian's ♭3 is E♭, not D♯).
+  const speller = degreeSpeller(
+    root,
+    Object.fromEntries(
+      definition.intervals.map((iv, i) => [iv, definition.degrees[i]]),
+    ),
+  );
+
   const labelFor = (marker: ScaleMarker): string => {
     if (showNotes) {
-      return noteName((root + marker.intervalPc) % 12, root);
+      return speller.spell(marker.intervalPc);
     }
     return (
       definition.labels?.[marker.intervalPc] ??
@@ -74,18 +83,18 @@ export function ScaleExplorer({ scale: scaleSlug }: ScaleExplorerProps) {
 
   if (effectiveView === "full") {
     scaleMarkers = getFullNeckMarkers(definition, root, 15, 0);
-    caption = `${noteName(root, root)} ${definition.name} — full neck`;
+    caption = `${speller.root} ${definition.name} — full neck`;
   } else if (effectiveView === "caged") {
     const shapes = getCAGEDScalePositions(definition, root);
     const chosen = shapes[cagedIndex] ?? shapes[0];
     scaleMarkers = chosen?.markers ?? [];
-    caption = `${noteName(root, root)} ${definition.name} — ${chosen?.name ?? "C"} shape (CAGED)`;
+    caption = `${speller.root} ${definition.name} — ${chosen?.name ?? "C"} shape (CAGED)`;
   } else {
     const positions = get3NPSPositions(definition, root);
     const safeIndex = Math.min(position, positions.length) - 1;
     const chosen = positions[safeIndex];
     scaleMarkers = chosen?.markers ?? [];
-    caption = `${noteName(root, root)} ${definition.name} — position ${position} (3NPS)`;
+    caption = `${speller.root} ${definition.name} — position ${position} (3NPS)`;
   }
 
   const fretboardMarkers = scaleMarkers.map((m) => {

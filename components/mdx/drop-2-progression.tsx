@@ -13,7 +13,9 @@ import {
   chordLabel,
   getMajor251,
   getMinor251,
+  chordSpeller,
   noteName,
+  type ChordQuality,
   type Voicing,
 } from "@/lib/music";
 import { VoicingDiagram } from "./voicing-diagram";
@@ -28,16 +30,18 @@ import {
 function buildLabels(
   voicing: Voicing,
   chordRoot: number,
+  quality: ChordQuality,
   key: number,
   stringSetIndex: number,
   showNotes: boolean,
 ): (string | null)[] {
   const labels: (string | null)[] = [null, null, null, null, null, null];
+  const speller = chordSpeller(chordRoot, quality, noteName(chordRoot, key));
   const indices = STRING_SETS[stringSetIndex].indices;
   for (let j = 0; j < 4; j++) {
     const si = indices[j];
     labels[si] = showNotes
-      ? noteName((chordRoot + voicing.intervals[j]) % 12, key)
+      ? speller.spell(voicing.intervals[j])
       : (INTERVAL_LABELS[voicing.intervals[j]] ?? String(voicing.intervals[j]));
   }
   return labels;
@@ -209,6 +213,7 @@ export function Drop2Progression() {
                   labels={buildLabels(
                     voicing,
                     progression[chordIdx].root,
+                    progression[chordIdx].quality,
                     key,
                     stringSet,
                     showNotes,

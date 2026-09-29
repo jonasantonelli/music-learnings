@@ -1,4 +1,4 @@
-import { STRING_MIDI, noteName } from "./music";
+import { STRING_MIDI, degreeSpeller, noteName, type DegreeSpeller } from "./music";
 
 export type TetradChordQuality =
   | "maj7"
@@ -316,6 +316,22 @@ export function tetradChordLabel(
   quality: TetradChordQuality,
 ): string {
   return noteName(root, root) + TETRAD_CHORD_LABELS[quality];
+}
+
+/**
+ * Spells a tetrad's notes by chord degree. The 9-semitone interval is a 6th
+ * in 6/m6 chords but a diminished 7th in dim7 (C°7 → B𝄫, not A).
+ */
+export function tetradSpeller(root: number, quality: TetradChordQuality): DegreeSpeller {
+  return degreeSpeller(
+    root,
+    Object.fromEntries(
+      TETRAD_CHORD_FORMULAS[quality].map((iv) => [
+        iv,
+        quality === "dim7" && iv === 9 ? "°7" : TETRAD_INTERVAL_LABELS[iv],
+      ]),
+    ),
+  );
 }
 
 export function intervalLabel(interval: number): string {
