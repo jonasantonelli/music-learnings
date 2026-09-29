@@ -186,15 +186,6 @@ export const SONG_SUGGESTIONS: SongSuggestion[] = [
     why: "Minor blues in 6/4 with a modal feel and an unusual chromatic turnaround in bars 9–10.",
     recording: { artist: "Wayne Shorter", album: "Adam's Apple", year: 1966, youtube: yt("LgaIUqH0w6c") },
   },
-  {
-    title: "Stolen Moments",
-    composer: "Oliver Nelson",
-    key: "C minor",
-    style: "jazz standard",
-    relatedTo: ["equinox"],
-    why: "16-bar C minor tune with a strong blues feel — same key and mood as Equinox, but a longer, less predictable form.",
-    recording: { artist: "Oliver Nelson", album: "The Blues and the Abstract Truth", year: 1961, youtube: yt("S-48nLo810I") },
-  },
 
   // Modal and ballads — Naima
   {
