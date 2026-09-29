@@ -45,7 +45,7 @@ export function ScaleExplorer({ scale: scaleSlug }: ScaleExplorerProps) {
   const definition = SCALES[scaleSlug];
   if (!definition) {
     return (
-      <div className="my-8 rounded-3xl border border-border bg-card p-4 text-sm text-muted-foreground">
+      <div className="my-8 rounded-card border border-border bg-card p-4 text-sm text-muted-foreground">
         Unknown scale: <code>{scaleSlug}</code>
       </div>
     );
@@ -91,18 +91,25 @@ export function ScaleExplorer({ scale: scaleSlug }: ScaleExplorerProps) {
   const fretboardMarkers = scaleMarkers.map((m) => {
     const isRoot = m.intervalPc === 0;
     const isPassing = passingTones.has(m.intervalPc);
+    // Thirds and sevenths are the guide tones that define the chord quality.
+    const isGuide = [3, 4, 10, 11].includes(m.intervalPc);
+    const role = isRoot
+      ? "root"
+      : isPassing
+        ? "passing"
+        : isGuide
+          ? "guide"
+          : "tone";
     return {
       string: m.string,
       fret: m.fret,
       label: labelFor(m),
-      color: isRoot
-        ? "var(--accent-9)"
-        : isPassing
-          ? "var(--muted-foreground)"
-          : "var(--accent-7)",
-      labelColor: isPassing
-        ? "var(--background)"
-        : "var(--accent-contrast)",
+      color: `var(--degree-${role}-bg)`,
+      labelColor: `var(--degree-${role}-fg)`,
+      stroke:
+        role === "guide" || role === "tone"
+          ? `var(--degree-${role}-border)`
+          : undefined,
     };
   });
 
@@ -165,6 +172,37 @@ export function ScaleExplorer({ scale: scaleSlug }: ScaleExplorerProps) {
       </ControlBar>
 
       <Fretboard frets={15} startFret={0} markers={fretboardMarkers} caption={caption} />
+      <DegreeLegend showPassing={passingTones.size > 0} />
     </div>
+  );
+}
+
+const LEGEND = [
+  { role: "root", label: "Root" },
+  { role: "guide", label: "Guide tones (3rd, 7th)" },
+  { role: "tone", label: "Scale tone" },
+  { role: "passing", label: "Passing tone" },
+] as const;
+
+function DegreeLegend({ showPassing }: { showPassing: boolean }) {
+  return (
+    <ul className="mt-3 flex flex-wrap justify-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
+      {LEGEND.filter((l) => showPassing || l.role !== "passing").map((l) => (
+        <li key={l.role} className="flex items-center gap-2">
+          <span
+            aria-hidden
+            className="h-3 w-3 rounded-full"
+            style={{
+              background: `var(--degree-${l.role}-bg)`,
+              boxShadow:
+                l.role === "guide" || l.role === "tone"
+                  ? `inset 0 0 0 1.5px var(--degree-${l.role}-border)`
+                  : undefined,
+            }}
+          />
+          {l.label}
+        </li>
+      ))}
+    </ul>
   );
 }

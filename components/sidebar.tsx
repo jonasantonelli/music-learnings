@@ -20,14 +20,18 @@ function renderNode(
         <Link
           href={node.lesson.href}
           onClick={onNavigate}
+          aria-current={active ? "page" : undefined}
           className={cn(
-            "block rounded-full border-l-2 px-3 py-1 text-sm transition-colors",
+            "flex items-center justify-between gap-2 rounded-control px-3 py-1.5 text-sm transition-colors",
             active
-              ? "border-accent-9 bg-accent-3 text-accent-11 font-medium"
-              : "border-transparent text-muted-foreground hover:text-foreground hover:border-accent-7",
+              ? "bg-muted font-medium text-foreground dark:bg-accent-3 dark:text-accent-11"
+              : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
           )}
         >
           {node.lesson.frontmatter.title}
+          {active && (
+            <span aria-hidden className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent-dot" />
+          )}
         </Link>
       </li>
     );
@@ -38,8 +42,8 @@ function renderNode(
       <div
         className={
           depth === 0
-            ? "mt-4 mb-1 text-xs font-semibold uppercase tracking-wide text-accent-11"
-            : "mt-2 mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground"
+            ? "mt-5 mb-1.5 px-3 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground dark:text-accent-9"
+            : "mt-2 mb-1 px-3 text-[13px] font-medium text-foreground"
         }
       >
         {node.title}
@@ -77,7 +81,7 @@ export function SidebarClient({ tree }: { tree: TreeNode[] }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="md:hidden inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:border-accent-7 transition-colors mx-4 sm:mx-6 mt-4"
+        className="md:hidden inline-flex items-center gap-2 rounded-control border border-border bg-card px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:border-accent-7 transition-colors mx-4 sm:mx-6 mt-4"
         aria-label="Open lessons menu"
         aria-expanded={open}
       >
@@ -90,7 +94,7 @@ export function SidebarClient({ tree }: { tree: TreeNode[] }) {
       </button>
 
       {/* Desktop sidebar */}
-      <nav className="hidden md:block w-64 shrink-0 border-r border-border bg-card/30 px-4 py-6 overflow-y-auto">
+      <nav className="hidden md:block w-64 shrink-0 border-r border-border bg-card px-3 py-4 overflow-y-auto dark:bg-background">
         {list}
       </nav>
 

@@ -22,10 +22,10 @@ export function SegmentedControl<T extends string | number>({
 }: SegmentedControlProps<T>) {
   return (
     <fieldset className="flex flex-col gap-1.5">
-      <legend className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+      <legend className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
         {label}
       </legend>
-      <div className="inline-flex rounded-full border border-border bg-muted/40 p-0.5">
+      <div className="inline-flex gap-0.5 rounded-control bg-muted p-[3px] dark:border dark:border-border dark:bg-background">
         {options.map((opt) => {
           const active = opt.value === value;
           return (
@@ -33,11 +33,11 @@ export function SegmentedControl<T extends string | number>({
               key={String(opt.value)}
               onClick={() => onChange(opt.value)}
               className={`
-                rounded-full transition-all text-center
+                rounded-[7px] dark:rounded-full transition-all text-center
                 ${size === "sm" ? "px-2 py-1 text-xs min-w-[2rem]" : "px-3 py-1.5 text-sm min-w-[2.5rem]"}
                 ${
                   active
-                    ? "bg-accent-9 text-accent-contrast shadow-sm font-medium"
+                    ? "bg-card text-foreground shadow-sm font-medium dark:bg-accent-9 dark:text-accent-contrast"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
                 }
               `}
@@ -61,7 +61,7 @@ type NoteGridProps = {
 export function NoteGrid({ label, options, value, onChange }: NoteGridProps) {
   return (
     <fieldset className="flex flex-col gap-1.5">
-      <legend className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+      <legend className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
         {label}
       </legend>
       <div className="inline-flex flex-wrap gap-1">
@@ -72,7 +72,7 @@ export function NoteGrid({ label, options, value, onChange }: NoteGridProps) {
               key={opt.value}
               onClick={() => onChange(opt.value)}
               className={`
-                h-9 w-9 rounded-full text-sm text-center transition-all
+                h-9 w-9 rounded-control text-sm text-center transition-all
                 ${
                   active
                     ? "bg-accent-9 text-accent-contrast shadow-sm font-semibold"
@@ -104,7 +104,7 @@ export function StringSetControl({
 }: StringSetControlProps) {
   return (
     <fieldset className="flex flex-col gap-1.5">
-      <legend className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+      <legend className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
         {label}
       </legend>
       <div className="inline-flex gap-1.5">
@@ -115,7 +115,7 @@ export function StringSetControl({
               key={opt.value}
               onClick={() => onChange(opt.value)}
               className={`
-                rounded-full px-3 py-1.5 text-sm transition-all
+                rounded-control px-3 py-1.5 text-sm transition-all
                 ${
                   active
                     ? "bg-accent-9 text-accent-contrast shadow-sm font-medium"
@@ -158,7 +158,7 @@ export function ToggleSwitch({
         data-state={value ? "checked" : "unchecked"}
       >
         <span
-          className={`pointer-events-none block h-3.5 w-3.5 rounded-full bg-foreground shadow-sm transition-transform ${value ? "translate-x-[1.125rem]" : "translate-x-[0.175rem]"} data-[state=checked]:bg-white`}
+          className={`pointer-events-none block h-3.5 w-3.5 rounded-full bg-foreground shadow-sm transition-transform ${value ? "translate-x-[1.125rem]" : "translate-x-[0.175rem]"} data-[state=checked]:bg-accent-contrast`}
           data-state={value ? "checked" : "unchecked"}
         />
       </button>
@@ -175,7 +175,7 @@ type ControlBarProps = {
 
 export function ControlBar({ children }: ControlBarProps) {
   return (
-    <div className="flex flex-wrap items-end gap-x-6 gap-y-4 mb-8 rounded-3xl border border-border bg-card/50 p-4">
+    <div className="flex flex-wrap items-end gap-x-6 gap-y-4 mb-8 rounded-card border border-border bg-card p-4">
       {children}
     </div>
   );

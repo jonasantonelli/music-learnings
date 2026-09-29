@@ -20,6 +20,13 @@ export async function generateMetadata({
   };
 }
 
+const TAG_TONES = [
+  "bg-tone-lilac text-tone-lilac-fg",
+  "bg-tone-mint text-tone-mint-fg",
+  "bg-tone-sky text-tone-sky-fg",
+  "bg-tone-peach text-tone-peach-fg",
+];
+
 export default async function LessonPage({
   params,
 }: {
@@ -36,19 +43,24 @@ export default async function LessonPage({
 
   return (
     <article className="mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-      <header className="mb-8">
-        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
+      <header className="mb-10">
+        {slug.length > 1 && (
+          <p className="mb-3 font-mono text-xs capitalize text-muted-foreground">
+            {slug.slice(0, -1).map((s) => s.replace(/-/g, " ")).join(" / ")}
+          </p>
+        )}
+        <h1 className="font-display text-4xl leading-tight sm:text-5xl">
           {lesson.frontmatter.title}
         </h1>
-        <p className="mt-2 text-muted-foreground">
+        <p className="mt-3 max-w-2xl text-base text-muted-foreground sm:text-lg">
           {lesson.frontmatter.description}
         </p>
         {lesson.frontmatter.tags.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-2">
-            {lesson.frontmatter.tags.map((t) => (
+          <div className="mt-4 flex flex-wrap gap-1.5">
+            {lesson.frontmatter.tags.map((t, i) => (
               <span
                 key={t}
-                className="rounded-full border border-accent-6 bg-accent-3 px-2.5 py-0.5 text-xs font-medium text-accent-11"
+                className={`rounded-md px-2 py-0.5 font-mono text-xs ${TAG_TONES[i % TAG_TONES.length]}`}
               >
                 {t}
               </span>

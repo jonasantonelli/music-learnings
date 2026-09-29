@@ -23,10 +23,17 @@ const PROGRESSION_OPTIONS: { label: string; value: ProgressionType }[] = [
   { label: "Single chord", value: "single" },
 ];
 
+// Beat types reuse the scale-degree roles from globals.css.
+const BEAT_ROLE: Record<BassNote["type"], "root" | "guide" | "passing"> = {
+  root: "root",
+  "chord-tone": "guide",
+  approach: "passing",
+};
+
 const BEAT_COLORS: Record<BassNote["type"], string> = {
-  root: "var(--accent-9)",
-  "chord-tone": "var(--accent-11)",
-  approach: "var(--gray-8)",
+  root: "var(--degree-root-bg)",
+  "chord-tone": "var(--degree-guide-bg)",
+  approach: "var(--degree-passing-bg)",
 };
 
 function buildMarkers(
@@ -42,7 +49,9 @@ function buildMarkers(
       ? noteName((chordRoot + n.interval) % 12, key)
       : String(n.beat),
     color: BEAT_COLORS[n.type],
-    labelColor: n.type === "root" ? "var(--accent-contrast)" : undefined,
+    labelColor: `var(--degree-${BEAT_ROLE[n.type]}-fg)`,
+    stroke:
+      n.type === "chord-tone" ? "var(--degree-guide-border)" : undefined,
   }));
 }
 
@@ -124,7 +133,10 @@ export function WalkingBassExplorer() {
         <span className="inline-flex items-center gap-1.5">
           <span
             className="inline-block h-3 w-3 rounded-full"
-            style={{ background: BEAT_COLORS["chord-tone"] }}
+            style={{
+              background: BEAT_COLORS["chord-tone"],
+              boxShadow: "inset 0 0 0 1.5px var(--degree-guide-border)",
+            }}
           />
           Chord tone
         </span>

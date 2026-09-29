@@ -22,10 +22,11 @@ export function NavLinks() {
           <Link
             key={href}
             href={href}
+            aria-current={active ? "page" : undefined}
             className={cn(
-              "text-sm transition-colors",
+              "rounded-control px-2.5 py-1.5 text-sm transition-colors sm:px-3",
               active
-                ? "text-accent-11 font-medium"
+                ? "bg-muted font-medium text-foreground"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >

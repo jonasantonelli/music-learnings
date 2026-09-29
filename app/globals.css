@@ -1,32 +1,139 @@
 @import "tailwindcss";
-@import "@radix-ui/colors/mauve.css";
-@import "@radix-ui/colors/mauve-dark.css";
-@import "@radix-ui/colors/lime.css";
-@import "@radix-ui/colors/lime-dark.css";
-@import "@radix-ui/colors/mauve-alpha.css";
-@import "@radix-ui/colors/mauve-dark-alpha.css";
 @plugin "@tailwindcss/typography";
 @custom-variant dark (&:where(.dark, .dark *));
 
+/*
+  Two themes, one set of semantic tokens:
+  - Light — "Studio": crisp monochrome, hairline borders, pastel tints as tags.
+  - Dark  — "Nocturne": deep ink surfaces, luminous pastels with dark ink on top.
+  Components only reference the semantic names below, never raw hex.
+*/
 :root {
-  --background: var(--mauve-1);
-  --foreground: var(--mauve-12);
-  --muted: var(--mauve-3);
-  --muted-foreground: var(--mauve-11);
-  --border: var(--mauve-6);
-  --card: var(--mauve-2);
-  --card-hover: var(--mauve-3);
+  --background: #fafafa;
+  --foreground: #0a0a0a;
+  --muted: #f2f2f2;
+  --muted-foreground: #666666;
+  --border: #eaeaea;
+  --card: #ffffff;
+  --card-hover: #f7f7f8;
 
-  --accent-1: var(--lime-1);
-  --accent-3: var(--lime-3);
-  --accent-4: var(--lime-4);
-  --accent-6: var(--lime-6);
-  --accent-7: var(--lime-7);
-  --accent-9: var(--lime-9);
-  --accent-10: var(--lime-10);
-  --accent-11: var(--lime-11);
-  --accent-12: var(--lime-12);
-  --accent-contrast: #1a2900;
+  /* Accent: solid fills are ink; tints and text lean lilac. */
+  --accent-1: #fbfaff;
+  --accent-3: #f1edff;
+  --accent-4: #e9e3ff;
+  --accent-6: #d9cfff;
+  --accent-7: #c9bcff;
+  --accent-9: #0a0a0a;
+  --accent-10: #262626;
+  --accent-11: #4b3a99;
+  --accent-12: #1f1545;
+  --accent-contrast: #ffffff;
+  --accent-dot: #6e56cf;
+
+  /* Pastel tones — bg / fg / border triplets. */
+  --tone-lilac-bg: #e9e3ff;
+  --tone-lilac-fg: #3b2a85;
+  --tone-lilac-border: #c9bcff;
+  --tone-mint-bg: #ddf5e8;
+  --tone-mint-fg: #1f6b45;
+  --tone-mint-border: #a8e0c2;
+  --tone-peach-bg: #ffe6d5;
+  --tone-peach-fg: #8a3f12;
+  --tone-peach-border: #f5b990;
+  --tone-sky-bg: #dcebff;
+  --tone-sky-fg: #1d4e89;
+  --tone-sky-border: #a9cbf5;
+  --tone-butter-bg: #fff3c4;
+  --tone-butter-fg: #6b4f00;
+  --tone-butter-border: #ebd57a;
+
+  /* Scale-degree roles on diagrams. */
+  --degree-root-bg: var(--accent-9);
+  --degree-root-fg: var(--accent-contrast);
+  --degree-guide-bg: var(--tone-lilac-bg);
+  --degree-guide-fg: var(--tone-lilac-fg);
+  --degree-guide-border: var(--tone-lilac-border);
+  --degree-tone-bg: #ffffff;
+  --degree-tone-fg: #0a0a0a;
+  --degree-tone-border: #cfcfcf;
+  --degree-passing-bg: var(--muted-foreground);
+  --degree-passing-fg: var(--background);
+
+  /* Fretboard drawing. */
+  --fret-string: #c4c4c4;
+  --fret-wire: #e2e2e2;
+  --fret-nut: #0a0a0a;
+  --fret-inlay: #e6e6e6;
+
+  --app-sans: var(--font-geist);
+  --app-display: var(--font-geist);
+  --app-mono: var(--font-geist-mono);
+  --app-display-weight: 600;
+  --app-display-tracking: -0.04em;
+
+  --app-radius-card: 14px;
+  --app-radius-control: 10px;
+}
+
+.dark {
+  color-scheme: dark;
+
+  --background: #0b0b10;
+  --foreground: #eeeef4;
+  --muted: #1b1b24;
+  --muted-foreground: #a0a0b2;
+  --border: #272733;
+  --card: #14141b;
+  --card-hover: #1a1a23;
+
+  --accent-1: #120f1e;
+  --accent-3: #241f3a;
+  --accent-4: #2c2548;
+  --accent-6: #3d3366;
+  --accent-7: #5a4c94;
+  --accent-9: #c8b6ff;
+  --accent-10: #d6c8ff;
+  --accent-11: #d9ccff;
+  --accent-12: #f0ebff;
+  --accent-contrast: #16112b;
+  --accent-dot: #c8b6ff;
+
+  --tone-lilac-bg: #c8b6ff;
+  --tone-lilac-fg: #16112b;
+  --tone-lilac-border: #c8b6ff;
+  --tone-mint-bg: #9fe8c7;
+  --tone-mint-fg: #0c2a1e;
+  --tone-mint-border: #9fe8c7;
+  --tone-peach-bg: #ffc3a0;
+  --tone-peach-fg: #3a1605;
+  --tone-peach-border: #ffc3a0;
+  --tone-sky-bg: #a8d4ff;
+  --tone-sky-fg: #0b2340;
+  --tone-sky-border: #a8d4ff;
+  --tone-butter-bg: #f5e19a;
+  --tone-butter-fg: #2e2400;
+  --tone-butter-border: #f5e19a;
+
+  --degree-guide-bg: var(--tone-mint-bg);
+  --degree-guide-fg: var(--tone-mint-fg);
+  --degree-guide-border: var(--tone-mint-border);
+  --degree-tone-bg: #1b1b24;
+  --degree-tone-fg: #eeeef4;
+  --degree-tone-border: #5a5a6e;
+
+  --fret-string: #3e3e4e;
+  --fret-wire: #2a2a36;
+  --fret-nut: #eeeef4;
+  --fret-inlay: #23232e;
+
+  --app-sans: var(--font-figtree);
+  --app-display: var(--font-bricolage);
+  --app-mono: var(--font-jetbrains-mono);
+  --app-display-weight: 700;
+  --app-display-tracking: -0.045em;
+
+  --app-radius-card: 20px;
+  --app-radius-control: 9999px;
 }
 
 @theme inline {
@@ -48,9 +155,25 @@
   --color-accent-11: var(--accent-11);
   --color-accent-12: var(--accent-12);
   --color-accent-contrast: var(--accent-contrast);
+  --color-accent-dot: var(--accent-dot);
 
-  --font-sans: var(--font-sans);
-  --radius-default: 9999px;
+  --color-tone-lilac: var(--tone-lilac-bg);
+  --color-tone-lilac-fg: var(--tone-lilac-fg);
+  --color-tone-mint: var(--tone-mint-bg);
+  --color-tone-mint-fg: var(--tone-mint-fg);
+  --color-tone-peach: var(--tone-peach-bg);
+  --color-tone-peach-fg: var(--tone-peach-fg);
+  --color-tone-sky: var(--tone-sky-bg);
+  --color-tone-sky-fg: var(--tone-sky-fg);
+  --color-tone-butter: var(--tone-butter-bg);
+  --color-tone-butter-fg: var(--tone-butter-fg);
+
+  --font-sans: var(--app-sans);
+  --font-display: var(--app-display);
+  --font-mono: var(--app-mono);
+
+  --radius-card: var(--app-radius-card);
+  --radius-control: var(--app-radius-control);
 }
 
 html {
@@ -64,14 +187,30 @@ html {
   }
 }
 
-.dark {
-  color-scheme: dark;
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans), system-ui, sans-serif;
+  font-family: var(--app-sans), system-ui, sans-serif;
+}
+
+/* Display type: Geist semibold in light, Bricolage Grotesque bold in dark. */
+.font-display {
+  font-weight: var(--app-display-weight);
+  letter-spacing: var(--app-display-tracking);
+}
+
+/* Faint drafting grid used behind the home hero. */
+.bg-grid {
+  background-image:
+    linear-gradient(#f0f0f0 1px, transparent 1px),
+    linear-gradient(90deg, #f0f0f0 1px, transparent 1px);
+  background-size: 40px 40px;
+  background-position: -1px -1px;
+}
+.dark .bg-grid {
+  background-image:
+    linear-gradient(#1a1a22 1px, transparent 1px),
+    linear-gradient(90deg, #1a1a22 1px, transparent 1px);
 }
 
 /* Prose accent tweaks */
@@ -80,15 +219,47 @@ body {
   --tw-prose-headings: var(--foreground);
   --tw-prose-body: var(--foreground);
   --tw-prose-bold: var(--foreground);
-  --tw-prose-quotes: var(--mauve-11);
+  --tw-prose-quotes: var(--muted-foreground);
   --tw-prose-quote-borders: var(--accent-6);
   --tw-prose-code: var(--accent-11);
   --tw-prose-hr: var(--border);
+  --tw-prose-th-borders: var(--border);
+  --tw-prose-td-borders: var(--border);
+  --tw-prose-counters: var(--muted-foreground);
+  --tw-prose-bullets: var(--accent-7);
+}
+
+.prose :where(h1, h2, h3):not(:where(.not-prose, .not-prose *)) {
+  font-family: var(--app-display), system-ui, sans-serif;
+  font-weight: var(--app-display-weight);
+  letter-spacing: -0.02em;
+}
+
+.prose :where(code):not(:where(pre code, .not-prose *)) {
+  font-family: var(--app-mono), ui-monospace, monospace;
+  font-size: 0.85em;
+  background: var(--accent-3);
+  border-radius: 6px;
+  padding: 0.15em 0.4em;
+}
+.prose :where(code):not(:where(pre code, .not-prose *))::before,
+.prose :where(code):not(:where(pre code, .not-prose *))::after {
+  content: none;
 }
 
 .dark .prose {
-  --tw-prose-links: var(--accent-11);
-  --tw-prose-quote-borders: var(--accent-7);
+  --tw-prose-invert-links: var(--accent-11);
+  --tw-prose-invert-headings: var(--foreground);
+  --tw-prose-invert-body: var(--foreground);
+  --tw-prose-invert-bold: var(--foreground);
+  --tw-prose-invert-quotes: var(--muted-foreground);
+  --tw-prose-invert-quote-borders: var(--accent-6);
+  --tw-prose-invert-code: var(--accent-11);
+  --tw-prose-invert-hr: var(--border);
+  --tw-prose-invert-th-borders: var(--border);
+  --tw-prose-invert-td-borders: var(--border);
+  --tw-prose-invert-counters: var(--muted-foreground);
+  --tw-prose-invert-bullets: var(--accent-7);
 }
 
 .prose a:hover {

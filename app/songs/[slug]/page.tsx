@@ -41,28 +41,28 @@ export default async function SongPage({
       <SiteHeader />
       <main className="mx-auto w-full max-w-4xl px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         <header className="mb-8">
-          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
+          <h1 className="font-display text-4xl leading-tight sm:text-5xl">
             {fm.title}
           </h1>
-          <p className="mt-1 text-muted-foreground">{fm.composer}</p>
+          <p className="mt-2 text-lg text-muted-foreground">{fm.composer}</p>
 
-          <div className="mt-3 flex flex-wrap gap-2">
-            <span className="rounded-full border border-accent-6 bg-accent-3 px-2.5 py-0.5 text-xs font-medium text-accent-11">
+          <div className="mt-4 flex flex-wrap gap-1.5 font-mono text-xs">
+            <span className="rounded-md bg-tone-butter px-2 py-0.5 text-tone-butter-fg">
               {fm.key}
             </span>
-            <span className="rounded-full border border-border bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+            <span className="rounded-md bg-muted px-2 py-0.5 text-muted-foreground">
               {fm.time_signature}
             </span>
-            <span className="rounded-full border border-border bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+            <span className="rounded-md bg-muted px-2 py-0.5 text-muted-foreground">
               {fm.tempo_feel}
             </span>
-            <span className="rounded-full border border-border bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+            <span className="rounded-md bg-muted px-2 py-0.5 text-muted-foreground">
               Form: {fm.form}
             </span>
             {fm.tags.map((t) => (
               <span
                 key={t}
-                className="rounded-full border border-accent-6 bg-accent-3 px-2.5 py-0.5 text-xs font-medium text-accent-11"
+                className="rounded-md bg-tone-lilac px-2 py-0.5 text-tone-lilac-fg"
               >
                 {t}
               </span>
