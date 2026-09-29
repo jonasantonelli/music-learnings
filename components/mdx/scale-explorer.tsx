@@ -55,6 +55,7 @@ export function ScaleExplorer({ scale: scaleSlug }: ScaleExplorerProps) {
   // full-neck and CAGED only.
   const supports3NPS = definition.intervals.length === 7;
   const passingTones = new Set(definition.passingTones ?? []);
+  const colorTones = new Set(definition.colorTones ?? []);
   const effectiveView: ViewMode =
     view === "position" && !supports3NPS ? "full" : view;
 
@@ -100,13 +101,16 @@ export function ScaleExplorer({ scale: scaleSlug }: ScaleExplorerProps) {
   const fretboardMarkers = scaleMarkers.map((m) => {
     const isRoot = m.intervalPc === 0;
     const isPassing = passingTones.has(m.intervalPc);
+    const isColor = colorTones.has(m.intervalPc);
     // Thirds and sevenths are the guide tones that define the chord quality.
     const isGuide = [3, 4, 10, 11].includes(m.intervalPc);
     const role = isRoot
       ? "root"
       : isPassing
         ? "passing"
-        : isGuide
+        : isColor
+          ? "color"
+          : isGuide
           ? "guide"
           : "tone";
     return {
@@ -116,7 +120,7 @@ export function ScaleExplorer({ scale: scaleSlug }: ScaleExplorerProps) {
       color: `var(--degree-${role}-bg)`,
       labelColor: `var(--degree-${role}-fg)`,
       stroke:
-        role === "guide" || role === "tone"
+        role === "guide" || role === "tone" || role === "color"
           ? `var(--degree-${role}-border)`
           : undefined,
     };
@@ -181,7 +185,17 @@ export function ScaleExplorer({ scale: scaleSlug }: ScaleExplorerProps) {
       </ControlBar>
 
       <Fretboard frets={15} startFret={0} markers={fretboardMarkers} caption={caption} />
-      <DegreeLegend showPassing={passingTones.size > 0} />
+      <DegreeLegend
+        showPassing={passingTones.size > 0}
+        colorLabel={
+          colorTones.size > 0
+            ? `Color tone (${definition.intervals
+                .map((iv, i) => (colorTones.has(iv) ? definition.degrees[i] : null))
+                .filter(Boolean)
+                .join(", ")})`
+            : undefined
+        }
+      />
     </div>
   );
 }
@@ -189,14 +203,25 @@ export function ScaleExplorer({ scale: scaleSlug }: ScaleExplorerProps) {
 const LEGEND = [
   { role: "root", label: "Root" },
   { role: "guide", label: "Guide tones (3rd, 7th)" },
+  { role: "color", label: "Color tone" },
   { role: "tone", label: "Scale tone" },
   { role: "passing", label: "Passing tone" },
 ] as const;
 
-function DegreeLegend({ showPassing }: { showPassing: boolean }) {
+function DegreeLegend({
+  showPassing,
+  colorLabel,
+}: {
+  showPassing: boolean;
+  colorLabel?: string;
+}) {
+  const items = LEGEND.filter(
+    (l) =>
+      (showPassing || l.role !== "passing") && (colorLabel || l.role !== "color"),
+  ).map((l) => (l.role === "color" && colorLabel ? { ...l, label: colorLabel } : l));
   return (
     <ul className="mt-3 flex flex-wrap justify-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
-      {LEGEND.filter((l) => showPassing || l.role !== "passing").map((l) => (
+      {items.map((l) => (
         <li key={l.role} className="flex items-center gap-2">
           <span
             aria-hidden
@@ -204,7 +229,7 @@ function DegreeLegend({ showPassing }: { showPassing: boolean }) {
             style={{
               background: `var(--degree-${l.role}-bg)`,
               boxShadow:
-                l.role === "guide" || l.role === "tone"
+                l.role === "guide" || l.role === "tone" || l.role === "color"
                   ? `inset 0 0 0 1.5px var(--degree-${l.role}-border)`
                   : undefined,
             }}

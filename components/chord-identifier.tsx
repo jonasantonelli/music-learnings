@@ -1,5 +1,6 @@
 "use client";
 
+import { NoteText } from "@/components/note-text";
 import { useCallback, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { noteName, STRING_MIDI, type Spelling } from "@/lib/music";
@@ -412,7 +413,7 @@ function FretboardSvg({
                     fontWeight={700}
                     fill="var(--accent-contrast)"
                   >
-                    {name}
+                    <NoteText svg text={name} />
                   </text>
                 </g>
               ) : (
@@ -436,7 +437,7 @@ function FretboardSvg({
                     fontWeight={700}
                     fill="var(--muted-foreground)"
                   >
-                    {name}
+                    <NoteText svg text={name} />
                   </text>
                 </g>
               )}
@@ -531,7 +532,7 @@ function ResultPanel({
                     key={`${name}-${i}`}
                     className="flex items-baseline gap-3 text-sm"
                   >
-                    <span className="font-medium min-w-[5ch]">{name}</span>
+                    <span className="font-medium min-w-[5ch]"><NoteText text={name} /></span>
                     {why && (
                       <span className="text-muted-foreground">— {why}</span>
                     )}

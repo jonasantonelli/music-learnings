@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 
 import { cn } from "@/lib/utils";
 import type { TreeNode } from "@/lib/content";
+import { TONE_DOTS, TONE_TEXT, sectionTone } from "@/lib/tones";
 
 function renderNode(
   node: TreeNode,
@@ -37,17 +38,24 @@ function renderNode(
     );
   }
 
+  const tone = sectionTone(node.slug.join("/"));
   return (
     <li key={node.slug.join("/")}>
-      <div
-        className={
-          depth === 0
-            ? "mt-5 mb-1.5 px-3 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground dark:text-accent-9"
-            : "mt-2 mb-1 px-3 text-[13px] font-medium text-foreground"
-        }
-      >
-        {node.title}
-      </div>
+      {depth === 0 ? (
+        <div
+          className={cn(
+            "mt-5 mb-1.5 flex items-center gap-2 px-3 font-mono text-[11px] uppercase tracking-[0.08em]",
+            TONE_TEXT[tone],
+          )}
+        >
+          <span aria-hidden className={cn("h-1.5 w-1.5 rounded-full", TONE_DOTS[tone])} />
+          {node.title}
+        </div>
+      ) : (
+        <div className="mt-2 mb-1 px-3 text-[13px] font-medium text-foreground">
+          {node.title}
+        </div>
+      )}
       <ul className="pl-2">
         {node.children.map((c) => renderNode(c, depth + 1, pathname, onNavigate))}
       </ul>
