@@ -16,6 +16,11 @@ export type SongSuggestion = {
   recording: Recording;
 };
 
+/** "Black Orpheus (Paul Desmond version)" and "Black Orpheus" are the same tune. */
+export function baseTitle(title: string): string {
+  return title.replace(/\s*\(.*\)\s*$/, "").toLowerCase();
+}
+
 const yt = (id: string) => `https://www.youtube.com/watch?v=${id}`;
 
 export const SONG_SUGGESTIONS: SongSuggestion[] = [

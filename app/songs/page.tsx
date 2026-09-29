@@ -3,11 +3,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SongFilters } from "@/components/song-filters";
 import { SongSuggestions } from "@/components/song-suggestions";
 import { getAllSongs } from "@/lib/songs";
-import { SONG_SUGGESTIONS } from "@/lib/song-suggestions";
-
-// "Black Orpheus (Paul Desmond version)" and "Black Orpheus" are the same tune.
-const baseTitle = (title: string) =>
-  title.replace(/\s*\(.*\)\s*$/, "").toLowerCase();
+import { SONG_SUGGESTIONS, baseTitle } from "@/lib/song-suggestions";
 
 export const metadata = {
   title: "Songs — Music Learnings",

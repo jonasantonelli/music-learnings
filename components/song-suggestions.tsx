@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ListenLinks, recordingLabel } from "@/components/listen-links";
-import type { SongSuggestion } from "@/lib/song-suggestions";
+import { baseTitle, type SongSuggestion } from "@/lib/song-suggestions";
 
 type RelatedSong = { slug: string; href: string; title: string };
 
@@ -12,6 +12,7 @@ export function SongSuggestions({
   songs: RelatedSong[];
 }) {
   const bySlug = new Map(songs.map((s) => [s.slug, s]));
+  const byTitle = new Map(songs.map((s) => [baseTitle(s.title), s]));
 
   return (
     <div className="mt-6 grid gap-3 sm:grid-cols-2">
@@ -19,12 +20,22 @@ export function SongSuggestions({
         const related = s.relatedTo
           .map((slug) => bySlug.get(slug))
           .filter((x): x is RelatedSong => Boolean(x));
+        const chart = byTitle.get(baseTitle(s.title));
         return (
           <div
             key={s.title}
             className="flex flex-col rounded-card border border-border bg-card p-4"
           >
-            <div className="font-display text-base">{s.title}</div>
+            {chart ? (
+              <Link
+                href={chart.href}
+                className="font-display text-base hover:text-accent-11 transition-colors"
+              >
+                {s.title} <span aria-hidden>→</span>
+              </Link>
+            ) : (
+              <div className="font-display text-base">{s.title}</div>
+            )}
             <div className="mt-0.5 text-sm text-muted-foreground">
               {s.composer}
             </div>
