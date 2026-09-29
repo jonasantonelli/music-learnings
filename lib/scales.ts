@@ -29,6 +29,7 @@ export const SCALES: Record<string, ScaleDefinition> = {
     altNames: ["Major Scale"],
     intervals: [0, 2, 4, 5, 7, 9, 11],
     degrees: ["R", "2", "3", "4", "5", "6", "7"],
+    colorTones: [5],
   },
   dorian: {
     slug: "dorian",
@@ -125,6 +126,7 @@ export const SCALES: Record<string, ScaleDefinition> = {
     intervals: [0, 2, 4, 5, 7, 9, 10, 11],
     degrees: ["R", "2", "3", "4", "5", "6", "♭7", "7"],
     passingTones: [11],
+    colorTones: [10],
   },
   "bebop-major": {
     slug: "bebop-major",
@@ -133,6 +135,7 @@ export const SCALES: Record<string, ScaleDefinition> = {
     intervals: [0, 2, 4, 5, 7, 8, 9, 11],
     degrees: ["R", "2", "3", "4", "5", "♯5", "6", "7"],
     passingTones: [8],
+    colorTones: [5],
     labels: { 8: "♯5" },
   },
   "bebop-dorian": {
@@ -142,6 +145,7 @@ export const SCALES: Record<string, ScaleDefinition> = {
     intervals: [0, 2, 3, 5, 7, 9, 10, 11],
     degrees: ["R", "2", "♭3", "4", "5", "6", "♭7", "7"],
     passingTones: [11],
+    colorTones: [9],
   },
   "bebop-melodic-minor": {
     slug: "bebop-melodic-minor",
@@ -150,6 +154,7 @@ export const SCALES: Record<string, ScaleDefinition> = {
     intervals: [0, 2, 3, 5, 7, 8, 9, 11],
     degrees: ["R", "2", "♭3", "4", "5", "♯5", "6", "7"],
     passingTones: [8],
+    colorTones: [11],
     labels: { 8: "♯5" },
   },
 };
