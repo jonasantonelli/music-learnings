@@ -1,4 +1,5 @@
 import * as React from "react";
+import { NoteText } from "@/components/note-text";
 
 type ChordDiagramProps = {
   name?: string;
@@ -73,7 +74,7 @@ export function ChordDiagram({
             fontWeight={600}
             fill="currentColor"
           >
-            {name}
+            <NoteText svg text={name} />
           </text>
         )}
 

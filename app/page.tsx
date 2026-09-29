@@ -12,6 +12,7 @@ import {
 import { SiteHeader } from "@/components/site-header";
 import { getTopSections, type TreeNode } from "@/lib/content";
 import { getAllSongs } from "@/lib/songs";
+import { TONES, sectionTone, type Tone } from "@/lib/tones";
 import { cn } from "@/lib/utils";
 
 type Section = Extract<TreeNode, { kind: "section" }>;
@@ -45,24 +46,12 @@ function summarize(node: Section): string {
     .join(", ");
 }
 
-// Full class strings so Tailwind can see them.
-const TONES = {
-  lilac: "bg-tone-lilac text-tone-lilac-fg",
-  mint: "bg-tone-mint text-tone-mint-fg",
-  peach: "bg-tone-peach text-tone-peach-fg",
-  sky: "bg-tone-sky text-tone-sky-fg",
-  butter: "bg-tone-butter text-tone-butter-fg",
-} as const;
-
-type Tone = keyof typeof TONES;
-
-const SECTION_STYLE: Record<string, { tone: Tone; icon: LucideIcon }> = {
-  scales: { tone: "lilac", icon: ChartNoAxesColumnIncreasing },
-  arpeggios: { tone: "mint", icon: Spline },
-  harmony: { tone: "peach", icon: Layers },
-  "bass-lines": { tone: "sky", icon: Waves },
+const SECTION_ICONS: Record<string, LucideIcon> = {
+  scales: ChartNoAxesColumnIncreasing,
+  arpeggios: Spline,
+  harmony: Layers,
+  "bass-lines": Waves,
 };
-const FALLBACK_TONES: Tone[] = ["lilac", "mint", "peach", "sky"];
 
 function plural(n: number, word: string) {
   return `${n} ${word}${n === 1 ? "" : "s"}`;
@@ -167,9 +156,9 @@ export default function Home() {
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {sections.map((section, i) => {
             const key = section.slug.join("/");
-            const style = SECTION_STYLE[key] ?? {
-              tone: FALLBACK_TONES[i % FALLBACK_TONES.length],
-              icon: ChartNoAxesColumnIncreasing,
+            const style = {
+              tone: sectionTone(key, i),
+              icon: SECTION_ICONS[key] ?? ChartNoAxesColumnIncreasing,
             };
             return (
               <SectionCard

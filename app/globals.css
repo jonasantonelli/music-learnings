@@ -53,6 +53,9 @@
   --degree-guide-bg: var(--tone-lilac-bg);
   --degree-guide-fg: var(--tone-lilac-fg);
   --degree-guide-border: var(--tone-lilac-border);
+  --degree-color-bg: var(--tone-peach-bg);
+  --degree-color-fg: var(--tone-peach-fg);
+  --degree-color-border: var(--tone-peach-border);
   --degree-tone-bg: #ffffff;
   --degree-tone-fg: #0a0a0a;
   --degree-tone-border: #cfcfcf;
@@ -167,6 +170,11 @@
   --color-tone-sky-fg: var(--tone-sky-fg);
   --color-tone-butter: var(--tone-butter-bg);
   --color-tone-butter-fg: var(--tone-butter-fg);
+  --color-tone-lilac-line: var(--tone-lilac-border);
+  --color-tone-mint-line: var(--tone-mint-border);
+  --color-tone-peach-line: var(--tone-peach-border);
+  --color-tone-sky-line: var(--tone-sky-border);
+  --color-tone-butter-line: var(--tone-butter-border);
 
   --font-sans: var(--app-sans);
   --font-display: var(--app-display);
@@ -197,6 +205,11 @@ body {
 .font-display {
   font-weight: var(--app-display-weight);
   letter-spacing: var(--app-display-tracking);
+}
+
+/* Accidentals fall back to a symbol font with an oversized "♯"; see NoteText. */
+.acc {
+  font-size: 0.72em;
 }
 
 /* Faint drafting grid used behind the home hero. */

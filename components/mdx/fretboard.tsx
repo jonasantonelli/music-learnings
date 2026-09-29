@@ -1,4 +1,5 @@
 import * as React from "react";
+import { NoteText } from "@/components/note-text";
 
 type Marker = {
   string: number; // 1 = high E (top visual), 6 = low E (bottom)
@@ -167,7 +168,7 @@ export function Fretboard({
                   fontFamily="var(--app-mono), ui-monospace, monospace"
                   fill={m.labelColor ?? "var(--background)"}
                 >
-                  {m.label}
+                  <NoteText svg text={m.label} />
                 </text>
               )}
             </g>

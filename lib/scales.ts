@@ -13,6 +13,11 @@ export type ScaleDefinition = {
    * with a muted marker in the explorer.
    */
   passingTones?: number[];
+  /**
+   * Pitch classes that give the scale its character (Dorian's natural 6,
+   * Lydian's ♯4…). Highlighted as "color tones" in the explorer.
+   */
+  colorTones?: number[];
   /** Per-pitch-class label overrides, taking precedence over SCALE_INTERVAL_LABELS. */
   labels?: Record<number, string>;
 };
@@ -31,6 +36,7 @@ export const SCALES: Record<string, ScaleDefinition> = {
     altNames: [],
     intervals: [0, 2, 3, 5, 7, 9, 10],
     degrees: ["R", "2", "♭3", "4", "5", "6", "♭7"],
+    colorTones: [9],
     parent: { slug: "ionian", name: "Ionian", degree: 2 },
   },
   phrygian: {
@@ -39,6 +45,7 @@ export const SCALES: Record<string, ScaleDefinition> = {
     altNames: [],
     intervals: [0, 1, 3, 5, 7, 8, 10],
     degrees: ["R", "♭2", "♭3", "4", "5", "♭6", "♭7"],
+    colorTones: [1],
     parent: { slug: "ionian", name: "Ionian", degree: 3 },
   },
   lydian: {
@@ -47,6 +54,7 @@ export const SCALES: Record<string, ScaleDefinition> = {
     altNames: [],
     intervals: [0, 2, 4, 6, 7, 9, 11],
     degrees: ["R", "2", "3", "♯4", "5", "6", "7"],
+    colorTones: [6],
     parent: { slug: "ionian", name: "Ionian", degree: 4 },
   },
   mixolydian: {
@@ -55,6 +63,7 @@ export const SCALES: Record<string, ScaleDefinition> = {
     altNames: [],
     intervals: [0, 2, 4, 5, 7, 9, 10],
     degrees: ["R", "2", "3", "4", "5", "6", "♭7"],
+    colorTones: [10],
     parent: { slug: "ionian", name: "Ionian", degree: 5 },
   },
   aeolian: {
@@ -63,6 +72,7 @@ export const SCALES: Record<string, ScaleDefinition> = {
     altNames: ["Natural Minor"],
     intervals: [0, 2, 3, 5, 7, 8, 10],
     degrees: ["R", "2", "♭3", "4", "5", "♭6", "♭7"],
+    colorTones: [8],
     parent: { slug: "ionian", name: "Ionian", degree: 6 },
   },
   locrian: {
@@ -71,6 +81,7 @@ export const SCALES: Record<string, ScaleDefinition> = {
     altNames: [],
     intervals: [0, 1, 3, 5, 6, 8, 10],
     degrees: ["R", "♭2", "♭3", "4", "♭5", "♭6", "♭7"],
+    colorTones: [6],
     parent: { slug: "ionian", name: "Ionian", degree: 7 },
   },
   "melodic-minor": {
@@ -79,6 +90,7 @@ export const SCALES: Record<string, ScaleDefinition> = {
     altNames: [],
     intervals: [0, 2, 3, 5, 7, 9, 11],
     degrees: ["R", "2", "♭3", "4", "5", "6", "7"],
+    colorTones: [11],
   },
   "lydian-b7": {
     slug: "lydian-b7",
@@ -86,6 +98,7 @@ export const SCALES: Record<string, ScaleDefinition> = {
     altNames: ["Lydian Dominant"],
     intervals: [0, 2, 4, 6, 7, 9, 10],
     degrees: ["R", "2", "3", "♯4", "5", "6", "♭7"],
+    colorTones: [6],
     parent: { slug: "melodic-minor", name: "Melodic Minor", degree: 4 },
   },
   "harmonic-minor": {
@@ -94,6 +107,7 @@ export const SCALES: Record<string, ScaleDefinition> = {
     altNames: [],
     intervals: [0, 2, 3, 5, 7, 8, 11],
     degrees: ["R", "2", "♭3", "4", "5", "♭6", "7"],
+    colorTones: [11],
   },
   "mixolydian-b9-b13": {
     slug: "mixolydian-b9-b13",
@@ -101,6 +115,7 @@ export const SCALES: Record<string, ScaleDefinition> = {
     altNames: ["Phrygian Dominant"],
     intervals: [0, 1, 4, 5, 7, 8, 10],
     degrees: ["R", "♭9", "3", "4", "5", "♭13", "♭7"],
+    colorTones: [1],
     parent: { slug: "harmonic-minor", name: "Harmonic Minor", degree: 5 },
   },
   "bebop-dominant": {

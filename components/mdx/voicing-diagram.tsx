@@ -1,3 +1,4 @@
+import { NoteText } from "@/components/note-text";
 type VoicingDiagramProps = {
   name?: string;
   subtitle?: string;
@@ -58,7 +59,7 @@ export function VoicingDiagram({
             fontWeight={600}
             fill="currentColor"
           >
-            {name}
+            <NoteText svg text={name} />
           </text>
         )}
         {subtitle && (
@@ -160,7 +161,7 @@ export function VoicingDiagram({
                     fill={highlights?.[i] ? "var(--accent-9)" : "currentColor"}
                     opacity={0.7}
                   >
-                    {labels[i]}
+                    <NoteText svg text={labels[i]!} />
                   </text>
                 )}
               </g>
@@ -188,7 +189,7 @@ export function VoicingDiagram({
                   fontWeight={600}
                   fill={highlights?.[i] ? "var(--accent-contrast)" : "var(--background)"}
                 >
-                  {label}
+                  <NoteText svg text={label} />
                 </text>
               )}
             </g>

@@ -53,10 +53,10 @@ function normalizeBar(bar: SongBar): string[] {
 }
 
 const FUNCTION_COLORS: Record<ChordFunction, string> = {
-  tonic: "bg-accent-3 border-accent-7 text-accent-12",
-  subdominant: "bg-blue-50 border-blue-300 text-blue-900 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-200",
-  dominant: "bg-orange-50 border-orange-300 text-orange-900 dark:bg-orange-950 dark:border-orange-800 dark:text-orange-200",
-  other: "bg-muted border-border text-foreground",
+  tonic: "bg-tone-lilac border-tone-lilac-line text-tone-lilac-fg",
+  subdominant: "bg-tone-sky border-tone-sky-line text-tone-sky-fg",
+  dominant: "bg-tone-peach border-tone-peach-line text-tone-peach-fg",
+  other: "bg-card border-border text-foreground",
 };
 
 const FUNCTION_LABELS: Record<ChordFunction, string> = {
@@ -199,7 +199,7 @@ export function SongChart({ sections, songKey }: Props) {
         return (
           <div key={`${section.label}-${sectionIndex}`}>
             <div className="mb-2 flex items-center gap-2">
-              <span className="inline-flex items-center justify-center rounded-full bg-accent-3 border border-accent-6 px-2.5 py-0.5 text-xs font-semibold text-accent-11">
+              <span className="inline-flex items-center justify-center rounded-md bg-tone-butter px-2.5 py-0.5 font-mono text-xs font-semibold text-tone-butter-fg dark:rounded-full">
                 {section.label}
               </span>
               <div className="h-px flex-1 bg-border" />
