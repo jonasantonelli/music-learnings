@@ -127,10 +127,18 @@ export function degreeSpeller(
   };
 }
 
-export type ChordQuality = "maj7" | "m7" | "7" | "m7b5" | "dim7" | "mMaj7";
+export type ChordQuality =
+  | "maj7"
+  | "maj13"
+  | "m7"
+  | "7"
+  | "m7b5"
+  | "dim7"
+  | "mMaj7";
 
 export const CHORD_FORMULAS: Record<ChordQuality, readonly number[]> = {
   maj7: [0, 4, 7, 11],
+  maj13: [0, 4, 9, 11], // R 3 13 7 (drop the 5th)
   m7: [0, 3, 7, 10],
   "7": [0, 4, 7, 10],
   m7b5: [0, 3, 6, 10],
@@ -140,6 +148,7 @@ export const CHORD_FORMULAS: Record<ChordQuality, readonly number[]> = {
 
 export const QUALITY_LABELS: Record<ChordQuality, string> = {
   maj7: "maj7",
+  maj13: "maj7(13)",
   m7: "m7",
   "7": "7",
   m7b5: "m7♭5",
@@ -149,6 +158,7 @@ export const QUALITY_LABELS: Record<ChordQuality, string> = {
 
 export const QUALITY_SUFFIXES: Record<ChordQuality, string> = {
   maj7: "maj7",
+  maj13: "maj7(13)",
   m7: "m7",
   "7": "7",
   m7b5: "m7♭5",
@@ -167,6 +177,20 @@ export const INTERVAL_LABELS: Record<number, string> = {
   11: "7",
 };
 
+// Per-quality overrides where the same semitone reads as a different degree
+// depending on the chord (e.g. 9 semitones is a °7 in dim7 but a 13 in maj7(13)).
+const QUALITY_INTERVAL_LABELS: Partial<Record<ChordQuality, Record<number, string>>> = {
+  maj13: { 9: "13" },
+};
+
+export function intervalLabel(interval: number, quality: ChordQuality): string {
+  return (
+    QUALITY_INTERVAL_LABELS[quality]?.[interval] ??
+    INTERVAL_LABELS[interval] ??
+    String(interval)
+  );
+}
+
 /** Spells a drop-2 chord quality by degree; `rootName` pins the root to a key. */
 export function chordSpeller(
   root: number,
@@ -175,7 +199,9 @@ export function chordSpeller(
 ): DegreeSpeller {
   return degreeSpeller(
     root,
-    Object.fromEntries(CHORD_FORMULAS[quality].map((iv) => [iv, INTERVAL_LABELS[iv]])),
+    Object.fromEntries(
+      CHORD_FORMULAS[quality].map((iv) => [iv, intervalLabel(iv, quality)]),
+    ),
     rootName,
   );
 }
