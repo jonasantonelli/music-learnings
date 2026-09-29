@@ -24,7 +24,8 @@ export function NavLinks() {
             href={href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "whitespace-nowrap rounded-control px-2.5 py-1.5 text-sm transition-colors sm:px-3 dark:sm:px-3.5",
+              // Below md the links share the full-width row equally.
+              "flex-1 whitespace-nowrap rounded-control px-2.5 py-1.5 text-center text-sm transition-colors sm:px-3 md:flex-none dark:sm:px-3.5",
               active
                 ? "bg-muted font-medium text-foreground"
                 : "text-muted-foreground hover:text-foreground",

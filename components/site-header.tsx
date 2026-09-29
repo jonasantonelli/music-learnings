@@ -10,12 +10,13 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-10 border-b border-border bg-card/80 backdrop-blur dark:bg-background/80">
-      {/* Logo · centered nav · search + theme. The outer columns share the
-          leftover width equally so the nav sits in the true center. */}
-      <div className="grid h-16 grid-cols-[auto_1fr_auto] items-center gap-2 px-4 sm:gap-3 sm:px-6 md:grid-cols-[1fr_auto_1fr] md:px-8 dark:h-[68px]">
+      {/* md+: logo · centered nav · search + theme on one row, the outer
+          columns sharing the leftover width so the nav sits in the true
+          center. Below md the nav drops to its own full-width row. */}
+      <div className="grid grid-cols-[1fr_auto] items-center gap-x-3 px-4 sm:px-6 md:h-16 md:grid-cols-[1fr_auto_1fr] md:px-8 dark:md:h-[68px]">
         <Link
           href="/"
-          className="flex items-center gap-2.5 justify-self-start font-display text-[15px] dark:text-[17px]"
+          className="flex h-14 items-center gap-2.5 justify-self-start font-display text-[15px] md:h-auto dark:text-[17px]"
         >
           <span
             aria-hidden
@@ -23,12 +24,12 @@ export function SiteHeader() {
           >
             <Music className="h-3.5 w-3.5" strokeWidth={2.5} />
           </span>
-          <span className="hidden lg:inline">Music Learnings</span>
+          <span className="md:hidden lg:inline">Music Learnings</span>
         </Link>
 
         <nav
           aria-label="Main"
-          className="flex min-w-0 max-w-full items-center gap-0.5 justify-self-start overflow-x-auto rounded-control p-1 [scrollbar-width:none] md:justify-self-center dark:border dark:border-border dark:bg-card"
+          className="col-span-2 row-start-2 mb-2 flex items-center gap-0.5 rounded-control p-1 md:col-span-1 md:col-start-2 md:row-start-1 md:mb-0 md:justify-self-center dark:border dark:border-border dark:bg-card"
         >
           <NavLinks />
         </nav>
