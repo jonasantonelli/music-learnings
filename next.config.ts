@@ -7,7 +7,8 @@ const nextConfig: NextConfig = {
 
 const withMDX = createMDX({
   options: {
-    remarkPlugins: ["remark-frontmatter"],
+    // Plugins are referenced by name so the config stays serializable for Turbopack.
+    remarkPlugins: ["remark-frontmatter", "remark-gfm"],
   },
 });
 

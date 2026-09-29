@@ -9,7 +9,8 @@ import {
   INVERSION_NAMES,
   INTERVAL_LABELS,
   computeDrop2Voicing,
-  noteName,
+  chordSpeller,
+  type DegreeSpeller,
   type ChordQuality,
   type Voicing,
 } from "@/lib/music";
@@ -33,7 +34,7 @@ const QUALITIES: ChordQuality[] = [
 
 function buildLabels(
   voicing: Voicing,
-  root: number,
+  speller: DegreeSpeller,
   stringSetIndex: number,
   showNotes: boolean,
 ): (string | null)[] {
@@ -42,7 +43,7 @@ function buildLabels(
   for (let i = 0; i < 4; i++) {
     const si = indices[i];
     labels[si] = showNotes
-      ? noteName((root + voicing.intervals[i]) % 12, root)
+      ? speller.spell(voicing.intervals[i])
       : (INTERVAL_LABELS[voicing.intervals[i]] ?? String(voicing.intervals[i]));
   }
   return labels;
@@ -77,7 +78,8 @@ export function Drop2Explorer() {
     .map((inv) => computeDrop2Voicing(root, quality, inv, stringSet))
     .sort((a, b) => a.midi[a.midi.length - 1] - b.midi[b.midi.length - 1]);
 
-  const chordName = `${noteName(root, root)}${QUALITY_LABELS[quality]}`;
+  const speller = chordSpeller(root, quality);
+  const chordName = `${speller.root}${QUALITY_LABELS[quality]}`;
 
   return (
     <div className="my-8">
@@ -119,7 +121,7 @@ export function Drop2Explorer() {
             name={chordName}
             subtitle={INVERSION_NAMES[v.inversionIndex]}
             frets={v.frets}
-            labels={buildLabels(v, root, stringSet, showNotes)}
+            labels={buildLabels(v, speller, stringSet, showNotes)}
             highlights={buildHighlights(v, stringSet)}
           />
         ))}

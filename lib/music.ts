@@ -24,6 +24,109 @@ export function noteName(pc: number, pref?: Spelling): string {
   return useSharp ? NOTE_NAMES_SHARP[n] : NOTE_NAMES_FLAT[n];
 }
 
+// --- Degree-based spelling -------------------------------------------------
+// `noteName` picks sharps/flats per key, which misspells altered degrees
+// (C Dorian's ♭3 came out as D♯). Spelling by degree keeps letter names
+// consecutive: the 3rd of C is always some kind of E.
+
+const LETTERS = ["C", "D", "E", "F", "G", "A", "B"];
+const LETTER_PC = [0, 2, 4, 5, 7, 9, 11];
+const ACCIDENTALS: Record<number, string> = {
+  [-2]: "𝄫",
+  [-1]: "♭",
+  0: "",
+  1: "♯",
+  2: "𝄪",
+};
+
+type ParsedNote = { letter: number; alter: number };
+
+function parseNoteName(name: string): ParsedNote {
+  const letter = LETTERS.indexOf(name[0]);
+  let alter = 0;
+  for (const ch of name.slice(1)) {
+    if (ch === "♭" || ch === "b") alter--;
+    else if (ch === "♯" || ch === "#") alter++;
+  }
+  return { letter, alter };
+}
+
+/**
+ * Parse a degree label ("R", "♭3", "♯11", "°7", "13") into a letter offset
+ * above the root and a semitone distance. Returns null for unknown labels.
+ */
+function parseDegree(label: string): { steps: number; semitones: number } | null {
+  const m = /^(°|[♭♯b#]*)(R|\d+)$/.exec(label.trim());
+  if (!m) return null;
+  const n = m[2] === "R" ? 1 : Number(m[2]);
+  if (n < 1) return null;
+  let alter = 0;
+  if (m[1] === "°") alter = -2; // diminished 7th
+  else for (const ch of m[1]) alter += ch === "♭" || ch === "b" ? -1 : 1;
+  const steps = (n - 1) % 7;
+  return { steps, semitones: LETTER_PC[steps] + alter };
+}
+
+function spellFrom(root: ParsedNote, label: string): { name: string; alter: number } | null {
+  const degree = parseDegree(label);
+  if (!degree || root.letter < 0) return null;
+  const letter = (root.letter + degree.steps) % 7;
+  const target = LETTER_PC[root.letter] + root.alter + degree.semitones;
+  // Distance from the natural letter to the target, folded into -6..5.
+  const alter = ((((target - LETTER_PC[letter]) % 12) + 18) % 12) - 6;
+  if (!(alter in ACCIDENTALS)) return null;
+  return { name: LETTERS[letter] + ACCIDENTALS[alter], alter };
+}
+
+export type DegreeSpeller = {
+  /** The root, spelled to minimise accidentals across the given degrees. */
+  root: string;
+  /** Spell the note `interval` semitones above the root. */
+  spell: (interval: number) => string;
+};
+
+/**
+ * Build a speller for a scale or chord from its degree labels, keyed by
+ * semitone interval above the root (e.g. `{ 0: "R", 3: "♭3", 10: "♭7" }`).
+ * Chooses between the sharp and flat spelling of the root, preferring the
+ * one with fewer accidentals (double accidentals count extra); ties go flat.
+ * Pass `rootName` to pin the root's spelling (e.g. to match a key).
+ */
+export function degreeSpeller(
+  rootPc: number,
+  degreesByInterval: Record<number, string>,
+  rootName?: string,
+): DegreeSpeller {
+  const pc = ((rootPc % 12) + 12) % 12;
+  const candidates = rootName
+    ? [rootName]
+    : [...new Set([NOTE_NAMES_FLAT[pc], NOTE_NAMES_SHARP[pc]])];
+  const labels = Object.values(degreesByInterval);
+
+  const cost = (rootName: string) => {
+    const root = parseNoteName(rootName);
+    return labels.reduce((sum, label) => {
+      const spelled = spellFrom(root, label);
+      if (!spelled) return sum + 10;
+      const a = Math.abs(spelled.alter);
+      return sum + (a === 2 ? 4 : a);
+    }, 0);
+  };
+
+  const chosen = candidates.reduce((best, c) => (cost(c) < cost(best) ? c : best));
+  const root = parseNoteName(chosen);
+
+  return {
+    root: chosen,
+    spell: (interval: number) => {
+      const label =
+        degreesByInterval[interval] ?? degreesByInterval[((interval % 12) + 12) % 12];
+      const spelled = label ? spellFrom(root, label) : null;
+      return spelled?.name ?? noteName(pc + interval, pc);
+    },
+  };
+}
+
 export type ChordQuality = "maj7" | "m7" | "7" | "m7b5" | "dim7" | "mMaj7";
 
 export const CHORD_FORMULAS: Record<ChordQuality, readonly number[]> = {
@@ -63,6 +166,24 @@ export const INTERVAL_LABELS: Record<number, string> = {
   10: "♭7",
   11: "7",
 };
+
+/** Spells a drop-2 chord quality by degree; `rootName` pins the root to a key. */
+export function chordSpeller(
+  root: number,
+  quality: ChordQuality,
+  rootName?: string,
+): DegreeSpeller {
+  return degreeSpeller(
+    root,
+    Object.fromEntries(CHORD_FORMULAS[quality].map((iv) => [iv, INTERVAL_LABELS[iv]])),
+    rootName,
+  );
+}
+
+/** Spells a V7♭9 — the diminished 7th a half step above the root sits on its ♭9, 3, 5, ♭7. */
+export function dominantFlat9Speller(root: number): DegreeSpeller {
+  return degreeSpeller(root, { 0: "R", 1: "♭9", 4: "3", 7: "5", 10: "♭7" });
+}
 
 // Standard tuning MIDI values: string 6 (low E) → string 1 (high E)
 export const STRING_MIDI = [40, 45, 50, 55, 59, 64];

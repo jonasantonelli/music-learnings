@@ -1,4 +1,4 @@
-import { STRING_MIDI } from "./music";
+import { STRING_MIDI, degreeSpeller, type DegreeSpeller } from "./music";
 
 export type TriadQuality = "major" | "minor" | "dim" | "aug";
 export type TetradQuality = "maj7" | "m7" | "7" | "m7b5" | "dim7";
@@ -59,6 +59,16 @@ export const ARPEGGIO_INTERVAL_LABELS: Record<number, string> = {
   10: "♭7",
   11: "7",
 };
+
+/** Spells an arpeggio's notes by chord degree (e.g. C°7 → C E♭ G♭ B𝄫). */
+export function arpeggioSpeller(root: number, quality: ArpeggioQuality): DegreeSpeller {
+  return degreeSpeller(
+    root,
+    Object.fromEntries(
+      ARPEGGIO_FORMULAS[quality].map((iv) => [iv, ARPEGGIO_INTERVAL_LABELS[iv]]),
+    ),
+  );
+}
 
 export type ArpeggioMarker = {
   string: number;
