@@ -56,7 +56,7 @@ export function SongFilters({ songs, allTags, allKeys, allStyles }: Props) {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search by title or composer…"
-          className="flex-1 rounded-full border border-border bg-card px-4 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent-7 transition-colors"
+          className="flex-1 rounded-control border border-border bg-card px-4 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent-7 transition-colors"
         />
         <div className="flex flex-wrap gap-2">
           <FilterSelect
@@ -105,26 +105,20 @@ export function SongFilters({ songs, allTags, allKeys, allStyles }: Props) {
           <Link
             key={song.slug}
             href={song.href}
-            className="group relative overflow-hidden rounded-2xl border border-border bg-card p-4 transition-colors hover:border-accent-7 hover:bg-card-hover"
+            className="group rounded-card border border-border bg-card p-4 transition-colors hover:border-accent-7 hover:bg-card-hover"
           >
-            <div
-              aria-hidden
-              className="absolute inset-y-0 left-0 w-1 bg-accent-9 opacity-60 transition-opacity group-hover:opacity-100"
-            />
-            <div className="font-medium group-hover:text-accent-11 transition-colors">
-              {song.title}
-            </div>
+            <div className="font-display text-base">{song.title}</div>
             <div className="mt-0.5 text-sm text-muted-foreground">
               {song.composer}
             </div>
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              <span className="rounded-full border border-accent-6 bg-accent-3 px-2 py-0.5 text-[10px] font-medium text-accent-11">
+            <div className="mt-3 flex flex-wrap gap-1.5 font-mono text-[11px]">
+              <span className="rounded-md bg-tone-butter px-2 py-0.5 text-tone-butter-fg">
                 {song.songKey}
               </span>
-              <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+              <span className="rounded-md bg-muted px-2 py-0.5 text-muted-foreground">
                 {song.form}
               </span>
-              <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+              <span className="rounded-md bg-muted px-2 py-0.5 text-muted-foreground">
                 {song.tempo_feel}
               </span>
             </div>
@@ -159,7 +153,7 @@ function FilterSelect({
       value={value ?? ""}
       onChange={(e) => onChange(e.target.value || null)}
       className={cn(
-        "rounded-full border border-border bg-card px-3 py-2 text-sm transition-colors focus:outline-none focus:border-accent-7 appearance-none cursor-pointer pr-7",
+        "rounded-control border border-border bg-card px-3 py-2 text-sm transition-colors focus:outline-none focus:border-accent-7 appearance-none cursor-pointer pr-7",
         value
           ? "text-accent-11 border-accent-6"
           : "text-muted-foreground",

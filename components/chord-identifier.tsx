@@ -459,7 +459,7 @@ function ResultPanel({
 }) {
   if (result.midi.length === 0) {
     return (
-      <div className="mt-8 rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+      <div className="mt-8 rounded-card border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
         Click the fretboard to place notes. Use ○ for open strings and × to mute.
       </div>
     );
@@ -468,7 +468,7 @@ function ResultPanel({
   if (result.matches.length === 0) {
     const notes = result.midi.map((m) => noteName(m % 12, spelling)).join(" ");
     return (
-      <div className="mt-8 rounded-2xl border border-border bg-card p-5 sm:p-6">
+      <div className="mt-8 rounded-card border border-border bg-card p-5 sm:p-6">
         <p className="text-sm uppercase tracking-widest text-muted-foreground">
           No chord identified
         </p>
@@ -497,7 +497,7 @@ function ResultPanel({
 
   return (
     <div className="mt-8 grid gap-6 sm:grid-cols-[1fr_auto] items-start">
-      <div className="rounded-2xl border border-border bg-card p-5 sm:p-6">
+      <div className="rounded-card border border-border bg-card p-5 sm:p-6">
         <p className="text-sm uppercase tracking-widest text-muted-foreground">
           Most likely
         </p>

@@ -6,6 +6,7 @@ type Marker = {
   label?: string;
   color?: string;
   labelColor?: string;
+  stroke?: string;
 };
 
 type FretboardProps = {
@@ -63,8 +64,7 @@ export function Fretboard({
               cx={padX + cellW * (f - 0.5)}
               cy={padY + (cellH * (strings - 1)) / 2}
               r={4}
-              fill="currentColor"
-              opacity={0.15}
+              fill="var(--fret-inlay)"
             />
           ))}
         {doubleInlay
@@ -75,15 +75,13 @@ export function Fretboard({
                 cx={padX + cellW * (f - 0.5)}
                 cy={padY + cellH * 0.8}
                 r={4}
-                fill="currentColor"
-                opacity={0.15}
+                fill="var(--fret-inlay)"
               />
               <circle
                 cx={padX + cellW * (f - 0.5)}
                 cy={padY + cellH * (strings - 1.8)}
                 r={4}
-                fill="currentColor"
-                opacity={0.15}
+                fill="var(--fret-inlay)"
               />
             </g>
           ))}
@@ -96,9 +94,8 @@ export function Fretboard({
             y1={padY}
             x2={padX + i * cellW}
             y2={padY + cellH * (strings - 1)}
-            stroke="currentColor"
-            strokeWidth={i === 0 && startFret === 0 ? 4 : 1.5}
-            opacity={0.5}
+            stroke={i === 0 && startFret === 0 ? "var(--fret-nut)" : "var(--fret-wire)"}
+            strokeWidth={i === 0 && startFret === 0 ? 4 : 2}
           />
         ))}
 
@@ -110,9 +107,8 @@ export function Fretboard({
             y1={padY + i * cellH}
             x2={padX + cellW * frets}
             y2={padY + i * cellH}
-            stroke="currentColor"
-            strokeWidth={1.25}
-            opacity={0.75}
+            stroke="var(--fret-string)"
+            strokeWidth={1 + i * 0.25}
           />
         ))}
 
@@ -158,6 +154,8 @@ export function Fretboard({
                 cy={cy}
                 r={10}
                 fill={m.color ?? "currentColor"}
+                stroke={m.stroke}
+                strokeWidth={m.stroke ? 1.5 : undefined}
               />
               {m.label && (
                 <text
@@ -166,6 +164,7 @@ export function Fretboard({
                   textAnchor="middle"
                   fontSize={10}
                   fontWeight={600}
+                  fontFamily="var(--app-mono), ui-monospace, monospace"
                   fill={m.labelColor ?? "var(--background)"}
                 >
                   {m.label}

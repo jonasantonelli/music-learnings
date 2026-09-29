@@ -25,11 +25,11 @@ export default function SongsPage() {
     <>
       <SiteHeader />
       <main className="mx-auto w-full max-w-4xl px-4 sm:px-6 py-10 sm:py-16">
-        <div className="inline-flex items-center gap-2 rounded-full border border-border bg-accent-3 px-3 py-1 text-xs font-medium text-accent-11">
-          <span className="h-1.5 w-1.5 rounded-full bg-accent-9" />
+        <div className="inline-flex items-center gap-2 rounded-full bg-tone-butter px-3 py-1 text-xs font-medium text-tone-butter-fg">
+          <span className="h-1.5 w-1.5 rounded-full bg-current" />
           Real Book
         </div>
-        <h1 className="mt-5 text-3xl sm:text-4xl font-semibold tracking-tight">
+        <h1 className="mt-5 font-display text-4xl sm:text-5xl">
           Songs
         </h1>
         <p className="mt-4 text-base sm:text-lg text-muted-foreground">

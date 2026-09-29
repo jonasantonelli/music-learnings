@@ -412,15 +412,15 @@ function ChordVoicingPopover({
             <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Drop-2
             </h4>
-            <div className="inline-flex rounded-full border border-border bg-muted/40 p-0.5">
+            <div className="inline-flex gap-0.5 rounded-control bg-muted p-[3px] dark:border dark:border-border dark:bg-background">
               {STRING_SETS.map((s, i) => (
                 <button
                   key={s.label}
                   onClick={() => setStringSet(i)}
                   className={cn(
-                    "rounded-full px-2.5 py-1 text-xs font-medium transition-colors",
+                    "rounded-[7px] px-2.5 py-1 text-xs font-medium transition-colors dark:rounded-full",
                     i === stringSet
-                      ? "bg-accent-9 text-accent-contrast shadow-sm"
+                      ? "bg-card text-foreground shadow-sm dark:bg-accent-9 dark:text-accent-contrast"
                       : "text-muted-foreground hover:text-foreground",
                   )}
                 >
