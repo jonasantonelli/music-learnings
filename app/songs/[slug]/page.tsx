@@ -1,6 +1,9 @@
 import { notFound } from "next/navigation";
+import { ListenLinks, recordingLabel } from "@/components/listen-links";
 import { SiteHeader } from "@/components/site-header";
+import { SongSuggestions } from "@/components/song-suggestions";
 import { getAllSongs, getSongBySlug } from "@/lib/songs";
+import { SONG_SUGGESTIONS } from "@/lib/song-suggestions";
 import { useMDXComponents } from "@/mdx-components";
 
 export function generateStaticParams() {
@@ -35,6 +38,7 @@ export default async function SongPage({
   const components = useMDXComponents({});
 
   const fm = song.frontmatter;
+  const studyNext = SONG_SUGGESTIONS.filter((s) => s.relatedTo.includes(slug));
 
   return (
     <>
@@ -68,11 +72,45 @@ export default async function SongPage({
               </span>
             ))}
           </div>
+
+          {fm.recordings.length > 0 && (
+            <div className="mt-5 space-y-2">
+              <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Listen
+              </div>
+              {fm.recordings.map((r) => (
+                <div
+                  key={`${r.artist}-${r.album}`}
+                  className="flex flex-wrap items-center gap-x-3 gap-y-1.5"
+                >
+                  <span className="text-sm">{recordingLabel(r)}</span>
+                  <ListenLinks title={fm.title} recording={r} />
+                </div>
+              ))}
+            </div>
+          )}
         </header>
 
         <div className="prose prose-zinc dark:prose-invert max-w-none">
           <Content components={components} />
         </div>
+
+        {studyNext.length > 0 && (
+          <section className="mt-16 border-t border-border pt-10">
+            <h2 className="font-display text-2xl">Study next</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Standards that build on {fm.title}.
+            </p>
+            <SongSuggestions
+              suggestions={studyNext}
+              songs={getAllSongs().map((s) => ({
+                slug: s.slug,
+                href: s.href,
+                title: s.frontmatter.title,
+              }))}
+            />
+          </section>
+        )}
       </main>
     </>
   );

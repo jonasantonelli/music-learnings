@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { SongFilters } from "@/components/song-filters";
+import { SongSuggestions } from "@/components/song-suggestions";
 import { getAllSongs } from "@/lib/songs";
+import { SONG_SUGGESTIONS, baseTitle } from "@/lib/song-suggestions";
 
 export const metadata = {
   title: "Songs — Music Learnings",
@@ -20,6 +22,11 @@ export default function SongsPage() {
   const allStyles = Array.from(
     new Set(songs.map((s) => s.frontmatter.style)),
   ).sort();
+
+  const charted = new Set(songs.map((s) => baseTitle(s.frontmatter.title)));
+  const suggestions = SONG_SUGGESTIONS.filter(
+    (s) => !charted.has(baseTitle(s.title)),
+  );
 
   return (
     <>
@@ -58,6 +65,26 @@ export default function SongsPage() {
           <p className="mt-12 text-center text-muted-foreground">
             No songs yet. Use the <code>/transcribe</code> skill to add your first chart.
           </p>
+        )}
+
+        {suggestions.length > 0 && (
+          <section className="mt-16 border-t border-border pt-10">
+            <h2 className="font-display text-2xl sm:text-3xl">
+              Next tunes to learn
+            </h2>
+            <p className="mt-2 text-sm sm:text-base text-muted-foreground">
+              {suggestions.length} standards that build on the charts above,
+              each with a reference recording to listen to before transcribing.
+            </p>
+            <SongSuggestions
+              suggestions={suggestions}
+              songs={songs.map((s) => ({
+                slug: s.slug,
+                href: s.href,
+                title: s.frontmatter.title,
+              }))}
+            />
+          </section>
         )}
       </main>
     </>
