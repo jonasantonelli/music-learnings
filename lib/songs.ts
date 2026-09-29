@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
 import { z } from "zod";
+import { recordingSchema } from "./recordings";
 
 export {
   parseChordSymbol,
@@ -28,6 +29,7 @@ export const songFrontmatterSchema = z.object({
   form: z.string().default("AABA"),
   tags: z.array(z.string()).default([]),
   order: z.number().int().default(999),
+  recordings: z.array(recordingSchema).default([]),
 });
 
 export type SongFrontmatter = z.infer<typeof songFrontmatterSchema>;
