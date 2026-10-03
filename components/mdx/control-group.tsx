@@ -1,5 +1,7 @@
 "use client";
 
+import { NoteText } from "@/components/note-text";
+
 type Option<T extends string | number> = {
   label: string;
   value: T;
@@ -166,6 +168,51 @@ export function ToggleSwitch({
         {labelOn}
       </span>
     </label>
+  );
+}
+
+type ChipGroupProps<T extends string | number> = {
+  label: string;
+  options: Option<T>[];
+  value: T;
+  onChange: (value: T) => void;
+};
+
+/** Like StringSetControl, but wraps — for option lists too long for one row. */
+export function ChipGroup<T extends string | number>({
+  label,
+  options,
+  value,
+  onChange,
+}: ChipGroupProps<T>) {
+  return (
+    <fieldset className="flex min-w-0 flex-col gap-1.5">
+      <legend className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+        {label}
+      </legend>
+      <div className="flex flex-wrap gap-1.5">
+        {options.map((opt) => {
+          const active = opt.value === value;
+          return (
+            <button
+              key={String(opt.value)}
+              onClick={() => onChange(opt.value)}
+              aria-pressed={active}
+              className={`
+                rounded-control px-2.5 py-1 text-sm transition-all
+                ${
+                  active
+                    ? "bg-accent-9 text-accent-contrast shadow-sm font-medium"
+                    : "border border-border text-muted-foreground hover:text-foreground hover:bg-muted/80"
+                }
+              `}
+            >
+              <NoteText text={opt.label} />
+            </button>
+          );
+        })}
+      </div>
+    </fieldset>
   );
 }
 

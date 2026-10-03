@@ -6,20 +6,24 @@ import {
   KEY_OPTIONS,
   STRING_SETS,
   INVERSION_NAMES,
-  INTERVAL_LABELS,
+  PROGRESSIONS,
   computeDrop2Voicing,
   findBestVoiceLeading,
   shiftVoicingOctave,
   chordLabel,
-  getMajor251,
-  getMinor251,
+  getProgression,
   chordSpeller,
   noteName,
-  type ChordQuality,
+  type ProgressionChord,
+  type ProgressionId,
+  type TonicMinor,
   type Voicing,
 } from "@/lib/music";
+import { NoteText } from "@/components/note-text";
 import { VoicingDiagram } from "./voicing-diagram";
+import { drop2DiagramMarks } from "./drop-2-shared";
 import {
+  ChipGroup,
   NoteGrid,
   SegmentedControl,
   StringSetControl,
@@ -27,36 +31,12 @@ import {
   ControlBar,
 } from "./control-group";
 
-function buildLabels(
-  voicing: Voicing,
-  chordRoot: number,
-  quality: ChordQuality,
-  key: number,
-  stringSetIndex: number,
-  showNotes: boolean,
-): (string | null)[] {
-  const labels: (string | null)[] = [null, null, null, null, null, null];
-  const speller = chordSpeller(chordRoot, quality, noteName(chordRoot, key));
-  const indices = STRING_SETS[stringSetIndex].indices;
-  for (let j = 0; j < 4; j++) {
-    const si = indices[j];
-    labels[si] = showNotes
-      ? speller.spell(voicing.intervals[j])
-      : (INTERVAL_LABELS[voicing.intervals[j]] ?? String(voicing.intervals[j]));
-  }
-  return labels;
-}
+type ProgressionProps = {
+  /** Initial progression, so a lesson page can open on the one it discusses. */
+  progression?: ProgressionId;
+};
 
-function buildHighlights(voicing: Voicing, stringSetIndex: number): (boolean | null)[] {
-  const highlights: (boolean | null)[] = [null, null, null, null, null, null];
-  const indices = STRING_SETS[stringSetIndex].indices;
-  for (let i = 0; i < 4; i++) {
-    highlights[indices[i]] = voicing.toneIndices[i] === 0;
-  }
-  return highlights;
-}
-
-export function Drop2Progression() {
+export function Drop2Progression({ progression: initial = "major-251" }: ProgressionProps) {
   const [practiceNote, setPracticeNote] = usePracticeNote();
   const [key, setKeyLocal] = useState(0);
 
@@ -69,67 +49,56 @@ export function Drop2Progression() {
     if (practiceNote !== null) setKeyLocal(practiceNote);
   }, [practiceNote]);
   const [stringSet, setStringSet] = useState(1);
-  const [mode, setMode] = useState<"major" | "minor">("major");
-  const [useMmaj7, setUseMmaj7] = useState(false);
+  const [progId, setProgId] = useState<ProgressionId>(initial);
+  const [tonic, setTonic] = useState<TonicMinor>("m7");
+  const [extended, setExtended] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
 
-  const progression = useMemo(
-    () => (mode === "major" ? getMajor251(key) : getMinor251(key, useMmaj7)),
-    [key, mode, useMmaj7],
+  const chords = useMemo(
+    () =>
+      getProgression(progId, key, tonic).map((c) => ({
+        ...c,
+        color: extended ? c.color : undefined,
+      })),
+    [progId, key, tonic, extended],
   );
 
   const paths = useMemo(() => {
-    const buildPath = (ii: Voicing): [Voicing, Voicing, Voicing] => {
-      const v = findBestVoiceLeading(
-        ii,
-        progression[1].root,
-        progression[1].quality,
-        stringSet,
-      );
-      const i = findBestVoiceLeading(
-        v,
-        progression[2].root,
-        progression[2].quality,
-        stringSet,
-      );
-      return [ii, v, i];
+    const buildPath = (first: Voicing): Voicing[] => {
+      const path = [first];
+      for (const c of chords.slice(1)) {
+        path.push(
+          findBestVoiceLeading(path[path.length - 1], c.root, c.quality, stringSet, c.color),
+        );
+      }
+      return path;
     };
 
     const raw = [0, 1, 2, 3].map((startInv) =>
       buildPath(
-        computeDrop2Voicing(
-          progression[0].root,
-          progression[0].quality,
-          startInv,
-          stringSet,
-        ),
+        computeDrop2Voicing(chords[0].root, chords[0].quality, startInv, stringSet, chords[0].color),
       ),
     );
 
-    // Dedupe: when two paths share the same V and I voicings, voice-leading has
-    // collapsed them. Shift the lower-topped ii up an octave and rebuild so each
-    // row shows a distinct chain.
-    const fretKey = (v: Voicing) => v.frets.join(",");
+    // Dedupe: when two paths converge on the same voicings after the first
+    // chord, voice-leading has collapsed them. Shift the lower-topped start up
+    // an octave and rebuild so each row shows a distinct chain.
+    const tailKey = (p: Voicing[]) => p.slice(1).map((v) => v.frets.join(",")).join("|");
     const topMidi = (v: Voicing) => v.midi[v.midi.length - 1];
-    const order = [0, 1, 2, 3].sort(
-      (a, b) => topMidi(raw[a][0]) - topMidi(raw[b][0]),
-    );
+    const order = [0, 1, 2, 3].sort((a, b) => topMidi(raw[a][0]) - topMidi(raw[b][0]));
     for (let a = 0; a < order.length; a++) {
       for (let b = a + 1; b < order.length; b++) {
-        const lo = raw[order[a]];
-        const hi = raw[order[b]];
-        if (
-          fretKey(lo[1]) === fretKey(hi[1]) &&
-          fretKey(lo[2]) === fretKey(hi[2])
-        ) {
-          const shifted = shiftVoicingOctave(lo[0], 12);
+        if (tailKey(raw[order[a]]) === tailKey(raw[order[b]])) {
+          const shifted = shiftVoicingOctave(raw[order[a]][0], 12);
           if (shifted) raw[order[a]] = buildPath(shifted);
         }
       }
     }
 
     return raw.sort((a, b) => topMidi(a[0]) - topMidi(b[0]));
-  }, [progression, stringSet]);
+  }, [chords, stringSet]);
+
+  const name = (c: ProgressionChord) => chordLabel(c.root, c.quality, key, c.color);
 
   return (
     <div className="my-8">
@@ -141,34 +110,42 @@ export function Drop2Progression() {
           onChange={setKey}
         />
 
+        <ChipGroup
+          label="Progression"
+          options={PROGRESSIONS.map((p) => ({ label: p.label, value: p.id }))}
+          value={progId}
+          onChange={setProgId}
+        />
+
+        {progId === "minor-251" && (
+          <SegmentedControl
+            label="i chord"
+            options={[
+              { label: "m7", value: "m7" as const },
+              { label: "m6", value: "m6" as const },
+              { label: "m(maj7)", value: "mMaj7" as const },
+            ]}
+            value={tonic}
+            onChange={setTonic}
+          />
+        )}
+
+        <SegmentedControl
+          label="Chords"
+          options={[
+            { label: "7ths", value: "basic" as const },
+            { label: "Extended", value: "extended" as const },
+          ]}
+          value={extended ? "extended" : "basic"}
+          onChange={(v) => setExtended(v === "extended")}
+        />
+
         <StringSetControl
           label="Strings"
           options={STRING_SETS.map((s, i) => ({ label: s.label, value: i }))}
           value={stringSet}
           onChange={setStringSet}
         />
-
-        <SegmentedControl
-          label="Mode"
-          options={[
-            { label: "Major", value: "major" as const },
-            { label: "Minor", value: "minor" as const },
-          ]}
-          value={mode}
-          onChange={setMode}
-        />
-
-        {mode === "minor" && (
-          <SegmentedControl
-            label="i chord"
-            options={[
-              { label: "m7", value: "m7" },
-              { label: "m(maj7)", value: "mMaj7" },
-            ]}
-            value={useMmaj7 ? "mMaj7" : "m7"}
-            onChange={(v) => setUseMmaj7(v === "mMaj7")}
-          />
-        )}
 
         <ToggleSwitch
           labelOff="Intervals"
@@ -179,11 +156,10 @@ export function Drop2Progression() {
       </ControlBar>
 
       <p className="text-sm text-muted-foreground mb-6">
-        {progression.map((c, i) => (
+        {chords.map((c, i) => (
           <span key={i}>
-            {i > 0 && " \u2192 "}
-            <strong>{c.degree}</strong>:{" "}
-            {chordLabel(c.root, c.quality, key)}
+            {i > 0 && " → "}
+            <strong>{c.degree}</strong>: <NoteText text={name(c)} />
           </span>
         ))}
       </p>
@@ -191,37 +167,28 @@ export function Drop2Progression() {
       {paths.map((path, pathIdx) => (
         <div key={pathIdx} className="mb-8">
           <h4 className="text-sm font-medium mb-2 text-muted-foreground">
-            Starting from {INVERSION_NAMES[path[0].inversionIndex]} of{" "}
-            {progression[0].degree}
+            Starting from {INVERSION_NAMES[path[0].inversionIndex]} of {chords[0].degree}
           </h4>
           <div className="flex flex-wrap items-start gap-1">
-            {path.map((voicing, chordIdx) => (
-              <div key={chordIdx} className="flex items-start gap-1">
-                {chordIdx > 0 && (
-                  <span className="text-muted-foreground text-lg mx-1">
-                    →
-                  </span>
-                )}
-                <VoicingDiagram
-                  name={chordLabel(
-                    progression[chordIdx].root,
-                    progression[chordIdx].quality,
-                    key,
+            {path.map((voicing, chordIdx) => {
+              const c = chords[chordIdx];
+              const speller = chordSpeller(c.root, c.quality, noteName(c.root, key), c.color);
+              const marks = drop2DiagramMarks(voicing, stringSet, speller, showNotes);
+              return (
+                <div key={chordIdx} className="flex items-start gap-1">
+                  {chordIdx > 0 && (
+                    <span className="text-muted-foreground text-lg mx-1">→</span>
                   )}
-                  subtitle={`${progression[chordIdx].degree} \u00b7 ${INVERSION_NAMES[voicing.inversionIndex]}`}
-                  frets={voicing.frets}
-                  labels={buildLabels(
-                    voicing,
-                    progression[chordIdx].root,
-                    progression[chordIdx].quality,
-                    key,
-                    stringSet,
-                    showNotes,
-                  )}
-                  highlights={buildHighlights(voicing, stringSet)}
-                />
-              </div>
-            ))}
+                  <VoicingDiagram
+                    name={name(c)}
+                    subtitle={`${c.degree} · ${INVERSION_NAMES[voicing.inversionIndex]}`}
+                    frets={voicing.frets}
+                    labels={marks.labels}
+                    highlights={marks.highlights}
+                  />
+                </div>
+              );
+            })}
           </div>
         </div>
       ))}
