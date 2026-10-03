@@ -207,8 +207,8 @@ export function chordSpeller(
 }
 
 /** Spells a V7♭9 — the diminished 7th a half step above the root sits on its ♭9, 3, 5, ♭7. */
-export function dominantFlat9Speller(root: number): DegreeSpeller {
-  return degreeSpeller(root, { 0: "R", 1: "♭9", 4: "3", 7: "5", 10: "♭7" });
+export function dominantFlat9Speller(root: number, rootName?: string): DegreeSpeller {
+  return degreeSpeller(root, { 0: "R", 1: "♭9", 4: "3", 7: "5", 10: "♭7" }, rootName);
 }
 
 // Standard tuning MIDI values: string 6 (low E) → string 1 (high E)
@@ -397,3 +397,11 @@ export const KEY_OPTIONS = NOTE_NAMES_FLAT.map((name, i) => ({
   name,
   value: i,
 }));
+
+/**
+ * The root name shown in the KEY_OPTIONS picker. Pass it as a speller's
+ * `rootName` so picking G♭ never comes back spelled as F♯.
+ */
+export function keyName(pc: number): string {
+  return KEY_OPTIONS[((pc % 12) + 12) % 12].name;
+}

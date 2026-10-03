@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePracticeNote } from "@/lib/use-practice-note";
-import { KEY_OPTIONS, degreeSpeller } from "@/lib/music";
+import { KEY_OPTIONS, degreeSpeller, keyName } from "@/lib/music";
 import {
   SCALES,
   SCALE_INTERVAL_LABELS,
@@ -60,12 +60,13 @@ export function ScaleExplorer({ scale: scaleSlug }: ScaleExplorerProps) {
     view === "position" && !supports3NPS ? "full" : view;
 
   // Spell notes by scale degree so altered tones keep their letter
-  // (C Dorian's ♭3 is E♭, not D♯).
+  // (C Dorian's ♭3 is E♭, not D♯). The root keeps the picker's spelling.
   const speller = degreeSpeller(
     root,
     Object.fromEntries(
       definition.intervals.map((iv, i) => [iv, definition.degrees[i]]),
     ),
+    keyName(root),
   );
 
   const labelFor = (marker: ScaleMarker): string => {

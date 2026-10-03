@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePracticeNote } from "@/lib/use-practice-note";
-import { KEY_OPTIONS, dominantFlat9Speller } from "@/lib/music";
+import { KEY_OPTIONS, dominantFlat9Speller, keyName } from "@/lib/music";
 import { Fretboard } from "./fretboard";
 import { ControlBar, NoteGrid } from "./control-group";
 
@@ -68,7 +68,7 @@ export function DimOverDominants() {
     if (practiceNote !== null) setRootLocal(practiceNote);
   }, [practiceNote]);
 
-  const speller = dominantFlat9Speller(root);
+  const speller = dominantFlat9Speller(root, keyName(root));
   const rootName = speller.root;
   const dimRootName = speller.spell(1);
   const caption = `${rootName}7♭9 — ${dimRootName}°7 arpeggio on strings 2–3–4`;
