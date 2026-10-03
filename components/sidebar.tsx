@@ -101,10 +101,16 @@ export function SidebarClient({ tree }: { tree: TreeNode[] }) {
         Lessons menu
       </button>
 
-      {/* Desktop sidebar */}
-      <nav className="hidden md:block w-64 shrink-0 border-r border-border bg-card px-3 py-4 overflow-y-auto dark:bg-background">
-        {list}
-      </nav>
+      {/* Desktop sidebar — the column keeps the border full height while the
+          nav sticks below the header and scrolls on its own. */}
+      <div className="hidden md:block w-64 shrink-0 border-r border-border bg-card dark:bg-background">
+        <nav
+          className="sticky top-16 max-h-[calc(100dvh-4rem)] overflow-y-auto overscroll-contain px-3 py-4 dark:top-[68px] dark:max-h-[calc(100dvh-68px)]"
+          aria-label="Lessons navigation"
+        >
+          {list}
+        </nav>
+      </div>
 
       {/* Mobile drawer */}
       {open && (
