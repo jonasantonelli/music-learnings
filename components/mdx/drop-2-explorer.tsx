@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { usePracticeNote } from "@/lib/use-practice-note";
 import {
   KEY_OPTIONS,
+  keyName,
   QUALITY_LABELS,
   STRING_SETS,
   INVERSION_NAMES,
@@ -80,7 +81,7 @@ export function Drop2Explorer() {
     .map((inv) => computeDrop2Voicing(root, quality, inv, stringSet))
     .sort((a, b) => a.midi[a.midi.length - 1] - b.midi[b.midi.length - 1]);
 
-  const speller = chordSpeller(root, quality);
+  const speller = chordSpeller(root, quality, keyName(root));
   const chordName = `${speller.root}${QUALITY_LABELS[quality]}`;
 
   return (
