@@ -77,26 +77,42 @@ export function SidebarClient({ tree }: { tree: TreeNode[] }) {
     };
   }, [open]);
 
-  // Sticky offset for the desktop nav: it scrolls with the page until its last
-  // item comes into view, then stops. A nav shorter than the viewport simply
-  // sticks under the header.
+  // Two-way sticky for the desktop nav. Its sticky `top` shifts by each scroll
+  // delta, clamped between "bottom of nav at bottom of viewport" and "just
+  // under the header". Scrolling down it follows the page until its last item
+  // shows, then stops; scrolling up it follows back at once, revealing the top.
+  // A nav shorter than the viewport simply sticks under the header.
   const navRef = useRef<HTMLElement>(null);
   useEffect(() => {
     const nav = navRef.current;
     if (!nav) return;
     const header = document.querySelector("header");
-    const update = () => {
-      const headerH = header?.offsetHeight ?? 0;
-      nav.style.top = `${Math.min(headerH, window.innerHeight - nav.offsetHeight)}px`;
+    let top = header?.offsetHeight ?? 0;
+    let lastY = window.scrollY;
+
+    const apply = (delta: number) => {
+      const maxTop = header?.offsetHeight ?? 0;
+      const minTop = Math.min(maxTop, window.innerHeight - nav.offsetHeight);
+      top = Math.min(maxTop, Math.max(minTop, top - delta));
+      nav.style.top = `${top}px`;
     };
-    update();
-    const observer = new ResizeObserver(update);
+    const onScroll = () => {
+      const y = window.scrollY;
+      apply(y - lastY);
+      lastY = y;
+    };
+    const onResize = () => apply(0);
+
+    apply(0);
+    const observer = new ResizeObserver(onResize);
     observer.observe(nav);
     if (header) observer.observe(header);
-    window.addEventListener("resize", update);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onResize);
     return () => {
       observer.disconnect();
-      window.removeEventListener("resize", update);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onResize);
     };
   }, []);
 
