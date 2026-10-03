@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
 import type { TreeNode } from "@/lib/content";
@@ -77,6 +77,29 @@ export function SidebarClient({ tree }: { tree: TreeNode[] }) {
     };
   }, [open]);
 
+  // Sticky offset for the desktop nav: it scrolls with the page until its last
+  // item comes into view, then stops. A nav shorter than the viewport simply
+  // sticks under the header.
+  const navRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const nav = navRef.current;
+    if (!nav) return;
+    const header = document.querySelector("header");
+    const update = () => {
+      const headerH = header?.offsetHeight ?? 0;
+      nav.style.top = `${Math.min(headerH, window.innerHeight - nav.offsetHeight)}px`;
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(nav);
+    if (header) observer.observe(header);
+    window.addEventListener("resize", update);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", update);
+    };
+  }, []);
+
   const close = () => setOpen(false);
 
   const list = (
@@ -102,10 +125,11 @@ export function SidebarClient({ tree }: { tree: TreeNode[] }) {
       </button>
 
       {/* Desktop sidebar — the column keeps the border full height while the
-          nav sticks below the header and scrolls on its own. */}
+          nav follows the scroll and stops once its end is visible. */}
       <div className="hidden md:block w-64 shrink-0 border-r border-border bg-card dark:bg-background">
         <nav
-          className="sticky top-16 max-h-[calc(100dvh-4rem)] overflow-y-auto overscroll-contain px-3 py-4 dark:top-[68px] dark:max-h-[calc(100dvh-68px)]"
+          ref={navRef}
+          className="sticky top-16 px-3 py-4 dark:top-[68px]"
           aria-label="Lessons navigation"
         >
           {list}
