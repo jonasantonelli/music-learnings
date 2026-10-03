@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
 import type { TreeNode } from "@/lib/content";
@@ -77,6 +77,45 @@ export function SidebarClient({ tree }: { tree: TreeNode[] }) {
     };
   }, [open]);
 
+  // Two-way sticky for the desktop nav. Its sticky `top` shifts by each scroll
+  // delta, clamped between "bottom of nav at bottom of viewport" and "just
+  // under the header". Scrolling down it follows the page until its last item
+  // shows, then stops; scrolling up it follows back at once, revealing the top.
+  // A nav shorter than the viewport simply sticks under the header.
+  const navRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const nav = navRef.current;
+    if (!nav) return;
+    const header = document.querySelector("header");
+    let top = header?.offsetHeight ?? 0;
+    let lastY = window.scrollY;
+
+    const apply = (delta: number) => {
+      const maxTop = header?.offsetHeight ?? 0;
+      const minTop = Math.min(maxTop, window.innerHeight - nav.offsetHeight);
+      top = Math.min(maxTop, Math.max(minTop, top - delta));
+      nav.style.top = `${top}px`;
+    };
+    const onScroll = () => {
+      const y = window.scrollY;
+      apply(y - lastY);
+      lastY = y;
+    };
+    const onResize = () => apply(0);
+
+    apply(0);
+    const observer = new ResizeObserver(onResize);
+    observer.observe(nav);
+    if (header) observer.observe(header);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onResize);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onResize);
+    };
+  }, []);
+
   const close = () => setOpen(false);
 
   const list = (
@@ -101,10 +140,17 @@ export function SidebarClient({ tree }: { tree: TreeNode[] }) {
         Lessons menu
       </button>
 
-      {/* Desktop sidebar */}
-      <nav className="hidden md:block w-64 shrink-0 border-r border-border bg-card px-3 py-4 overflow-y-auto dark:bg-background">
-        {list}
-      </nav>
+      {/* Desktop sidebar — the column keeps the border full height while the
+          nav follows the scroll and stops once its end is visible. */}
+      <div className="hidden md:block w-64 shrink-0 border-r border-border bg-card dark:bg-background">
+        <nav
+          ref={navRef}
+          className="sticky top-16 px-3 py-4 dark:top-[68px]"
+          aria-label="Lessons navigation"
+        >
+          {list}
+        </nav>
+      </div>
 
       {/* Mobile drawer */}
       {open && (

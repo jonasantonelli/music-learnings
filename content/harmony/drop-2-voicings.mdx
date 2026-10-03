@@ -1,99 +1,170 @@
 ---
 title: Drop 2 Voicings
-description: Explore all drop 2 inversions for any chord quality across guitar string sets.
-tags: ["harmony", "voicings", "drop-2", "chords"]
+description: Every drop 2 inversion for twelve chord qualities and their extensions (9, 11, 13, altered) across all three guitar string sets.
+tags: ["harmony", "voicings", "drop-2", "chords", "extensions"]
 order: 1
 ---
 
-Drop 2 voicings are built by taking a close-voiced four-note chord and dropping
-the **second voice from the top** down an octave. This creates a wider voicing
-that sits naturally on four adjacent guitar strings.
+Drop 2 voicings take a four-note chord stacked in close position and drop
+the **second voice from the top** down an octave. The result spreads across
+four adjacent strings with no big stretches, and it's the backbone of jazz
+comping and chord melody on guitar.
 
-Each chord quality has four inversions — root position, 1st, 2nd, and 3rd — and
-each can be played on three different string sets.
+Each chord has **four inversions**, named after the note in the bass, and each
+inversion fits on **three string sets**. That's twelve shapes per chord
+quality. Pick a quality, add a **color** to turn a seventh chord into a 9th,
+11th or 13th, and switch to **Full neck** to see every position from the 1st
+fret up to the 19th.
 
-### How to read these diagrams
+### How to read the diagrams
 
-- **R** = root, **3** / **♭3** = third, **5** / **♭5** = fifth, **7** / **♭7** / **°7** = seventh
-- Toggle between interval labels and note names using the button above
-- Muted strings (×) are not part of the voicing — don't play them
+- Dot labels show the chord degree: **R**, **3** / **♭3**, **5** / **♭5** / **♯5**,
+  **6**, **7** / **♭7** / **°7**, plus tensions like **9**, **♭9**, **11**, **♯11**, **13** or **♭13**
+- The root is highlighted in the accent color
+- Muted strings (×) are not part of the voicing
+- Use **Notes** to see note names spelled by degree (C°7 is C–E♭–G♭–B𝄫, not
+  C–E♭–G♭–A)
 
 <Drop2Explorer />
 
 ---
 
-## Understanding drop 2 in depth
+## What makes a voicing "drop 2"
 
-### What is a close voicing?
+### Start from a close voicing
 
-Before understanding drop 2, you need to know what a **close voicing** (also
-called a close position or closed voicing) is. A close voicing is a chord where
-all four notes are packed within one octave, stacked in thirds:
+A **close voicing** packs all four notes inside one octave, stacked in thirds.
+On piano it falls straight under the hand. On guitar it usually needs an
+awkward stretch, because adjacent strings are a 4th apart and the notes of a
+close voicing are only a 3rd apart.
 
-> **Cmaj7 close voicing:** C – E – G – B (all within a single octave)
+### Drop the second voice from the top
 
-On piano this is easy to play. On guitar, however, close voicings are
-impractical — cramming four notes into one octave often requires awkward
-stretches or impossible fingerings.
+Take **Cmaj7** in close position, from the top down: **B – G – E – C**.
+The second voice from the top is **G**. Move it down an octave and it becomes
+the new bass:
 
-### The drop 2 technique
+| Voice      | Close position | Drop 2      |
+| ---------- | -------------- | ----------- |
+| Top        | B              | B           |
+| 2nd        | G              | — (dropped) |
+| 3rd        | E              | E           |
+| 4th        | C              | C           |
+| New bottom | —              | G           |
 
-Drop 2 voicings solve this problem with one simple operation:
-
-1. Start with a close-voiced four-note chord (four voices stacked top to bottom)
-2. Count from the top: the **second voice from the top** is "dropped" — moved
-   **down one octave**
-3. The result is a wider, open voicing that spans more than an octave
-
-For example, with **Cmaj7** in close position (top to bottom: **B – G – E – C**):
-
-| Voice | Close position | After drop 2 |
-|-------|---------------|--------------|
-| 1 (top) | B | B |
-| 2 | G | ↓ dropped one octave |
-| 3 | E | E |
-| 4 (bottom) | C | C |
-| New bottom | — | G (dropped from voice 2) |
-
-The result **B – E – C – G** gives us an open, spread voicing that falls
-naturally across four adjacent guitar strings.
-
-### Why drop 2 voicings matter for guitar
-
-- **Playable shapes** — the spread interval structure fits the guitar's tuning,
-  landing cleanly on four consecutive strings without extreme stretches
-- **Rich harmonic sound** — the wider spacing creates depth and clarity that
-  close voicings lack, each note rings distinctly
-- **Voice leading** — drop 2 inversions connect smoothly with minimal finger
-  movement, making chord progressions sound fluid
-- **Versatility** — the same shapes work across jazz, bossa nova, R&B, gospel,
-  and any style that uses seventh chords
-- **Three string sets** — each voicing can be played on strings 6-5-4-3,
-  5-4-3-2, or 4-3-2-1, giving you options across the entire neck register
+From the bottom up, the drop 2 voicing reads **G – C – E – B**: a 5th in the
+bass, then the root, the 3rd and the 7th. The voicing now spans a 10th
+instead of a 7th. That wider spacing matches the guitar's tuning, so it falls
+onto four adjacent strings.
 
 ### Four inversions
 
-Each drop 2 chord has **four inversions**, determined by which chord tone is the
-lowest note:
+Apply the same drop to each of the four close inversions and you get four
+drop 2 inversions. On guitar they're named after the **bass note**:
 
-| Inversion | Bottom note | Voice order (low → high) |
-|-----------|-----------|------------------------|
-| Root position | Root (R) | R – 5 – 7 – 3 |
-| 1st inversion | Third (3) | 3 – 7 – R – 5 |
-| 2nd inversion | Fifth (5) | 5 – R – 3 – 7 |
-| 3rd inversion | Seventh (7) | 7 – 3 – 5 – R |
+| Inversion     | Bass | Low → high  | Comes from close |
+| ------------- | ---- | ----------- | ---------------- |
+| Root position | R    | R – 5 – 7 – 3 | 5 – 7 – R – 3  |
+| 1st inversion | 3    | 3 – 7 – R – 5 | 7 – R – 3 – 5  |
+| 2nd inversion | 5    | 5 – R – 3 – 7 | R – 3 – 5 – 7  |
+| 3rd inversion | 7    | 7 – 3 – 5 – R | 3 – 5 – 7 – R  |
 
-Learning all four inversions across all three string sets gives you **12 shapes
-per chord quality** — a complete map of the fretboard.
+Notice the voice order cycles: **R 5 7 3 → 3 7 R 5 → 5 R 3 7 → 7 3 5 R**.
+Every chord tone moves up to the next one. That's why the four shapes sit
+next to each other on the neck and repeat every 12 frets.
 
-### Practice tips
+### Three string sets
 
-- **Learn one quality at a time** — start with maj7 or m7 and master all four
-  inversions before moving on
-- **Connect inversions** — play root → 1st → 2nd → 3rd inversion going up the
-  neck on the same string set; this builds your fretboard awareness
-- **Move across string sets** — once comfortable on one string set, shift the
-  same inversions to adjacent string sets to hear the timbral differences
-- **Apply to progressions** — once you know the shapes, head to the
-  [ii-V-I voice leading](/harmony/drop-2-ii-v-i) page to practice connecting
-  chords with smooth voice movement
+| String set | Character                                                    |
+| ---------- | ------------------------------------------------------------ |
+| 6-5-4-3    | Dark and heavy; good for big-band comping and low pads        |
+| 5-4-3-2    | The workhorse; full but clear, and it sits in the mid-range   |
+| 4-3-2-1    | Bright and light; ideal for chord melody, where the top note is the melody |
+
+The same inversion looks slightly different on each set, and the reason is
+always the B string. Every other pair of adjacent strings is a 4th apart, but
+G–B is a major 3rd. So when you move a shape up a string set, any note that
+crosses onto the B (or high E) string moves **up one fret**. Learn that one
+adjustment and you can move any shape between string sets.
+
+---
+
+## The chord qualities
+
+| Family     | Quality | Formula        | Typical use                                     |
+| ---------- | ------- | -------------- | ----------------------------------------------- |
+| Major      | maj7    | R 3 5 7        | I and IV in major keys                           |
+|            | 6       | R 3 5 6        | Tonic major; swing-era sound, no clash with a melody root |
+|            | maj7♯5  | R 3 ♯5 7       | ♭III in melodic and harmonic minor; Lydian augmented |
+| Minor      | m7      | R ♭3 5 ♭7      | ii, iii and vi; Dorian / Aeolian                   |
+|            | m6      | R ♭3 5 6       | Minor tonic (melodic minor); also a rootless V9   |
+|            | m(maj7) | R ♭3 5 7       | Minor tonic; the "James Bond" chord               |
+| Dominant   | 7       | R 3 5 ♭7       | V; blues; secondary dominants                      |
+|            | 7sus4   | R 4 5 ♭7       | Suspended V; modal tunes (Maiden Voyage)           |
+|            | 7♯5     | R 3 ♯5 ♭7      | Altered/whole-tone V resolving to I                |
+|            | 7♭5     | R 3 ♭5 ♭7      | Tritone-sub flavor; French augmented 6th           |
+| Diminished | m7♭5    | R ♭3 ♭5 ♭7     | iiø in minor ii–V; also vii in major              |
+|            | dim7    | R ♭3 ♭5 °7     | Passing chord; rootless V7♭9                       |
+
+**Shared shapes:** **C6** and **Am7** contain the same four notes, so every C6
+shape is also an Am7 shape. Likewise **Cm6** is **Am7♭5**. One shape, two
+names; learn the pair together. **dim7** is symmetrical: each inversion is
+the same shape moved up 3 frets.
+
+---
+
+## Colors: extending drop 2 chords
+
+A drop 2 voicing has only four notes, so adding a 9th or 13th means
+**replacing** a chord tone rather than piling on another. The rule jazz
+guitarists use:
+
+- **The 3rd and 7th stay.** They're the guide tones that define the chord.
+- **The root becomes a 9** (or ♭9 / ♯9 on dominants). The bassist already
+  plays the root.
+- **The 5th becomes a 13** (or ♭13, ♯11, 11). The 5th adds the least color,
+  so it's the first to go.
+
+Each tension sits a step from the tone it replaces, so **the shape barely
+changes**: move one finger up a whole step and a maj7 becomes a maj9. This is
+the fastest way to multiply your chord vocabulary. Every drop 2 shape you know
+becomes three or four new chords.
+
+| Base | Root → 9            | 5 → 13 / 11 / ♯11         | Both                 |
+| ---- | ------------------- | ------------------------- | -------------------- |
+| maj7 | maj9                | maj7(13), maj7(♯11)       | maj13, maj9(♯11)     |
+| 6    | 6/9                 | —                         | —                    |
+| m7   | m9                  | m7(11)                    | m11                  |
+| m6   | m6/9                | —                         | —                    |
+| m(maj7) | m(maj9)          | —                         | —                    |
+| 7    | 9, 7♭9, 7♯9         | 13, 7♭13, 7♯11            | 13(9), 13♭9, 7♭9♭13, 7alt (♯9 + ♭13) |
+| 7sus4 | 9sus4, 7sus4(♭9)   | 13sus4                    | —                    |
+| m7♭5 | m9♭5                | —                         | —                    |
+
+**Rootless voicings** (where the 9 has replaced the root) are the norm in
+ensemble playing. Solo, play the root on a lower string first, or let the
+context imply it.
+
+**Choosing a dominant color.** Dominants resolving to **major** usually take
+natural tensions (9, 13). Dominants resolving to **minor** take altered ones
+(♭9, ♭13). Dominants that don't resolve (blues, a static vamp) take 9, 13 or
+♯11. The ii–V page has an **Extended** mode that applies these choices
+automatically.
+
+---
+
+## Practice plan
+
+1. **One quality, one string set.** Learn the four maj7 inversions on 5-4-3-2,
+   saying the bass degree aloud as you play each one.
+2. **Climb the neck.** Play root position → 1st → 2nd → 3rd → root position
+   (octave). Use **Full neck** to see where the cycle repeats.
+3. **Shift string sets.** Play the same inversion on all three sets. Watch the
+   B-string adjustment on 4-3-2-1.
+4. **Add colors one finger at a time.** maj7 → maj9 (root up a whole step),
+   then 7 → 13 (5th up a whole step), then 7 → 7♭9 (root up a half step).
+   Feel which finger moves.
+5. **Use them in context.** Take the shapes to the
+   [ii–V–I voice leading](/lessons/harmony/drop-2-ii-v-i) page, then to
+   [diatonic harmony](/lessons/harmony/drop-2-diatonic) to run every chord of
+   a key.
