@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { Languages } from "lucide-react";
 import {
   LOCALE_COOKIE,
@@ -22,12 +22,16 @@ export function LanguageSwitcher() {
   const lang = useLocale();
   const t = useMessages(messages);
   const pathname = usePathname();
-  const router = useRouter();
 
   const change = (next: Locale) => {
     // Remember the choice so the proxy sends unprefixed URLs here next time.
     document.cookie = `${LOCALE_COOKIE}=${next}; path=/; max-age=31536000; samesite=lax`;
-    router.push(switchLocalePath(pathname, next) + window.location.hash);
+    // Full navigation, not router.push: [lang] is the root layout segment, and
+    // remounting it client-side re-renders next-themes' inline <script>, which
+    // React refuses to run (and warns about). A reload also resets <html lang>.
+    window.location.assign(
+      switchLocalePath(pathname, next) + window.location.search + window.location.hash,
+    );
   };
 
   return (
