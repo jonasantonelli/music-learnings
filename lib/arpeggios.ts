@@ -145,7 +145,14 @@ export function getCagedShapes(
       high: r6 + 1,
       stringBounds: { 6: { low: 3 }, 3: { high: 3 } },
     },
-    { name: "E", low: r6, high: r6 + 4 },
+    // E shape: root on the 6th string under the 2nd finger, so the 3rd
+    // falls on the 5th string one fret behind it.
+    {
+      name: "E",
+      low: r6 - 1,
+      high: r6 + 3,
+      stringBounds: { 6: { low: 1 } },
+    },
     { name: "D", low: r4 - 1, high: r4 + 3 },
   ];
 
