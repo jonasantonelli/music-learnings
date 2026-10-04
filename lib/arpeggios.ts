@@ -156,6 +156,7 @@ export function getCagedShapes(
         6: { high: 3 },
         5: { low: -1, high: 3 },
         4: { low: -1 },
+        1: { high: 3 },
       },
     },
     {
