@@ -1,13 +1,22 @@
 import Link from "next/link";
 import { ListenLinks, recordingLabel } from "@/components/listen-links";
 import { baseTitle, type SongSuggestion } from "@/lib/song-suggestions";
+import { defineMessages, type Locale } from "@/lib/i18n";
+
+const messages = defineMessages({
+  en: { buildsOn: "Builds on" },
+  pt: { buildsOn: "Baseia-se em" },
+  es: { buildsOn: "Se basa en" },
+});
 
 type RelatedSong = { slug: string; href: string; title: string };
 
 export function SongSuggestions({
+  lang,
   suggestions,
   songs,
 }: {
+  lang: Locale;
   suggestions: SongSuggestion[];
   songs: RelatedSong[];
 }) {
@@ -50,7 +59,7 @@ export function SongSuggestions({
             <p className="mt-3 text-sm text-foreground/90">{s.why}</p>
             {related.length > 0 && (
               <p className="mt-2 text-xs text-muted-foreground">
-                Builds on{" "}
+                {messages[lang].buildsOn}{" "}
                 {related.map((r, i) => (
                   <span key={r.slug}>
                     {i > 0 && ", "}
@@ -69,6 +78,7 @@ export function SongSuggestions({
                 {recordingLabel(s.recording)}
               </div>
               <ListenLinks
+                lang={lang}
                 title={s.title}
                 recording={s.recording}
                 className="mt-1.5"

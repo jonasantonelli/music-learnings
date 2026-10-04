@@ -1,22 +1,29 @@
 import { notFound } from "next/navigation";
-import { getAllLessons, getLessonBySlug } from "@/lib/content";
+import { getAllLessons, getLessonBySlug, getSectionTrail } from "@/lib/content";
+import { hasLocale, htmlLang, locales } from "@/lib/i18n";
+import { localizedAnchor } from "@/components/mdx/localized-link";
 import { useMDXComponents } from "@/mdx-components";
 
-export function generateStaticParams() {
-  return getAllLessons().map((l) => ({ slug: l.slug }));
+export function generateStaticParams({ params }: { params: { lang: string } }) {
+  if (!hasLocale(params.lang)) return [];
+  return getAllLessons(params.lang).map((l) => ({ slug: l.slug }));
 }
 
 export async function generateMetadata({
   params,
-}: {
-  params: Promise<{ slug: string[] }>;
-}) {
-  const { slug } = await params;
-  const lesson = getLessonBySlug(slug);
+}: PageProps<"/[lang]/lessons/[...slug]">) {
+  const { lang, slug } = await params;
+  if (!hasLocale(lang)) return {};
+  const lesson = getLessonBySlug(lang, slug);
   if (!lesson) return {};
   return {
     title: `${lesson.frontmatter.title} — Music Learnings`,
     description: lesson.frontmatter.description,
+    alternates: {
+      languages: Object.fromEntries(
+        locales.map((l) => [htmlLang[l], `/${l}/lessons/${slug.join("/")}`]),
+      ),
+    },
   };
 }
 
@@ -29,24 +36,25 @@ const TAG_TONES = [
 
 export default async function LessonPage({
   params,
-}: {
-  params: Promise<{ slug: string[] }>;
-}) {
-  const { slug } = await params;
-  const lesson = getLessonBySlug(slug);
+}: PageProps<"/[lang]/lessons/[...slug]">) {
+  const { lang, slug } = await params;
+  if (!hasLocale(lang)) notFound();
+  const lesson = getLessonBySlug(lang, slug);
   if (!lesson) notFound();
+  const trail = getSectionTrail(lang, slug);
 
   // Dynamic import of the MDX file. Webpack/Turbopack resolves the glob at build time.
-  const mod = await import(`@/content/${slug.join("/")}.mdx`);
+  // contentLang is the locale the lesson was found in (English when untranslated).
+  const mod = await import(`@/content/${lesson.contentLang}/${slug.join("/")}.mdx`);
   const Content = mod.default;
-  const components = useMDXComponents({});
+  const components = useMDXComponents({ a: localizedAnchor(lang) });
 
   return (
     <article className="mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
       <header className="mb-10">
-        {slug.length > 1 && (
-          <p className="mb-3 font-mono text-xs capitalize text-muted-foreground">
-            {slug.slice(0, -1).map((s) => s.replace(/-/g, " ")).join(" / ")}
+        {trail.length > 0 && (
+          <p className="mb-3 font-mono text-xs text-muted-foreground">
+            {trail.join(" / ")}
           </p>
         )}
         <h1 className="font-display text-4xl leading-tight sm:text-5xl">

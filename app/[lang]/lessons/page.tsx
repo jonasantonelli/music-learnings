@@ -7,9 +7,35 @@ import {
   Waves,
   type LucideIcon,
 } from "lucide-react";
+import { notFound } from "next/navigation";
 import { getTopSections, type TreeNode } from "@/lib/content";
 import { TONES, TONE_DOTS, TONE_TEXT, sectionTone } from "@/lib/tones";
 import { cn } from "@/lib/utils";
+import { defineMessages, hasLocale } from "@/lib/i18n";
+
+const messages = defineMessages({
+  en: {
+    title: "Lessons",
+    intro: "Browse all lessons by section, or use the sidebar to jump to a specific topic.",
+    lessonCount: (n: number) => `${n} ${n === 1 ? "lesson" : "lessons"}`,
+  },
+  pt: {
+    title: "Lições",
+    intro: "Navegue por todas as lições por seção, ou use a barra lateral para ir direto a um tópico.",
+    lessonCount: (n: number) => `${n} ${n === 1 ? "lição" : "lições"}`,
+  },
+  es: {
+    title: "Lecciones",
+    intro: "Explora todas las lecciones por sección, o usa la barra lateral para ir directo a un tema.",
+    lessonCount: (n: number) => `${n} ${n === 1 ? "lección" : "lecciones"}`,
+  },
+});
+
+export async function generateMetadata({ params }: PageProps<"/[lang]/lessons">) {
+  const { lang } = await params;
+  if (!hasLocale(lang)) return {};
+  return { title: `${messages[lang].title} — Music Learnings` };
+}
 
 type Section = Extract<TreeNode, { kind: "section" }>;
 
@@ -45,15 +71,19 @@ function collectLessons(node: Section) {
   return lessons;
 }
 
-export default function LessonsIndex() {
-  const sections = getTopSections();
+export default async function LessonsIndex({
+  params,
+}: PageProps<"/[lang]/lessons">) {
+  const { lang } = await params;
+  if (!hasLocale(lang)) notFound();
+  const t = messages[lang];
+  const sections = getTopSections(lang);
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-      <h1 className="font-display text-4xl sm:text-5xl">Lessons</h1>
+      <h1 className="font-display text-4xl sm:text-5xl">{t.title}</h1>
       <p className="mt-3 max-w-2xl text-muted-foreground sm:text-lg">
-        Browse all lessons by section, or use the sidebar to jump to a specific
-        topic.
+        {t.intro}
       </p>
 
       {sections.map((section, i) => {
@@ -80,7 +110,7 @@ export default function LessonsIndex() {
                   TONE_TEXT[tone],
                 )}
               >
-                {lessons.length} {lessons.length === 1 ? "lesson" : "lessons"}
+                {t.lessonCount(lessons.length)}
               </span>
             </div>
             <ul className="grid gap-3 sm:grid-cols-2">

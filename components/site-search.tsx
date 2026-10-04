@@ -7,6 +7,32 @@ import { CornerDownLeft, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { SearchItem } from "@/lib/search-index";
 import { TONE_DOTS } from "@/lib/tones";
+import { defineMessages } from "@/lib/i18n";
+import { useMessages } from "@/components/locale-provider";
+
+const messages = defineMessages({
+  en: {
+    open: "Search lessons and songs",
+    button: "Search lessons…",
+    placeholder: "Search lessons and songs…",
+    dialog: "Search",
+    noResults: (q: string) => `No lessons or songs match “${q}”.`,
+  },
+  pt: {
+    open: "Buscar lições e músicas",
+    button: "Buscar lições…",
+    placeholder: "Buscar lições e músicas…",
+    dialog: "Busca",
+    noResults: (q: string) => `Nenhuma lição ou música corresponde a “${q}”.`,
+  },
+  es: {
+    open: "Buscar lecciones y canciones",
+    button: "Buscar lecciones…",
+    placeholder: "Buscar lecciones y canciones…",
+    dialog: "Búsqueda",
+    noResults: (q: string) => `Ninguna lección o canción coincide con “${q}”.`,
+  },
+});
 
 const MAX_RESULTS = 12;
 
@@ -37,6 +63,7 @@ function score(item: SearchItem, terms: string[]): number {
 
 export function SiteSearch({ items }: { items: SearchItem[] }) {
   const router = useRouter();
+  const t = useMessages(messages);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
@@ -116,7 +143,7 @@ export function SiteSearch({ items }: { items: SearchItem[] }) {
       <button
         type="button"
         onClick={show}
-        aria-label="Search lessons and songs"
+        aria-label={t.open}
         className={cn(
           "inline-flex h-9 shrink-0 items-center gap-2 rounded-control border border-border bg-background text-sm text-muted-foreground transition-colors hover:border-accent-7 hover:text-foreground",
           // Studio: a wide field with a ⌘K hint. Nocturne: a round icon button.
@@ -126,7 +153,7 @@ export function SiteSearch({ items }: { items: SearchItem[] }) {
       >
         <Search className="h-3.5 w-3.5 shrink-0 dark:h-4 dark:w-4" />
         <span className="hidden flex-1 text-left text-[13px] lg:inline dark:lg:hidden">
-          Search lessons…
+          {t.button}
         </span>
         <kbd className="hidden rounded border border-border bg-card px-1.5 py-0.5 font-mono text-[11px] leading-none lg:inline dark:lg:hidden">
           ⌘K
@@ -146,7 +173,7 @@ export function SiteSearch({ items }: { items: SearchItem[] }) {
           <div
             role="dialog"
             aria-modal="true"
-            aria-label="Search"
+            aria-label={t.dialog}
             className="w-full max-w-xl overflow-hidden rounded-card border border-border bg-card shadow-2xl dark:rounded-[20px]"
           >
             <div className="flex items-center gap-3 border-b border-border px-4">
@@ -159,8 +186,8 @@ export function SiteSearch({ items }: { items: SearchItem[] }) {
                   setActive(0);
                 }}
                 onKeyDown={onInputKey}
-                placeholder="Search lessons and songs…"
-                aria-label="Search lessons and songs"
+                placeholder={t.placeholder}
+                aria-label={t.open}
                 aria-controls="site-search-results"
                 aria-activedescendant={
                   results[active] ? `site-search-${active}` : undefined
@@ -180,7 +207,7 @@ export function SiteSearch({ items }: { items: SearchItem[] }) {
             >
               {results.length === 0 && (
                 <li className="px-3 py-8 text-center text-sm text-muted-foreground">
-                  No lessons or songs match “{query}”.
+                  {t.noResults(query)}
                 </li>
               )}
               {results.map((item, i) => (

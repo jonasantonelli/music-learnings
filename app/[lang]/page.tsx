@@ -10,10 +10,60 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
+import { notFound } from "next/navigation";
 import { getTopSections, type TreeNode } from "@/lib/content";
 import { getAllSongs } from "@/lib/songs";
 import { TONES, sectionTone, type Tone } from "@/lib/tones";
 import { cn } from "@/lib/utils";
+import { defineMessages, hasLocale, localizeHref } from "@/lib/i18n";
+
+const messages = defineMessages({
+  en: {
+    badge: "Personal knowledge base",
+    intro:
+      "A growing collection of notes and lessons from my music studies, focused on guitar harmony and voicings.",
+    start: (section: string) => `Start with ${section}`,
+    browseSongs: "Browse songs",
+    lessons: "Lessons",
+    songs: "Songs",
+    lessonCount: (n: number) => `${n} ${n === 1 ? "lesson" : "lessons"}`,
+    chartCount: (n: number) => `${n} ${n === 1 ? "chart" : "charts"}`,
+    songsDescription: "Standards with interactive chord charts",
+    tool: "Tool",
+    chordId: "Chord Identifier",
+    chordIdDescription: "Set notes on the fretboard, get the chord name",
+  },
+  pt: {
+    badge: "Base de conhecimento pessoal",
+    intro:
+      "Uma coleção crescente de notas e lições dos meus estudos de música, com foco em harmonia e voicings para guitarra.",
+    start: (section: string) => `Começar por ${section}`,
+    browseSongs: "Ver músicas",
+    lessons: "Lições",
+    songs: "Músicas",
+    lessonCount: (n: number) => `${n} ${n === 1 ? "lição" : "lições"}`,
+    chartCount: (n: number) => `${n} ${n === 1 ? "cifra" : "cifras"}`,
+    songsDescription: "Standards com cifras interativas",
+    tool: "Ferramenta",
+    chordId: "Identificador de Acordes",
+    chordIdDescription: "Marque notas no braço e descubra o nome do acorde",
+  },
+  es: {
+    badge: "Base de conocimiento personal",
+    intro:
+      "Una colección creciente de notas y lecciones de mis estudios de música, centrada en armonía y voicings para guitarra.",
+    start: (section: string) => `Empezar con ${section}`,
+    browseSongs: "Ver canciones",
+    lessons: "Lecciones",
+    songs: "Canciones",
+    lessonCount: (n: number) => `${n} ${n === 1 ? "lección" : "lecciones"}`,
+    chartCount: (n: number) => `${n} ${n === 1 ? "cifrado" : "cifrados"}`,
+    songsDescription: "Standards con cifrados interactivos",
+    tool: "Herramienta",
+    chordId: "Identificador de Acordes",
+    chordIdDescription: "Marca notas en el mástil y obtén el nombre del acorde",
+  },
+});
 
 type Section = Extract<TreeNode, { kind: "section" }>;
 
@@ -53,10 +103,6 @@ const SECTION_ICONS: Record<string, LucideIcon> = {
   "bass-lines": Waves,
 };
 
-function plural(n: number, word: string) {
-  return `${n} ${word}${n === 1 ? "" : "s"}`;
-}
-
 type CardProps = {
   href: string;
   title: string;
@@ -92,30 +138,32 @@ function SectionCard({ href, title, meta, description, icon: Icon, tone }: CardP
   );
 }
 
-export default function Home() {
-  const sections = getTopSections();
-  const songs = getAllSongs();
+export default async function Home({ params }: PageProps<"/[lang]">) {
+  const { lang } = await params;
+  if (!hasLocale(lang)) notFound();
+  const t = messages[lang];
+  const sections = getTopSections(lang);
+  const songs = getAllSongs(lang);
   const totalLessons = sections.reduce((n, s) => n + countLessons(s), 0);
   const firstSection = sections[0];
   const startHref = firstSection ? findFirstLessonHref(firstSection) : undefined;
 
   return (
     <>
-      <SiteHeader />
+      <SiteHeader lang={lang} />
       <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
         <section className="bg-grid relative overflow-hidden rounded-card border border-border bg-card p-6 sm:p-12 dark:bg-background">
           <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
             <div className="flex max-w-2xl flex-col gap-5">
               <span className="inline-flex items-center gap-2 self-start rounded-full bg-tone-lilac px-3 py-1 text-xs font-medium text-tone-lilac-fg">
                 <span className="h-1.5 w-1.5 rounded-full bg-accent-dot dark:bg-tone-lilac-fg" />
-                Personal knowledge base
+                {t.badge}
               </span>
               <h1 className="font-display text-5xl leading-none sm:text-6xl dark:sm:text-7xl">
                 Music <span className="dark:text-accent-9">Learnings</span>
               </h1>
               <p className="text-base text-muted-foreground sm:text-lg">
-                A growing collection of notes and lessons from my music studies,
-                focused on guitar harmony and voicings.
+                {t.intro}
               </p>
               <div className="flex flex-wrap gap-2.5">
                 {startHref && firstSection && (
@@ -123,15 +171,15 @@ export default function Home() {
                     href={startHref}
                     className="inline-flex h-11 items-center gap-2 rounded-control bg-accent-9 px-5 text-sm font-medium text-accent-contrast transition-colors hover:bg-accent-10"
                   >
-                    Start with {firstSection.title}
+                    {t.start(firstSection.title)}
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 )}
                 <Link
-                  href="/songs"
+                  href={localizeHref(lang, "/songs")}
                   className="inline-flex h-11 items-center rounded-control border border-border bg-card px-5 text-sm font-medium transition-colors hover:bg-muted"
                 >
-                  Browse songs
+                  {t.browseSongs}
                 </Link>
               </div>
             </div>
@@ -139,13 +187,13 @@ export default function Home() {
             <dl className="grid w-full grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border lg:w-72">
               <div className="bg-card p-4">
                 <dt className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-                  Lessons
+                  {t.lessons}
                 </dt>
                 <dd className="mt-1.5 font-display text-3xl">{totalLessons}</dd>
               </div>
               <div className="bg-card p-4">
                 <dt className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-                  Songs
+                  {t.songs}
                 </dt>
                 <dd className="mt-1.5 font-display text-3xl">{songs.length}</dd>
               </div>
@@ -163,9 +211,9 @@ export default function Home() {
             return (
               <SectionCard
                 key={key}
-                href={findFirstLessonHref(section) ?? "/"}
+                href={findFirstLessonHref(section) ?? localizeHref(lang, "/")}
                 title={section.title}
-                meta={plural(countLessons(section), "lesson")}
+                meta={t.lessonCount(countLessons(section))}
                 description={summarize(section)}
                 icon={style.icon}
                 tone={style.tone}
@@ -174,16 +222,16 @@ export default function Home() {
           })}
 
           <SectionCard
-            href="/songs"
-            title="Songs"
-            meta={plural(songs.length, "chart")}
-            description="Standards with interactive chord charts"
+            href={localizeHref(lang, "/songs")}
+            title={t.songs}
+            meta={t.chartCount(songs.length)}
+            description={t.songsDescription}
             icon={Music}
             tone="butter"
           />
 
           <Link
-            href="/chord-id"
+            href={localizeHref(lang, "/chord-id")}
             className="group flex flex-col gap-4 rounded-card bg-accent-9 p-5 text-accent-contrast transition-colors hover:bg-accent-10"
           >
             <div className="flex items-center justify-between">
@@ -193,12 +241,12 @@ export default function Home() {
               >
                 <Grid3x3 className="h-[18px] w-[18px]" strokeWidth={2.2} />
               </span>
-              <span className="font-mono text-xs opacity-70">Tool</span>
+              <span className="font-mono text-xs opacity-70">{t.tool}</span>
             </div>
             <div>
-              <div className="font-display text-[17px] dark:text-xl">Chord Identifier</div>
+              <div className="font-display text-[17px] dark:text-xl">{t.chordId}</div>
               <div className="mt-1 text-sm opacity-75">
-                Set notes on the fretboard, get the chord name
+                {t.chordIdDescription}
               </div>
             </div>
           </Link>

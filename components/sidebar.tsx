@@ -7,6 +7,35 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import type { TreeNode } from "@/lib/content";
 import { TONE_DOTS, TONE_TEXT, sectionTone } from "@/lib/tones";
+import { defineMessages } from "@/lib/i18n";
+import { useMessages } from "@/components/locale-provider";
+
+const messages = defineMessages({
+  en: {
+    lessons: "Lessons",
+    menu: "Lessons menu",
+    openMenu: "Open lessons menu",
+    closeMenu: "Close lessons menu",
+    close: "Close",
+    navigation: "Lessons navigation",
+  },
+  pt: {
+    lessons: "Lições",
+    menu: "Menu de lições",
+    openMenu: "Abrir menu de lições",
+    closeMenu: "Fechar menu de lições",
+    close: "Fechar",
+    navigation: "Navegação das lições",
+  },
+  es: {
+    lessons: "Lecciones",
+    menu: "Menú de lecciones",
+    openMenu: "Abrir menú de lecciones",
+    closeMenu: "Cerrar menú de lecciones",
+    close: "Cerrar",
+    navigation: "Navegación de lecciones",
+  },
+});
 
 function renderNode(
   node: TreeNode,
@@ -65,6 +94,7 @@ function renderNode(
 
 export function SidebarClient({ tree }: { tree: TreeNode[] }) {
   const pathname = usePathname();
+  const t = useMessages(messages);
   const [open, setOpen] = useState(false);
 
   // Lock body scroll while drawer open
@@ -129,7 +159,7 @@ export function SidebarClient({ tree }: { tree: TreeNode[] }) {
         type="button"
         onClick={() => setOpen(true)}
         className="md:hidden inline-flex items-center gap-2 rounded-control border border-border bg-card px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:border-accent-7 transition-colors mx-4 sm:mx-6 mt-4"
-        aria-label="Open lessons menu"
+        aria-label={t.openMenu}
         aria-expanded={open}
       >
         <span aria-hidden className="flex flex-col gap-[3px]">
@@ -137,7 +167,7 @@ export function SidebarClient({ tree }: { tree: TreeNode[] }) {
           <span className="block h-0.5 w-4 bg-current" />
           <span className="block h-0.5 w-4 bg-current" />
         </span>
-        Lessons menu
+        {t.menu}
       </button>
 
       {/* Desktop sidebar — the column keeps the border full height while the
@@ -146,7 +176,7 @@ export function SidebarClient({ tree }: { tree: TreeNode[] }) {
         <nav
           ref={navRef}
           className="sticky top-16 px-3 py-4 dark:top-[68px]"
-          aria-label="Lessons navigation"
+          aria-label={t.navigation}
         >
           {list}
         </nav>
@@ -162,19 +192,19 @@ export function SidebarClient({ tree }: { tree: TreeNode[] }) {
           />
           <nav
             className="absolute inset-y-0 left-0 w-72 max-w-[85vw] border-r border-border bg-background px-4 py-6 overflow-y-auto shadow-xl"
-            aria-label="Lessons navigation"
+            aria-label={t.navigation}
           >
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-semibold text-accent-11">
-                Lessons
+                {t.lessons}
               </span>
               <button
                 type="button"
                 onClick={close}
                 className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground hover:border-accent-7 transition-colors"
-                aria-label="Close lessons menu"
+                aria-label={t.closeMenu}
               >
-                Close
+                {t.close}
               </button>
             </div>
             {list}
