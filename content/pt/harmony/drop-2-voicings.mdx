@@ -1,0 +1,170 @@
+---
+title: Voicings Drop 2
+description: Todas as inversões drop 2 para doze qualidades de acorde e suas extensões (9, 11, 13, alteradas) nos três grupos de cordas da guitarra.
+tags: ["harmonia", "voicings", "drop-2", "acordes", "extensões"]
+order: 1
+---
+
+Os voicings drop 2 pegam um acorde de quatro notas empilhado em posição fechada
+e descem a **segunda voz de cima para baixo** uma oitava. O resultado se
+espalha por quatro cordas vizinhas, sem grandes aberturas de mão, e é a base do
+comping e do chord melody na guitarra de jazz.
+
+Cada acorde tem **quatro inversões**, nomeadas pela nota que está no baixo, e
+cada inversão cabe em **três grupos de cordas**. São doze formas por qualidade
+de acorde. Escolha uma qualidade, acrescente uma **cor** para transformar uma
+tétrade em um acorde de 9ª, 11ª ou 13ª, e mude para **Braço inteiro** para ver
+todas as posições da 1ª até a 19ª casa.
+
+### Como ler os diagramas
+
+- Os rótulos nos pontos mostram o grau do acorde: **R**, **3** / **♭3**, **5** / **♭5** / **♯5**,
+  **6**, **7** / **♭7** / **°7**, além de tensões como **9**, **♭9**, **11**, **♯11**, **13** ou **♭13**
+- A fundamental é destacada na cor de realce
+- Cordas abafadas (×) não fazem parte do voicing
+- Use **Notas** para ver os nomes das notas grafados pelo grau (C°7 é C–E♭–G♭–B𝄫, e
+  não C–E♭–G♭–A)
+
+<Drop2Explorer />
+
+---
+
+## O que faz um voicing ser "drop 2"
+
+### Comece de um voicing fechado
+
+Um **voicing fechado** junta as quatro notas dentro de uma oitava, empilhadas
+em terças. No piano ele cai direto sob a mão. Na guitarra costuma exigir uma
+abertura desconfortável, porque as cordas vizinhas estão a uma 4ª de distância
+e as notas de um voicing fechado estão a apenas uma 3ª.
+
+### Desça a segunda voz de cima
+
+Pegue **Cmaj7** em posição fechada, de cima para baixo: **B – G – E – C**. A
+segunda voz de cima é **G**. Desça-a uma oitava e ela vira o novo baixo:
+
+| Voz          | Posição fechada | Drop 2       |
+| ------------ | --------------- | ------------ |
+| Superior     | B               | B            |
+| 2ª           | G               | — (descida)  |
+| 3ª           | E               | E            |
+| 4ª           | C               | C            |
+| Novo baixo   | —               | G            |
+
+De baixo para cima, o voicing drop 2 fica **G – C – E – B**: uma 5ª no baixo,
+depois a fundamental, a 3ª e a 7ª. Agora o voicing abrange uma 10ª em vez de
+uma 7ª. Esse espaçamento mais aberto combina com a afinação da guitarra, e por
+isso cai em quatro cordas vizinhas.
+
+### Quatro inversões
+
+Aplique a mesma descida a cada uma das quatro inversões fechadas e você obtém
+quatro inversões drop 2. Na guitarra elas são nomeadas pela **nota do baixo**:
+
+| Inversão           | Baixo | Grave → agudo   | Vem da fechada |
+| ------------------ | ----- | --------------- | -------------- |
+| Estado fundamental | R     | R – 5 – 7 – 3   | 5 – 7 – R – 3  |
+| 1ª inversão        | 3     | 3 – 7 – R – 5   | 7 – R – 3 – 5  |
+| 2ª inversão        | 5     | 5 – R – 3 – 7   | R – 3 – 5 – 7  |
+| 3ª inversão        | 7     | 7 – 3 – 5 – R   | 3 – 5 – 7 – R  |
+
+Repare que a ordem das vozes gira: **R 5 7 3 → 3 7 R 5 → 5 R 3 7 → 7 3 5 R**.
+Cada nota do acorde sobe para a seguinte. É por isso que as quatro formas ficam
+lado a lado no braço e se repetem a cada 12 casas.
+
+### Três grupos de cordas
+
+| Grupo de cordas | Caráter                                                          |
+| --------------- | ---------------------------------------------------------------- |
+| 6-5-4-3         | Escuro e pesado; bom para comping de big band e pads graves       |
+| 5-4-3-2         | O burro de carga; cheio mas claro, e fica na região média         |
+| 4-3-2-1         | Brilhante e leve; ideal para chord melody, em que a nota mais aguda é a melodia |
+
+A mesma inversão fica um pouco diferente em cada grupo, e o motivo é sempre a
+corda B. Todos os outros pares de cordas vizinhas estão a uma 4ª de distância,
+mas G–B é uma 3ª maior. Então, quando você sobe uma forma de grupo de cordas,
+qualquer nota que passe para a corda B (ou para a E aguda) sobe **uma casa**.
+Aprenda esse único ajuste e você consegue levar qualquer forma de um grupo de
+cordas para outro.
+
+---
+
+## As qualidades de acorde
+
+| Família    | Qualidade | Fórmula        | Uso típico                                       |
+| ---------- | --------- | -------------- | ------------------------------------------------ |
+| Maior      | maj7      | R 3 5 7        | I e IV em tons maiores                            |
+|            | 6         | R 3 5 6        | Tônica maior; som da era do swing, sem choque com a fundamental na melodia |
+|            | maj7♯5    | R 3 ♯5 7       | ♭III na menor melódica e na menor harmônica; Lídio aumentado |
+| Menor      | m7        | R ♭3 5 ♭7      | ii, iii e vi; Dórico / Eólio                       |
+|            | m6        | R ♭3 5 6       | Tônica menor (menor melódica); também um V9 sem fundamental |
+|            | m(maj7)   | R ♭3 5 7       | Tônica menor; o acorde "James Bond"               |
+| Dominante  | 7         | R 3 5 ♭7       | V; blues; dominantes secundárias                   |
+|            | 7sus4     | R 4 5 ♭7       | V suspenso; músicas modais (Maiden Voyage)         |
+|            | 7♯5       | R 3 ♯5 ♭7      | V alterado/de tons inteiros resolvendo no I        |
+|            | 7♭5       | R 3 ♭5 ♭7      | Sabor de substituto de trítono; 6ª aumentada francesa |
+| Diminuto   | m7♭5      | R ♭3 ♭5 ♭7     | iiø no ii–V menor; também o vii no maior          |
+|            | dim7      | R ♭3 ♭5 °7     | Acorde de passagem; V7♭9 sem fundamental           |
+
+**Formas compartilhadas:** **C6** e **Am7** têm as mesmas quatro notas, então
+toda forma de C6 também é uma forma de Am7. Da mesma maneira, **Cm6** é
+**Am7♭5**. Uma forma, dois nomes; aprenda os pares juntos. O **dim7** é
+simétrico: cada inversão é a mesma forma deslocada 3 casas acima.
+
+---
+
+## Cores: estendendo acordes drop 2
+
+Um voicing drop 2 tem só quatro notas, então acrescentar uma 9ª ou uma 13ª
+significa **substituir** uma nota do acorde em vez de empilhar mais uma. A
+regra que os guitarristas de jazz usam:
+
+- **A 3ª e a 7ª ficam.** Elas são as notas-guia que definem o acorde.
+- **A fundamental vira 9** (ou ♭9 / ♯9 nas dominantes). O baixista já toca a
+  fundamental.
+- **A 5ª vira 13** (ou ♭13, ♯11, 11). A 5ª é a que menos acrescenta cor, então
+  é a primeira a sair.
+
+Cada tensão fica a um grau da nota que substitui, então **a forma quase não
+muda**: suba um dedo um tom inteiro e um maj7 vira maj9. Essa é a maneira mais
+rápida de multiplicar seu vocabulário de acordes. Cada forma drop 2 que você
+conhece vira três ou quatro acordes novos.
+
+| Base    | Fundamental → 9 | 5 → 13 / 11 / ♯11         | Ambos                |
+| ------- | --------------- | ------------------------- | -------------------- |
+| maj7    | maj9            | maj7(13), maj7(♯11)       | maj13, maj9(♯11)     |
+| 6       | 6/9             | —                         | —                    |
+| m7      | m9              | m7(11)                    | m11                  |
+| m6      | m6/9            | —                         | —                    |
+| m(maj7) | m(maj9)         | —                         | —                    |
+| 7       | 9, 7♭9, 7♯9     | 13, 7♭13, 7♯11            | 13(9), 13♭9, 7♭9♭13, 7alt (♯9 + ♭13) |
+| 7sus4   | 9sus4, 7sus4(♭9)| 13sus4                    | —                    |
+| m7♭5    | m9♭5            | —                         | —                    |
+
+**Voicings sem fundamental** (em que a 9 substituiu a fundamental) são a regra
+quando se toca em grupo. Tocando sozinho, toque a fundamental numa corda mais
+grave antes, ou deixe o contexto sugeri-la.
+
+**Escolhendo a cor da dominante.** Dominantes que resolvem em **maior**
+normalmente recebem tensões naturais (9, 13). Dominantes que resolvem em
+**menor** recebem tensões alteradas (♭9, ♭13). Dominantes que não resolvem
+(blues, um vamp estático) recebem 9, 13 ou ♯11. A página do ii–V tem a opção
+**Com tensões**, que aplica essas escolhas automaticamente.
+
+---
+
+## Plano de estudo
+
+1. **Uma qualidade, um grupo de cordas.** Aprenda as quatro inversões de maj7
+   em 5-4-3-2, dizendo em voz alta o grau do baixo enquanto toca cada uma.
+2. **Suba o braço.** Toque estado fundamental → 1ª → 2ª → 3ª → estado
+   fundamental (oitava). Use **Braço inteiro** para ver onde o ciclo se repete.
+3. **Troque de grupo de cordas.** Toque a mesma inversão nos três grupos.
+   Observe o ajuste da corda B em 4-3-2-1.
+4. **Acrescente cores um dedo de cada vez.** maj7 → maj9 (fundamental sobe um
+   tom), depois 7 → 13 (5ª sobe um tom), depois 7 → 7♭9 (fundamental sobe meio
+   tom). Sinta qual dedo se move.
+5. **Use em contexto.** Leve as formas para a página de
+   [condução de vozes no ii–V–I](/lessons/harmony/drop-2-ii-v-i) e depois para a
+   de [harmonia diatônica](/lessons/harmony/drop-2-diatonic) para percorrer
+   todos os acordes de um tom.

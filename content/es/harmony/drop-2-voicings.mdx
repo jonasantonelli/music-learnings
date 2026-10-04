@@ -1,0 +1,176 @@
+---
+title: Voicings Drop 2
+description: Todas las inversiones drop 2 para doce calidades de acorde y sus extensiones (9, 11, 13, alterados) en los tres grupos de cuerdas de la guitarra.
+tags: ["armonía", "voicings", "drop 2", "acordes", "extensiones"]
+order: 1
+---
+
+Los voicings drop 2 parten de un acorde de cuatro notas en posición cerrada y
+bajan una octava la **segunda voz desde arriba**. El resultado se reparte
+sobre cuatro cuerdas adyacentes sin grandes estiramientos, y es la columna
+vertebral del comping y del chord melody en la guitarra de jazz.
+
+Cada acorde tiene **cuatro inversiones**, nombradas según la nota del bajo, y
+cada inversión cabe en **tres grupos de cuerdas**. Eso da doce formas por
+calidad de acorde. Elige una calidad, agrega un **color** para convertir una
+cuatríada en un acorde de 9.ª, 11.ª o 13.ª, y cambia a **Mástil completo**
+para ver todas las posiciones desde el traste 1 hasta el 19.
+
+### Cómo leer los diagramas
+
+- Las etiquetas de los puntos muestran el grado del acorde: **R**, **3** / **♭3**, **5** / **♭5** / **♯5**,
+  **6**, **7** / **♭7** / **°7**, además de tensiones como **9**, **♭9**, **11**, **♯11**, **13** o **♭13**
+- La fundamental se resalta con el color de acento
+- Las cuerdas apagadas (×) no forman parte del voicing
+- Usa **Notas** para ver los nombres de las notas escritos según su grado
+  (C°7 es C–E♭–G♭–B𝄫, no C–E♭–G♭–A)
+
+<Drop2Explorer />
+
+---
+
+## Qué hace que un voicing sea "drop 2"
+
+### Parte de un voicing cerrado
+
+Un **voicing cerrado** concentra las cuatro notas dentro de una octava,
+apiladas por terceras. En el piano cae directamente bajo la mano. En la
+guitarra suele exigir un estiramiento incómodo, porque las cuerdas adyacentes
+están a una 4.ª de distancia y las notas de un voicing cerrado están solo a
+una 3.ª.
+
+### Baja la segunda voz desde arriba
+
+Toma **Cmaj7** en posición cerrada, de arriba hacia abajo: **B – G – E – C**.
+La segunda voz desde arriba es **G**. Bájala una octava y se convierte en el
+nuevo bajo:
+
+| Voz            | Posición cerrada | Drop 2      |
+| -------------- | ---------------- | ----------- |
+| Superior       | B                | B           |
+| 2.ª            | G                | — (bajada)  |
+| 3.ª            | E                | E           |
+| 4.ª            | C                | C           |
+| Nuevo bajo     | —                | G           |
+
+De abajo hacia arriba, el voicing drop 2 queda **G – C – E – B**: una 5.ª en
+el bajo, y luego la fundamental, la 3.ª y la 7.ª. Ahora el voicing abarca una
+10.ª en lugar de una 7.ª. Esa separación más amplia coincide con la afinación
+de la guitarra, así que cae sobre cuatro cuerdas adyacentes.
+
+### Cuatro inversiones
+
+Aplica el mismo procedimiento a cada una de las cuatro inversiones cerradas y
+obtienes cuatro inversiones drop 2. En la guitarra se nombran según la **nota
+del bajo**:
+
+| Inversión           | Bajo | Grave → agudo   | Viene de la cerrada |
+| ------------------- | ---- | --------------- | ------------------- |
+| Estado fundamental  | R    | R – 5 – 7 – 3   | 5 – 7 – R – 3       |
+| 1.ª inversión       | 3    | 3 – 7 – R – 5   | 7 – R – 3 – 5       |
+| 2.ª inversión       | 5    | 5 – R – 3 – 7   | R – 3 – 5 – 7       |
+| 3.ª inversión       | 7    | 7 – 3 – 5 – R   | 3 – 5 – 7 – R       |
+
+Fíjate en que el orden de las voces rota: **R 5 7 3 → 3 7 R 5 → 5 R 3 7 → 7
+3 5 R**. Cada nota del acorde sube a la siguiente. Por eso las cuatro formas
+quedan una al lado de la otra en el mástil y se repiten cada 12 trastes.
+
+### Tres grupos de cuerdas
+
+| Grupo de cuerdas | Carácter                                                     |
+| ---------------- | ------------------------------------------------------------ |
+| 6-5-4-3          | Oscuro y pesado; bueno para comping de big band y colchones graves |
+| 5-4-3-2          | El caballo de batalla; lleno pero claro, y se ubica en el registro medio |
+| 4-3-2-1          | Brillante y liviano; ideal para chord melody, donde la nota superior es la melodía |
+
+La misma inversión se ve un poco distinta en cada grupo, y la razón siempre es
+la cuerda B. Todos los demás pares de cuerdas adyacentes están a una 4.ª de
+distancia, pero G–B es una 3.ª mayor. Así que cuando subes una forma a otro
+grupo de cuerdas, cualquier nota que pase a la cuerda B (o a la E aguda) sube
+**un traste**. Aprende ese único ajuste y podrás mover cualquier forma entre
+grupos de cuerdas.
+
+---
+
+## Las calidades de acorde
+
+| Familia     | Calidad | Fórmula        | Uso típico                                      |
+| ----------- | ------- | -------------- | ----------------------------------------------- |
+| Mayor       | maj7    | R 3 5 7        | I y IV en tonalidades mayores                    |
+|             | 6       | R 3 5 6        | Tónica mayor; sonido de la era swing, sin choque con una melodía en la fundamental |
+|             | maj7♯5  | R 3 ♯5 7       | ♭III en menor melódica y armónica; Lidio aumentado |
+| Menor       | m7      | R ♭3 5 ♭7      | ii, iii y vi; Dórico / Eólico                     |
+|             | m6      | R ♭3 5 6       | Tónica menor (menor melódica); también un V9 sin fundamental |
+|             | m(maj7) | R ♭3 5 7       | Tónica menor; el acorde "James Bond"              |
+| Dominante   | 7       | R 3 5 ♭7       | V; blues; dominantes secundarios                  |
+|             | 7sus4   | R 4 5 ♭7       | V suspendido; temas modales (Maiden Voyage)       |
+|             | 7♯5     | R 3 ♯5 ♭7      | V alterado / de tonos enteros que resuelve al I   |
+|             | 7♭5     | R 3 ♭5 ♭7      | Sabor de sustituto tritonal; 6.ª aumentada francesa |
+| Disminuido  | m7♭5    | R ♭3 ♭5 ♭7     | iiø en el ii–V menor; también el vii en mayor     |
+|             | dim7    | R ♭3 ♭5 °7     | Acorde de paso; V7♭9 sin fundamental              |
+
+**Formas compartidas:** **C6** y **Am7** contienen las mismas cuatro notas, así
+que cada forma de C6 es también una forma de Am7. Del mismo modo, **Cm6** es
+**Am7♭5**. Una forma, dos nombres; aprende cada pareja junta. El **dim7** es
+simétrico: cada inversión es la misma forma desplazada 3 trastes hacia
+arriba.
+
+---
+
+## Colores: cómo extender los acordes drop 2
+
+Un voicing drop 2 tiene solo cuatro notas, así que agregar una 9.ª o una 13.ª
+implica **reemplazar** una nota del acorde en lugar de sumar otra. La regla
+que usan los guitarristas de jazz:
+
+- **La 3.ª y la 7.ª se quedan.** Son las notas guía que definen el acorde.
+- **La fundamental se convierte en 9** (o ♭9 / ♯9 en los dominantes). El
+  bajista ya toca la fundamental.
+- **La 5.ª se convierte en 13** (o ♭13, ♯11, 11). La 5.ª es la que menos color
+  aporta, así que es la primera en irse.
+
+Cada tensión está a un paso de la nota que reemplaza, así que **la forma
+apenas cambia**: sube un dedo un tono entero y un maj7 se convierte en maj9.
+Es la manera más rápida de multiplicar tu vocabulario de acordes. Cada forma
+drop 2 que conoces se convierte en tres o cuatro acordes nuevos.
+
+| Base | Fundamental → 9     | 5 → 13 / 11 / ♯11         | Ambas                |
+| ---- | ------------------- | ------------------------- | -------------------- |
+| maj7 | maj9                | maj7(13), maj7(♯11)       | maj13, maj9(♯11)     |
+| 6    | 6/9                 | —                         | —                    |
+| m7   | m9                  | m7(11)                    | m11                  |
+| m6   | m6/9                | —                         | —                    |
+| m(maj7) | m(maj9)          | —                         | —                    |
+| 7    | 9, 7♭9, 7♯9         | 13, 7♭13, 7♯11            | 13(9), 13♭9, 7♭9♭13, 7alt (♯9 + ♭13) |
+| 7sus4 | 9sus4, 7sus4(♭9)   | 13sus4                    | —                    |
+| m7♭5 | m9♭5                | —                         | —                    |
+
+Los **voicings sin fundamental** (donde la 9 reemplazó a la fundamental) son
+la norma cuando tocas en grupo. Si tocas solo, toca primero la fundamental en
+una cuerda más grave, o deja que el contexto la sugiera.
+
+**Cómo elegir el color de un dominante.** Los dominantes que resuelven a
+**mayor** suelen llevar tensiones naturales (9, 13). Los que resuelven a
+**menor** llevan tensiones alteradas (♭9, ♭13). Los dominantes que no
+resuelven (blues, un vamp estático) llevan 9, 13 o ♯11. La página del ii–V
+tiene un modo **Con tensiones** que aplica estas decisiones automáticamente.
+
+---
+
+## Plan de práctica
+
+1. **Una calidad, un grupo de cuerdas.** Aprende las cuatro inversiones de
+   maj7 en 5-4-3-2, diciendo en voz alta el grado del bajo mientras tocas cada
+   una.
+2. **Sube por el mástil.** Toca estado fundamental → 1.ª → 2.ª → 3.ª → estado
+   fundamental (a la octava). Usa **Mástil completo** para ver dónde se repite
+   el ciclo.
+3. **Cambia de grupo de cuerdas.** Toca la misma inversión en los tres grupos.
+   Presta atención al ajuste de la cuerda B en 4-3-2-1.
+4. **Agrega colores dedo a dedo.** maj7 → maj9 (fundamental un tono arriba),
+   luego 7 → 13 (5.ª un tono arriba), luego 7 → 7♭9 (fundamental medio tono
+   arriba). Siente qué dedo se mueve.
+5. **Úsalos en contexto.** Lleva las formas a la página de
+   [conducción de voces en el ii–V–I](/lessons/harmony/drop-2-ii-v-i), y
+   después a la de [armonía diatónica](/lessons/harmony/drop-2-diatonic) para
+   recorrer todos los acordes de una tonalidad.
