@@ -58,7 +58,9 @@ function buildFretboardMarkers(
       label: showNotes
         ? speller.spell(m.intervalPc)
         : ARPEGGIO_INTERVAL_LABELS[m.intervalPc] ?? String(m.intervalPc),
-      color: isRoot ? "var(--accent-9)" : "currentColor",
+      // accent-dot, not accent-9: in light mode accent-9 is the same ink as
+      // the other markers, so the root would not stand out.
+      color: isRoot ? "var(--accent-dot)" : "currentColor",
       labelColor: markerLabelColor(m.intervalPc),
     };
   });
