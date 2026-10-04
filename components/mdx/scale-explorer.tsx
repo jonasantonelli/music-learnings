@@ -32,6 +32,7 @@ export function ScaleExplorer({ scale: scaleSlug }: ScaleExplorerProps) {
   const [position, setPosition] = useState(1);
   const [cagedIndex, setCagedIndex] = useState(0);
   const [showNotes, setShowNotes] = useState(true);
+  const [showFingers, setShowFingers] = useState(false);
 
   const setRoot = (n: number) => {
     setRootLocal(n);
@@ -51,13 +52,8 @@ export function ScaleExplorer({ scale: scaleSlug }: ScaleExplorerProps) {
     );
   }
 
-  // 3NPS is a 7-note construct; bebop and other 8-note scales fall back to
-  // full-neck and CAGED only.
-  const supports3NPS = definition.intervals.length === 7;
   const passingTones = new Set(definition.passingTones ?? []);
   const colorTones = new Set(definition.colorTones ?? []);
-  const effectiveView: ViewMode =
-    view === "position" && !supports3NPS ? "full" : view;
 
   // Spell notes by scale degree so altered tones keep their letter
   // (C Dorian's ♭3 is E♭, not D♯).
@@ -79,13 +75,14 @@ export function ScaleExplorer({ scale: scaleSlug }: ScaleExplorerProps) {
     );
   };
 
-  let scaleMarkers: ScaleMarker[];
+  let scaleMarkers: (ScaleMarker & { finger?: number })[];
   let caption: string;
+  let frets = 15;
 
-  if (effectiveView === "full") {
+  if (view === "full") {
     scaleMarkers = getFullNeckMarkers(definition, root, 15, 0);
     caption = `${speller.root} ${definition.name} — full neck`;
-  } else if (effectiveView === "caged") {
+  } else if (view === "caged") {
     const shapes = getCAGEDScalePositions(definition, root);
     const chosen = shapes[cagedIndex] ?? shapes[0];
     scaleMarkers = chosen?.markers ?? [];
@@ -96,6 +93,8 @@ export function ScaleExplorer({ scale: scaleSlug }: ScaleExplorerProps) {
     const chosen = positions[safeIndex];
     scaleMarkers = chosen?.markers ?? [];
     caption = `${speller.root} ${definition.name} — position ${position} (3NPS)`;
+    // Positions near the nut fall back an octave up and can pass fret 15.
+    frets = Math.max(frets, chosen?.maxFret ?? 0);
   }
 
   const fretboardMarkers = scaleMarkers.map((m) => {
@@ -116,7 +115,7 @@ export function ScaleExplorer({ scale: scaleSlug }: ScaleExplorerProps) {
     return {
       string: m.string,
       fret: m.fret,
-      label: labelFor(m),
+      label: showFingers && m.finger ? String(m.finger) : labelFor(m),
       color: `var(--degree-${role}-bg)`,
       labelColor: `var(--degree-${role}-fg)`,
       stroke:
@@ -140,17 +139,15 @@ export function ScaleExplorer({ scale: scaleSlug }: ScaleExplorerProps) {
           label="View"
           options={[
             { label: "Full neck", value: "full" },
-            ...(supports3NPS
-              ? [{ label: "3NPS", value: "position" as const }]
-              : []),
+            { label: "3NPS", value: "position" },
             { label: "CAGED", value: "caged" },
           ]}
-          value={effectiveView}
+          value={view}
           onChange={setView}
           size="sm"
         />
 
-        {effectiveView === "caged" && (
+        {view === "caged" && (
           <SegmentedControl
             label="Shape"
             options={getCAGEDScalePositions(definition, root).map((s, i) => ({
@@ -163,16 +160,25 @@ export function ScaleExplorer({ scale: scaleSlug }: ScaleExplorerProps) {
           />
         )}
 
-        {effectiveView === "position" && (
+        {view === "position" && (
           <SegmentedControl
             label="Position"
-            options={definition.intervals.map((_, i) => ({
-              label: String(i + 1),
-              value: i + 1,
+            options={get3NPSPositions(definition, root).map((p) => ({
+              label: String(p.index),
+              value: p.index,
             }))}
             value={position}
             onChange={setPosition}
             size="sm"
+          />
+        )}
+
+        {view === "position" && (
+          <ToggleSwitch
+            labelOff="Degrees"
+            labelOn="Fingers"
+            value={showFingers}
+            onChange={setShowFingers}
           />
         )}
 
@@ -184,7 +190,7 @@ export function ScaleExplorer({ scale: scaleSlug }: ScaleExplorerProps) {
         />
       </ControlBar>
 
-      <Fretboard frets={15} startFret={0} markers={fretboardMarkers} caption={caption} />
+      <Fretboard frets={frets} startFret={0} markers={fretboardMarkers} caption={caption} />
       <DegreeLegend
         showPassing={passingTones.size > 0}
         colorLabel={
