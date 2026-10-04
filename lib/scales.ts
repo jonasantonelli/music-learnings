@@ -395,8 +395,15 @@ export function get3NPSPositions(
       used.add(finger);
       frets.push(fret);
 
-      const stretches = frets.filter((f) => f === hand - 1 || f === hand + 4).length;
-      const cost = Math.abs(frets.length - 3) * 4 + stretches;
+      // Reaching finger 4 up is easier than pulling finger 1 back, so on a
+      // tie the forward stretch wins.
+      const stretches = frets.reduce(
+        (sum, f) => sum + (f === hand - 1 ? 3 : f === hand + 4 ? 2 : 0),
+        0,
+      );
+      // The G→B major third makes the B string the natural home for a
+      // two-note string, worth a stretch elsewhere to keep the others at three.
+      const cost = Math.abs(frets.length - 3) * (si === 4 ? 4 : 8) + stretches;
       const rest = solve(hand, si + 1, nextScaleMidi(midi));
       if (!rest) continue;
       const total = rest.reduce((sum, r) => sum + r.cost, cost);
