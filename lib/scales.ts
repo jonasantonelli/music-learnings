@@ -209,11 +209,15 @@ export function getFullNeckMarkers(
   return markers;
 }
 
+export type Finger = 1 | 2 | 3 | 4;
+
 export type NPS3Position = {
   index: number;
-  markers: ScaleMarker[];
+  markers: (ScaleMarker & { finger: Finger })[];
   minFret: number;
   maxFret: number;
+  /** Fret of finger 1 in its natural (unstretched) place. */
+  handFret: number;
 };
 
 export type CAGEDScalePosition = {
@@ -337,60 +341,163 @@ export function getCAGEDScalePositions(
   });
 }
 
+/**
+ * 3NPS fingerings built on a fixed hand frame. Fingers 2 and 3 always sit on
+ * `handFret + 1` and `handFret + 2` — adjacent frets, never spread, nothing
+ * played between them. Only the outer fingers stretch: finger 1 plays
+ * `handFret` or one fret back, finger 4 plays `handFret + 3` or one fret up.
+ * Each finger plays at most one note per string, so the hand never shifts
+ * inside a position.
+ *
+ * Strings aim for three notes; where the frame can't fit a third the string
+ * takes two (or four), keeping the scale continuous from the low E to the
+ * high E without repeating a pitch. Among valid fingerings the one with the
+ * fewest stretches wins.
+ *
+ * There is one position per scale degree (7 in total), each starting on that
+ * degree on the low E string, numbered left to right from the nut. Passing
+ * tones (bebop scales) don't start a position but are played wherever the
+ * frame reaches them.
+ */
 export function get3NPSPositions(
   scale: ScaleDefinition,
   root: number,
 ): NPS3Position[] {
-  const n = scale.intervals.length;
-  if (n !== 7) return [];
+  const passing = new Set(scale.passingTones ?? []);
+  const core = scale.intervals.filter((i) => !passing.has(i));
+  const corePcs = new Set(core.map((i) => (root + i) % 12));
+  const passingPcs = new Set([...passing].map((i) => (root + i) % 12));
+  const nextScaleMidi = (midi: number) => {
+    let m = midi + 1;
+    while (!corePcs.has(m % 12)) m++;
+    return m;
+  };
+
+  const fingerFor = (fret: number, hand: number): Finger =>
+    fret <= hand ? 1 : fret === hand + 1 ? 2 : fret === hand + 2 ? 3 : 4;
+
+  type StringPlan = { frets: number[]; cost: number };
+
+  // Cheapest fingering from string `si` upward, given the pitch it starts on
+  // and whether the string below already had finger 4 stretched.
+  const solve = (
+    hand: number,
+    si: number,
+    startMidi: number,
+    open4 = false,
+  ): StringPlan[] | null => {
+    if (si === 6) return [];
+    const open = STRING_MIDI[si];
+    const lowest = Math.max(1, hand - 1);
+    if (startMidi - open < lowest || startMidi - open > hand + 4) return null;
+    // Finger 1 only ever moves outward: if its natural fret holds a scale
+    // note, the string must start there rather than leave that note to the
+    // string below and pull finger 1 in.
+    const finger1Skipped =
+      startMidi - open > hand && corePcs.has((open + hand) % 12);
+
+    let best: StringPlan[] | null = null;
+    let bestCost = Infinity;
+    const frets: number[] = [];
+    const used = new Set<Finger>();
+    for (let midi = startMidi; midi - open <= hand + 4; midi = nextScaleMidi(midi)) {
+      const fret = midi - open;
+      const finger = fingerFor(fret, hand);
+      if (used.has(finger)) break;
+      used.add(finger);
+      frets.push(fret);
+
+      // Keeping finger 4 stretched from the string below is the cheapest
+      // reach; opening it fresh on a single string costs more than handing
+      // the note to the next string.
+      const stretches = frets.reduce(
+        (sum, f) => sum + (f === hand - 1 ? 3 : f === hand + 4 ? (open4 ? 2 : 5) : 0),
+        0,
+      );
+      // The G→B major third makes the B string the natural home for a
+      // two-note string, worth a stretch elsewhere to keep the others at three.
+      // A two-note string that skips a finger (2 and 4, say) leaves the hand
+      // hanging; better to give that string's note to a neighbour.
+      const skipsFinger =
+        frets.length === 2 &&
+        fingerFor(frets[1], hand) - fingerFor(frets[0], hand) > 1;
+      const cost =
+        Math.abs(frets.length - 3) * (si === 4 ? 4 : 8) +
+        stretches +
+        (skipsFinger ? 2.5 : 0) +
+        (finger1Skipped ? 20 : 0);
+      const rest = solve(hand, si + 1, nextScaleMidi(midi), fret === hand + 4);
+      if (!rest) continue;
+      const total = rest.reduce((sum, r) => sum + r.cost, cost);
+      if (total < bestCost) {
+        bestCost = total;
+        best = [{ frets: [...frets], cost }, ...rest];
+      }
+    }
+    return best;
+  };
 
   const positions: NPS3Position[] = [];
+  for (const interval of core) {
+    const targetPc = (root + interval) % 12;
+    const lowestFret = ((targetPc - STRING_MIDI[0]) % 12 + 12) % 12 || 12;
 
-  for (let startDegree = 0; startDegree < n; startDegree++) {
-    // Build ascending sequence of 18 notes as offsets from the starting note.
-    const relOffsets: number[] = [];
-    const startInterval = scale.intervals[startDegree];
-    for (let i = 0; i < 6 * 3; i++) {
-      const deg = (startDegree + i) % n;
-      const octave = Math.floor((startDegree + i) / n);
-      relOffsets.push(scale.intervals[deg] + octave * 12 - startInterval);
+    // The first note is finger 1, either in place or stretched back. Near the
+    // nut the frame may not fit, so fall back to the octave above.
+    let best: { hand: number; plan: StringPlan[]; cost: number } | null = null;
+    for (const firstFret of [lowestFret, lowestFret + 12]) {
+      for (const hand of [firstFret, firstFret + 1]) {
+        const plan = solve(hand, 0, STRING_MIDI[0] + firstFret);
+        if (!plan) continue;
+        const cost = plan.reduce((sum, r) => sum + r.cost, 0);
+        if (!best || cost < best.cost) best = { hand, plan, cost };
+      }
+      if (best) break;
     }
+    if (!best) continue;
 
-    // Anchor the starting note on the low E string at the lowest fret >= 1.
-    const openLowE = STRING_MIDI[0];
-    const targetPc = (root + startInterval) % 12;
-    let anchorFret = ((targetPc - openLowE) % 12 + 12) % 12;
-    if (anchorFret === 0) anchorFret = 12;
-    const anchorMidi = openLowE + anchorFret;
+    const { hand, plan } = best;
+    const strings = plan.map((s) => [...s.frets]);
 
-    const markers: ScaleMarker[] = [];
-    let minFret = Infinity;
-    let maxFret = -Infinity;
-    let playable = true;
-
-    for (let i = 0; i < 18; i++) {
-      const si = Math.floor(i / 3);
-      const displayString = 6 - si;
-      const openMidi = STRING_MIDI[si];
-      const midi = anchorMidi + relOffsets[i];
-      const fret = midi - openMidi;
-      if (fret < 1 || fret > 22) {
-        playable = false;
+    // Slot each passing tone onto a string where the frame reaches it with a
+    // free finger, without breaking the ascending order across strings.
+    const lowMidi = STRING_MIDI[0] + strings[0][0];
+    const highMidi = STRING_MIDI[5] + strings[5][strings[5].length - 1];
+    for (let midi = lowMidi + 1; midi < highMidi; midi++) {
+      if (!passingPcs.has(midi % 12)) continue;
+      for (let si = 0; si < 6; si++) {
+        const fret = midi - STRING_MIDI[si];
+        if (fret < Math.max(1, hand - 1) || fret > hand + 4) continue;
+        const below = si > 0 ? STRING_MIDI[si - 1] + strings[si - 1].at(-1)! : -Infinity;
+        const above = si < 5 ? STRING_MIDI[si + 1] + strings[si + 1][0] : Infinity;
+        if (midi <= below || midi >= above) continue;
+        const finger = fingerFor(fret, hand);
+        if (strings[si].some((f) => fingerFor(f, hand) === finger)) continue;
+        strings[si] = [...strings[si], fret].sort((a, b) => a - b);
         break;
       }
-      markers.push({
-        string: displayString,
-        fret,
-        intervalPc: intervalFromRoot(midi, root),
-      });
-      if (fret < minFret) minFret = fret;
-      if (fret > maxFret) maxFret = fret;
     }
 
-    if (playable) {
-      positions.push({ index: startDegree + 1, markers, minFret, maxFret });
-    }
+    const markers = strings.flatMap((frets, si) =>
+      frets.map((fret) => ({
+        string: 6 - si,
+        fret,
+        intervalPc: intervalFromRoot(STRING_MIDI[si] + fret, root),
+        finger: fingerFor(fret, hand),
+      })),
+    );
+    const frets = markers.map((m) => m.fret);
+    positions.push({
+      index: positions.length + 1,
+      markers,
+      minFret: Math.min(...frets),
+      maxFret: Math.max(...frets),
+      handFret: hand,
+    });
   }
 
-  return positions;
+  // Number positions left to right along the neck, not by scale degree.
+  return positions
+    .sort((a, b) => a.handFret - b.handFret)
+    .map((p, i) => ({ ...p, index: i + 1 }));
 }

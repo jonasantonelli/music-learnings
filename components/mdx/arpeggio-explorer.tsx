@@ -41,10 +41,6 @@ const TETRAD_OPTIONS: { label: string; value: ArpeggioQuality }[] = [
 
 type ViewMode = "full" | "caged";
 
-function markerLabelColor(intervalPc: number): string | undefined {
-  return intervalPc === 0 ? "var(--accent-contrast)" : undefined;
-}
-
 function buildFretboardMarkers(
   markers: ArpeggioMarker[],
   speller: DegreeSpeller,
@@ -58,8 +54,9 @@ function buildFretboardMarkers(
       label: showNotes
         ? speller.spell(m.intervalPc)
         : ARPEGGIO_INTERVAL_LABELS[m.intervalPc] ?? String(m.intervalPc),
-      color: isRoot ? "var(--accent-9)" : "currentColor",
-      labelColor: markerLabelColor(m.intervalPc),
+      color: isRoot ? "var(--degree-root-bg)" : "var(--arpeggio-tone-bg)",
+      labelColor: isRoot ? "var(--degree-root-fg)" : "var(--arpeggio-tone-fg)",
+      stroke: isRoot ? undefined : "var(--arpeggio-tone-border)",
     };
   });
 }

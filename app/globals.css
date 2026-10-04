@@ -62,6 +62,11 @@
   --degree-passing-bg: var(--muted-foreground);
   --degree-passing-fg: var(--background);
 
+  /* Arpeggio diagrams: non-root notes are hollow so the solid root stands out. */
+  --arpeggio-tone-bg: var(--degree-tone-bg);
+  --arpeggio-tone-fg: var(--degree-tone-fg);
+  --arpeggio-tone-border: var(--degree-tone-border);
+
   /* Fretboard drawing. */
   --fret-string: #c4c4c4;
   --fret-wire: #e2e2e2;
@@ -123,6 +128,11 @@
   --degree-tone-bg: #1b1b24;
   --degree-tone-fg: #eeeef4;
   --degree-tone-border: #5a5a6e;
+
+  /* The lilac root already stands out against solid light notes. */
+  --arpeggio-tone-bg: var(--foreground);
+  --arpeggio-tone-fg: var(--background);
+  --arpeggio-tone-border: var(--foreground);
 
   --fret-string: #3e3e4e;
   --fret-wire: #2a2a36;

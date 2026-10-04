@@ -129,79 +129,209 @@ export function degreeSpeller(
 
 export type ChordQuality =
   | "maj7"
-  | "maj13"
+  | "6"
+  | "maj7#5"
   | "m7"
+  | "m6"
+  | "mMaj7"
   | "7"
+  | "7sus4"
+  | "7#5"
+  | "7b5"
   | "m7b5"
-  | "dim7"
-  | "mMaj7";
+  | "dim7";
 
+/** Four chord tones per quality, in close-position order (slot 0 = root). */
 export const CHORD_FORMULAS: Record<ChordQuality, readonly number[]> = {
   maj7: [0, 4, 7, 11],
-  maj13: [0, 4, 9, 11], // R 3 13 7 (drop the 5th)
+  "6": [0, 4, 7, 9],
+  "maj7#5": [0, 4, 8, 11],
   m7: [0, 3, 7, 10],
+  m6: [0, 3, 7, 9],
+  mMaj7: [0, 3, 7, 11],
   "7": [0, 4, 7, 10],
+  "7sus4": [0, 5, 7, 10],
+  "7#5": [0, 4, 8, 10],
+  "7b5": [0, 4, 6, 10],
   m7b5: [0, 3, 6, 10],
   dim7: [0, 3, 6, 9],
-  mMaj7: [0, 3, 7, 11],
+};
+
+/**
+ * Degree label for each formula slot. Semitones alone are ambiguous — 9 is a
+ * 6th in C6 but a diminished 7th in C°7 — so labels follow the chord.
+ */
+export const CHORD_TONE_LABELS: Record<ChordQuality, readonly string[]> = {
+  maj7: ["R", "3", "5", "7"],
+  "6": ["R", "3", "5", "6"],
+  "maj7#5": ["R", "3", "♯5", "7"],
+  m7: ["R", "♭3", "5", "♭7"],
+  m6: ["R", "♭3", "5", "6"],
+  mMaj7: ["R", "♭3", "5", "7"],
+  "7": ["R", "3", "5", "♭7"],
+  "7sus4": ["R", "4", "5", "♭7"],
+  "7#5": ["R", "3", "♯5", "♭7"],
+  "7b5": ["R", "3", "♭5", "♭7"],
+  m7b5: ["R", "♭3", "♭5", "♭7"],
+  dim7: ["R", "♭3", "♭5", "°7"],
 };
 
 export const QUALITY_LABELS: Record<ChordQuality, string> = {
   maj7: "maj7",
-  maj13: "maj7(13)",
+  "6": "6",
+  "maj7#5": "maj7♯5",
   m7: "m7",
+  m6: "m6",
+  mMaj7: "m(maj7)",
   "7": "7",
+  "7sus4": "7sus4",
+  "7#5": "7♯5",
+  "7b5": "7♭5",
   m7b5: "m7♭5",
   dim7: "dim7",
-  mMaj7: "m(maj7)",
 };
 
 export const QUALITY_SUFFIXES: Record<ChordQuality, string> = {
-  maj7: "maj7",
-  maj13: "maj7(13)",
-  m7: "m7",
-  "7": "7",
-  m7b5: "m7♭5",
+  ...QUALITY_LABELS,
   dim7: "°7",
-  mMaj7: "m(maj7)",
 };
+
+export const QUALITY_FAMILIES: { label: string; qualities: ChordQuality[] }[] = [
+  { label: "Major", qualities: ["maj7", "6", "maj7#5"] },
+  { label: "Minor", qualities: ["m7", "m6", "mMaj7"] },
+  { label: "Dominant", qualities: ["7", "7sus4", "7#5", "7b5"] },
+  { label: "Diminished", qualities: ["m7b5", "dim7"] },
+];
 
 export const INTERVAL_LABELS: Record<number, string> = {
   0: "R",
   3: "♭3",
   4: "3",
+  5: "4",
   6: "♭5",
   7: "5",
+  8: "♯5",
   9: "°7",
   10: "♭7",
   11: "7",
 };
 
-// Per-quality overrides where the same semitone reads as a different degree
-// depending on the chord (e.g. 9 semitones is a °7 in dim7 but a 13 in maj7(13)).
-const QUALITY_INTERVAL_LABELS: Partial<Record<ChordQuality, Record<number, string>>> = {
-  maj13: { 9: "13" },
-};
-
 export function intervalLabel(interval: number, quality: ChordQuality): string {
-  return (
-    QUALITY_INTERVAL_LABELS[quality]?.[interval] ??
-    INTERVAL_LABELS[interval] ??
-    String(interval)
-  );
+  const slot = CHORD_FORMULAS[quality].indexOf(interval);
+  return slot >= 0
+    ? CHORD_TONE_LABELS[quality][slot]
+    : (INTERVAL_LABELS[interval] ?? String(interval));
 }
 
-/** Spells a drop-2 chord quality by degree; `rootName` pins the root to a key. */
+// --- Colors (tensions) -----------------------------------------------------
+// Tension intervals sit above the octave so labels and spelling stay unambiguous.
+
+type Tension = { interval: number; label: string };
+
+const T = {
+  b9: { interval: 13, label: "♭9" },
+  n9: { interval: 14, label: "9" },
+  s9: { interval: 15, label: "♯9" },
+  n11: { interval: 17, label: "11" },
+  s11: { interval: 18, label: "♯11" },
+  b13: { interval: 20, label: "♭13" },
+  n13: { interval: 21, label: "13" },
+} satisfies Record<string, Tension>;
+
+/**
+ * A color swaps chord tones for tensions while keeping four voices — the
+ * standard way to extend a drop-2 shape. The root gives way to a 9 (♭9, ♯9)
+ * and the 5th to a 13 (♭13, ♯11, 11); each tension sits a step from the tone
+ * it replaces, so the shape barely changes. The 3rd and 7th — the guide
+ * tones that define the chord — always stay.
+ */
+export type ChordColor = {
+  id: string;
+  suffix: string;
+  /** formula slot → replacement tension */
+  replace: Partial<Record<0 | 1 | 2 | 3, Tension>>;
+};
+
+export const CHORD_COLORS: Partial<Record<ChordQuality, ChordColor[]>> = {
+  maj7: [
+    { id: "9", suffix: "maj9", replace: { 0: T.n9 } },
+    { id: "13", suffix: "maj7(13)", replace: { 2: T.n13 } },
+    { id: "9-13", suffix: "maj13", replace: { 0: T.n9, 2: T.n13 } },
+    { id: "#11", suffix: "maj7(♯11)", replace: { 2: T.s11 } },
+    { id: "9-#11", suffix: "maj9(♯11)", replace: { 0: T.n9, 2: T.s11 } },
+  ],
+  "6": [{ id: "9", suffix: "6/9", replace: { 0: T.n9 } }],
+  "maj7#5": [{ id: "9", suffix: "maj9♯5", replace: { 0: T.n9 } }],
+  m7: [
+    { id: "9", suffix: "m9", replace: { 0: T.n9 } },
+    { id: "11", suffix: "m7(11)", replace: { 2: T.n11 } },
+    { id: "9-11", suffix: "m11", replace: { 0: T.n9, 2: T.n11 } },
+  ],
+  m6: [{ id: "9", suffix: "m6/9", replace: { 0: T.n9 } }],
+  mMaj7: [{ id: "9", suffix: "m(maj9)", replace: { 0: T.n9 } }],
+  "7": [
+    { id: "9", suffix: "9", replace: { 0: T.n9 } },
+    { id: "13", suffix: "13", replace: { 2: T.n13 } },
+    { id: "9-13", suffix: "13(9)", replace: { 0: T.n9, 2: T.n13 } },
+    { id: "b9", suffix: "7♭9", replace: { 0: T.b9 } },
+    { id: "#9", suffix: "7♯9", replace: { 0: T.s9 } },
+    { id: "#11", suffix: "7♯11", replace: { 2: T.s11 } },
+    { id: "b13", suffix: "7♭13", replace: { 2: T.b13 } },
+    { id: "b9-13", suffix: "13♭9", replace: { 0: T.b9, 2: T.n13 } },
+    { id: "b9-b13", suffix: "7♭9♭13", replace: { 0: T.b9, 2: T.b13 } },
+    { id: "alt", suffix: "7alt", replace: { 0: T.s9, 2: T.b13 } },
+  ],
+  "7sus4": [
+    { id: "9", suffix: "9sus4", replace: { 0: T.n9 } },
+    { id: "13", suffix: "13sus4", replace: { 2: T.n13 } },
+    { id: "b9", suffix: "7sus4(♭9)", replace: { 0: T.b9 } },
+  ],
+  "7#5": [
+    { id: "9", suffix: "9♯5", replace: { 0: T.n9 } },
+    { id: "b9", suffix: "7♯5♭9", replace: { 0: T.b9 } },
+  ],
+  "7b5": [
+    { id: "9", suffix: "9♭5", replace: { 0: T.n9 } },
+    { id: "b9", suffix: "7♭5♭9", replace: { 0: T.b9 } },
+  ],
+  m7b5: [
+    { id: "9", suffix: "m9♭5", replace: { 0: T.n9 } },
+  ],
+};
+
+export function getChordColor(quality: ChordQuality, colorId?: string): ChordColor | undefined {
+  if (!colorId) return undefined;
+  return CHORD_COLORS[quality]?.find((c) => c.id === colorId);
+}
+
+/** Intervals + degree labels per formula slot, after applying an optional color. */
+export function resolveChordTones(
+  quality: ChordQuality,
+  colorId?: string,
+): { intervals: number[]; labels: string[] } {
+  const intervals = [...CHORD_FORMULAS[quality]];
+  const labels = [...CHORD_TONE_LABELS[quality]];
+  const color = getChordColor(quality, colorId);
+  if (color) {
+    for (const [slot, t] of Object.entries(color.replace)) {
+      intervals[Number(slot)] = t.interval;
+      labels[Number(slot)] = t.label;
+    }
+  }
+  return { intervals, labels };
+}
+
+/** Spells a drop-2 chord (and its color) by degree; `rootName` pins the root to a key. */
 export function chordSpeller(
   root: number,
   quality: ChordQuality,
   rootName?: string,
+  colorId?: string,
 ): DegreeSpeller {
+  const { intervals, labels } = resolveChordTones(quality, colorId);
   return degreeSpeller(
     root,
-    Object.fromEntries(
-      CHORD_FORMULAS[quality].map((iv) => [iv, intervalLabel(iv, quality)]),
-    ),
+    Object.fromEntries(intervals.map((iv, i) => [iv, labels[i]])),
     rootName,
   );
 }
@@ -220,13 +350,14 @@ export const STRING_SETS = [
   { label: "4-3-2-1", indices: [2, 3, 4, 5] },
 ];
 
-// Drop-2 voice arrangement per inversion (indices into chord formula)
-// Close voicing bottom→top, then drop 2nd-from-top an octave below
+// Drop-2 voice arrangement per inversion (indices into chord formula, bottom→top).
+// Inversions are named by the bass note, the usual guitar convention. Each is a
+// close voicing with its 2nd voice from the top dropped an octave.
 export const DROP2_VOICES: readonly (readonly number[])[] = [
-  [2, 0, 1, 3], // Root position: 5 R 3 7
-  [3, 1, 2, 0], // 1st inversion: 7 3 5 R
-  [0, 2, 3, 1], // 2nd inversion: R 5 7 3
-  [1, 3, 0, 2], // 3rd inversion: 3 7 R 5
+  [0, 2, 3, 1], // Root position: R 5 7 3  (close 5 7 R 3)
+  [1, 3, 0, 2], // 1st inversion: 3 7 R 5  (close 7 R 3 5)
+  [2, 0, 1, 3], // 2nd inversion: 5 R 3 7  (close R 3 5 7)
+  [3, 1, 2, 0], // 3rd inversion: 7 3 5 R  (close 3 5 7 R)
 ];
 
 export const INVERSION_NAMES = [
@@ -240,6 +371,7 @@ export type Voicing = {
   frets: (number | null)[]; // 6 elements, null = muted
   midi: number[]; // 4 pitches (one per voice, bottom→top)
   intervals: number[]; // 4 intervals in semitones from root
+  labels: string[]; // 4 degree labels (R, ♭3, 9, 13…), one per voice
   toneIndices: number[]; // which chord-tone index per voice
   inversionIndex: number;
 };
@@ -249,6 +381,7 @@ type VoiceCandidate = {
   pitch: number;
   toneIdx: number;
   interval: number;
+  label: string;
   si: number;
 };
 
@@ -257,8 +390,9 @@ export function computeDrop2Voicing(
   quality: ChordQuality,
   inversionIndex: number,
   stringSetIndex: number,
+  colorId?: string,
 ): Voicing {
-  const formula = CHORD_FORMULAS[quality];
+  const { intervals: formula, labels: toneLabels } = resolveChordTones(quality, colorId);
   const voices = DROP2_VOICES[inversionIndex];
   const stringSet = STRING_SETS[stringSetIndex];
 
@@ -276,7 +410,14 @@ export function computeDrop2Voicing(
 
     const voiceCandidates: VoiceCandidate[] = [];
     for (let fret = baseFret; fret <= 19; fret += 12) {
-      voiceCandidates.push({ fret, pitch: open + fret, toneIdx, interval, si });
+      voiceCandidates.push({
+        fret,
+        pitch: open + fret,
+        toneIdx,
+        interval,
+        label: toneLabels[toneIdx],
+        si,
+      });
     }
     candidates.push(voiceCandidates);
   }
@@ -312,16 +453,18 @@ export function computeDrop2Voicing(
   const frets: (number | null)[] = [null, null, null, null, null, null];
   const midi: number[] = [];
   const intervals: number[] = [];
+  const labels: string[] = [];
   const toneIndices: number[] = [];
 
   for (const c of best) {
     frets[c.si] = c.fret;
     midi.push(c.pitch);
     intervals.push(c.interval);
+    labels.push(c.label);
     toneIndices.push(c.toneIdx);
   }
 
-  return { frets, midi, intervals, toneIndices, inversionIndex };
+  return { frets, midi, intervals, labels, toneIndices, inversionIndex };
 }
 
 function shiftVoicing(v: Voicing, fretShift: number): Voicing {
@@ -332,14 +475,43 @@ function shiftVoicing(v: Voicing, fretShift: number): Voicing {
   };
 }
 
-function isPlayable(v: Voicing): boolean {
+function isPlayable(v: Voicing, minFret = 2): boolean {
   const played = v.frets.filter((f): f is number => f !== null);
-  return played.length > 0 && played.every((f) => f >= 2) && Math.max(...played) <= 19;
+  return played.length > 0 && played.every((f) => f >= minFret) && Math.max(...played) <= 19;
 }
 
 export function shiftVoicingOctave(v: Voicing, semitones: number): Voicing | null {
   const shifted = shiftVoicing(v, semitones);
   return isPlayable(shifted) ? shifted : null;
+}
+
+export function lowestFret(v: Voicing): number {
+  return Math.min(...v.frets.filter((f): f is number => f !== null));
+}
+
+/**
+ * Every playable position (frets 1–19) of every inversion on one string set,
+ * ordered up the neck. Shapes low enough to repeat an octave higher appear twice.
+ */
+export function allDrop2Positions(
+  root: number,
+  quality: ChordQuality,
+  stringSetIndex: number,
+  colorId?: string,
+): Voicing[] {
+  const seen = new Set<string>();
+  const out: Voicing[] = [];
+  for (let inv = 0; inv < 4; inv++) {
+    const base = computeDrop2Voicing(root, quality, inv, stringSetIndex, colorId);
+    for (const shift of [-12, 0, 12]) {
+      const v = shift === 0 ? base : shiftVoicing(base, shift);
+      const key = v.frets.join(",");
+      if (!isPlayable(v, 1) || seen.has(key)) continue;
+      seen.add(key);
+      out.push(v);
+    }
+  }
+  return out.sort((a, b) => lowestFret(a) - lowestFret(b) || a.midi[0] - b.midi[0]);
 }
 
 export function voiceLeadingDistance(a: Voicing, b: Voicing): number {
@@ -351,11 +523,12 @@ export function findBestVoiceLeading(
   root: number,
   quality: ChordQuality,
   stringSetIndex: number,
+  colorId?: string,
 ): Voicing {
   const candidates: Voicing[] = [];
 
   for (let inv = 0; inv < 4; inv++) {
-    const base = computeDrop2Voicing(root, quality, inv, stringSetIndex);
+    const base = computeDrop2Voicing(root, quality, inv, stringSetIndex, colorId);
     for (const shift of [-12, 0, 12]) {
       const v = shift === 0 ? base : shiftVoicing(base, shift);
       if (isPlayable(v)) candidates.push(v);
@@ -367,30 +540,203 @@ export function findBestVoiceLeading(
   );
 }
 
-export function chordLabel(root: number, quality: ChordQuality, key?: number): string {
-  return noteName(root, key) + QUALITY_SUFFIXES[quality];
+export function chordLabel(
+  root: number,
+  quality: ChordQuality,
+  key?: Spelling,
+  colorId?: string,
+): string {
+  const color = getChordColor(quality, colorId);
+  return noteName(root, key) + (color ? color.suffix : QUALITY_SUFFIXES[quality]);
 }
 
 export type ProgressionChord = {
   root: number;
   quality: ChordQuality;
   degree: string;
+  /** Color used when the progression is played with extensions */
+  color?: string;
 };
 
-export function getMajor251(key: number): ProgressionChord[] {
-  return [
-    { root: (key + 2) % 12, quality: "m7", degree: "ii" },
-    { root: (key + 7) % 12, quality: "7", degree: "V" },
-    { root: key % 12, quality: "maj7", degree: "I" },
-  ];
+type ProgressionStep = {
+  offset: number;
+  quality: ChordQuality;
+  degree: string;
+  ext?: string;
+};
+
+export type ProgressionId = "major-251" | "minor-251" | "turnaround" | "rhythm" | "iii-vi-ii-v";
+
+export type TonicMinor = "m7" | "m6" | "mMaj7";
+
+export const PROGRESSIONS: {
+  id: ProgressionId;
+  label: string;
+  steps: (tonicMinor: TonicMinor) => ProgressionStep[];
+}[] = [
+  {
+    id: "major-251",
+    label: "ii–V–I",
+    steps: () => [
+      { offset: 2, quality: "m7", degree: "ii", ext: "9" },
+      { offset: 7, quality: "7", degree: "V", ext: "13" },
+      { offset: 0, quality: "maj7", degree: "I", ext: "9" },
+    ],
+  },
+  {
+    id: "minor-251",
+    label: "Minor ii–V–i",
+    steps: (tonic) => [
+      { offset: 2, quality: "m7b5", degree: "iiø", ext: "9" },
+      { offset: 7, quality: "7", degree: "V", ext: "b9-b13" },
+      { offset: 0, quality: tonic, degree: "i", ext: "9" },
+    ],
+  },
+  {
+    id: "turnaround",
+    label: "I–vi–ii–V",
+    steps: () => [
+      { offset: 0, quality: "maj7", degree: "I", ext: "9" },
+      { offset: 9, quality: "m7", degree: "vi", ext: "11" },
+      { offset: 2, quality: "m7", degree: "ii", ext: "9" },
+      { offset: 7, quality: "7", degree: "V", ext: "13" },
+    ],
+  },
+  {
+    id: "rhythm",
+    label: "I–VI7–ii–V",
+    steps: () => [
+      { offset: 0, quality: "6", degree: "I", ext: "9" },
+      { offset: 9, quality: "7", degree: "VI7", ext: "b9" },
+      { offset: 2, quality: "m7", degree: "ii", ext: "9" },
+      { offset: 7, quality: "7", degree: "V", ext: "13" },
+    ],
+  },
+  {
+    id: "iii-vi-ii-v",
+    label: "iii–VI7–ii–V–I",
+    steps: () => [
+      { offset: 4, quality: "m7", degree: "iii", ext: "11" },
+      { offset: 9, quality: "7", degree: "VI7", ext: "b9-b13" },
+      { offset: 2, quality: "m7", degree: "ii", ext: "9" },
+      { offset: 7, quality: "7", degree: "V", ext: "13" },
+      { offset: 0, quality: "maj7", degree: "I", ext: "9" },
+    ],
+  },
+];
+
+export function getProgression(
+  id: ProgressionId,
+  key: number,
+  tonicMinor: TonicMinor = "m7",
+): ProgressionChord[] {
+  const prog = PROGRESSIONS.find((p) => p.id === id) ?? PROGRESSIONS[0];
+  return prog.steps(tonicMinor).map((s) => ({
+    root: (key + s.offset) % 12,
+    quality: s.quality,
+    degree: s.degree,
+    color: s.ext,
+  }));
 }
 
-export function getMinor251(key: number, useMmaj7: boolean): ProgressionChord[] {
-  return [
-    { root: (key + 2) % 12, quality: "m7b5", degree: "ii" },
-    { root: (key + 7) % 12, quality: "7", degree: "V" },
-    { root: key % 12, quality: useMmaj7 ? "mMaj7" : "m7", degree: "i" },
-  ];
+// --- Diatonic seventh chords ----------------------------------------------
+
+export type HarmonizedScaleId = "major" | "melodic-minor" | "harmonic-minor";
+
+export const HARMONIZED_SCALES: {
+  id: HarmonizedScaleId;
+  label: string;
+  steps: ProgressionStep[];
+}[] = [
+  {
+    id: "major",
+    label: "Major",
+    steps: [
+      { offset: 0, quality: "maj7", degree: "Imaj7" },
+      { offset: 2, quality: "m7", degree: "ii–7" },
+      { offset: 4, quality: "m7", degree: "iii–7" },
+      { offset: 5, quality: "maj7", degree: "IVmaj7" },
+      { offset: 7, quality: "7", degree: "V7" },
+      { offset: 9, quality: "m7", degree: "vi–7" },
+      { offset: 11, quality: "m7b5", degree: "viiø7" },
+    ],
+  },
+  {
+    id: "melodic-minor",
+    label: "Melodic minor",
+    steps: [
+      { offset: 0, quality: "mMaj7", degree: "i–(maj7)" },
+      { offset: 2, quality: "m7", degree: "ii–7" },
+      { offset: 3, quality: "maj7#5", degree: "♭IIImaj7♯5" },
+      { offset: 5, quality: "7", degree: "IV7" },
+      { offset: 7, quality: "7", degree: "V7" },
+      { offset: 9, quality: "m7b5", degree: "viø7" },
+      { offset: 11, quality: "m7b5", degree: "viiø7" },
+    ],
+  },
+  {
+    id: "harmonic-minor",
+    label: "Harmonic minor",
+    steps: [
+      { offset: 0, quality: "mMaj7", degree: "i–(maj7)" },
+      { offset: 2, quality: "m7b5", degree: "iiø7" },
+      { offset: 3, quality: "maj7#5", degree: "♭IIImaj7♯5" },
+      { offset: 5, quality: "m7", degree: "iv–7" },
+      { offset: 7, quality: "7", degree: "V7" },
+      { offset: 8, quality: "maj7", degree: "♭VImaj7" },
+      { offset: 11, quality: "dim7", degree: "vii°7" },
+    ],
+  },
+];
+
+export type DiatonicVoicing = { chord: ProgressionChord; voicing: Voicing };
+
+/**
+ * Harmonize a scale in one drop-2 inversion on one string set. Every voice
+ * climbs to the next scale degree, so the shape walks up the neck; the tonic
+ * repeats an octave higher to close the run. Starts as low as the neck allows,
+ * and drops an octave only if the run would run off the top.
+ */
+export function diatonicDrop2Run(
+  key: number,
+  scaleId: HarmonizedScaleId,
+  inversionIndex: number,
+  stringSetIndex: number,
+): DiatonicVoicing[] {
+  const scale = HARMONIZED_SCALES.find((s) => s.id === scaleId) ?? HARMONIZED_SCALES[0];
+  const chords: ProgressionChord[] = [...scale.steps, scale.steps[0]].map((s) => ({
+    root: (key + s.offset) % 12,
+    quality: s.quality,
+    degree: s.degree,
+  }));
+
+  const positions = chords.map((chord) => {
+    const base = computeDrop2Voicing(chord.root, chord.quality, inversionIndex, stringSetIndex);
+    return [-24, -12, 0, 12]
+      .map((s) => shiftVoicing(base, s))
+      .filter((v) => isPlayable(v, 1))
+      .sort((a, b) => a.midi[0] - b.midi[0]);
+  });
+
+  // Walk up from a given first shape: each chord takes the next position above.
+  const walk = (start: Voicing) => {
+    const run = [start];
+    let drops = 0;
+    for (const options of positions.slice(1)) {
+      const prev = run[run.length - 1].midi[0];
+      const next = options.find((o) => o.midi[0] > prev);
+      if (!next) drops++;
+      run.push(next ?? options[0]);
+    }
+    return { run, drops };
+  };
+
+  // Prefer a start where the whole run fits on the neck, then the lowest one.
+  const best = positions[0]
+    .map(walk)
+    .reduce((a, b) => (b.drops < a.drops ? b : a));
+
+  return best.run.map((voicing, i) => ({ chord: chords[i], voicing }));
 }
 
 export const KEY_OPTIONS = NOTE_NAMES_FLAT.map((name, i) => ({

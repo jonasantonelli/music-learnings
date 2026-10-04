@@ -14,7 +14,6 @@ import {
 import {
   STRING_SETS,
   INVERSION_NAMES,
-  INTERVAL_LABELS,
   QUALITY_LABELS,
   computeDrop2Voicing,
   noteName,
@@ -276,7 +275,7 @@ function buildPopoverLabels(
   const indices = STRING_SETS[stringSetIndex].indices;
   for (let i = 0; i < 4; i++) {
     const si = indices[i];
-    labels[si] = INTERVAL_LABELS[voicing.intervals[i]] ?? String(voicing.intervals[i]);
+    labels[si] = voicing.labels[i];
   }
   return labels;
 }
