@@ -127,10 +127,17 @@ export function getCagedShapes(
   const r5 = rootFret(1) || 12;
   const r4 = rootFret(2) || 12;
 
-  const shapeDefs: { name: string; low: number; high: number }[] = [
+  // lowStringFromRoot: the 6th string starts on the root instead of
+  // reaching back for the 7th (G shape tetrads).
+  const shapeDefs: {
+    name: string;
+    low: number;
+    high: number;
+    lowStringFromRoot?: boolean;
+  }[] = [
     { name: "C", low: r5 - 3, high: r5 + 1 },
     { name: "A", low: r5, high: r5 + 4 },
-    { name: "G", low: r6 - 3, high: r6 + 1 },
+    { name: "G", low: r6 - 3, high: r6 + 1, lowStringFromRoot: true },
     { name: "E", low: r6, high: r6 + 4 },
     { name: "D", low: r4 - 1, high: r4 + 3 },
   ];
@@ -147,12 +154,15 @@ export function getCagedShapes(
   return shapeDefs.map((def): CagedShape => {
     const lowFret = Math.max(1, def.low);
     const highFret = def.high;
+    const rootFret6 = def.high - 1;
 
     const markers: ArpeggioMarker[] = [];
     for (let si = 0; si < 6; si++) {
       const openMidi = STRING_MIDI[si];
       const displayString = 6 - si;
-      for (let fret = lowFret; fret <= highFret; fret++) {
+      const startFret =
+        si === 0 && def.lowStringFromRoot ? rootFret6 : lowFret;
+      for (let fret = startFret; fret <= highFret; fret++) {
         const midi = openMidi + fret;
         if (pcSet.has(midi % 12)) {
           markers.push({
