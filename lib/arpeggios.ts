@@ -127,11 +127,52 @@ export function getCagedShapes(
   const r5 = rootFret(1) || 12;
   const r4 = rootFret(2) || 12;
 
-  const shapeDefs: { name: string; low: number; high: number }[] = [
-    { name: "C", low: r5 - 3, high: r5 + 1 },
-    { name: "A", low: r5, high: r5 + 4 },
-    { name: "G", low: r6 - 3, high: r6 + 1 },
-    { name: "E", low: r6, high: r6 + 4 },
+  // stringBounds: per-string fret range, as offsets from the shape's low
+  // fret, to trim notes the shape already covers elsewhere. G shape: the
+  // 6th string starts on the root (no 7th behind it) and the 3rd string
+  // stops at the root fret (the 3rd is already on the 2nd string).
+  const shapeDefs: {
+    name: string;
+    low: number;
+    high: number;
+    stringBounds?: Record<number, { low?: number; high?: number }>;
+  }[] = [
+    // C shape: the 3rd string stops at the root fret (the maj7 is already
+    // on the 5th and 2nd strings).
+    {
+      name: "C",
+      low: r5 - 3,
+      high: r5 + 1,
+      stringBounds: { 3: { high: 3 } },
+    },
+    // A shape: the maj7 and the 3rd sit one fret behind the root (on the
+    // 5th and 4th strings) rather than at the top of the shape on the 6th
+    // and 5th strings.
+    {
+      name: "A",
+      low: r5,
+      high: r5 + 4,
+      stringBounds: {
+        6: { high: 3 },
+        5: { low: -1, high: 3 },
+        4: { low: -1 },
+        1: { high: 3 },
+      },
+    },
+    {
+      name: "G",
+      low: r6 - 3,
+      high: r6 + 1,
+      stringBounds: { 6: { low: 3 }, 3: { high: 3 } },
+    },
+    // E shape: root on the 6th string under the 2nd finger, so the 3rd
+    // falls on the 5th string one fret behind it.
+    {
+      name: "E",
+      low: r6 - 1,
+      high: r6 + 3,
+      stringBounds: { 6: { low: 1 } },
+    },
     { name: "D", low: r4 - 1, high: r4 + 3 },
   ];
 
@@ -152,7 +193,12 @@ export function getCagedShapes(
     for (let si = 0; si < 6; si++) {
       const openMidi = STRING_MIDI[si];
       const displayString = 6 - si;
-      for (let fret = lowFret; fret <= highFret; fret++) {
+      const bounds = def.stringBounds?.[displayString];
+      const startFret =
+        bounds?.low !== undefined ? Math.max(1, def.low + bounds.low) : lowFret;
+      const endFret =
+        bounds?.high !== undefined ? def.low + bounds.high : highFret;
+      for (let fret = startFret; fret <= endFret; fret++) {
         const midi = openMidi + fret;
         if (pcSet.has(midi % 12)) {
           markers.push({
