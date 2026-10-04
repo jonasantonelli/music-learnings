@@ -450,8 +450,9 @@ export function getCAGEDScalePositions(
  * fewest stretches wins.
  *
  * There is one position per scale degree (7 in total), each starting on that
- * degree on the low E string. Passing tones (bebop scales) don't start a
- * position but are played wherever the frame reaches them.
+ * degree on the low E string, numbered left to right from the nut. Passing
+ * tones (bebop scales) don't start a position but are played wherever the
+ * frame reaches them.
  */
 export function get3NPSPositions(
   scale: ScaleDefinition,
@@ -472,12 +473,23 @@ export function get3NPSPositions(
 
   type StringPlan = { frets: number[]; cost: number };
 
-  // Cheapest fingering from string `si` upward, given the pitch it starts on.
-  const solve = (hand: number, si: number, startMidi: number): StringPlan[] | null => {
+  // Cheapest fingering from string `si` upward, given the pitch it starts on
+  // and whether the string below already had finger 4 stretched.
+  const solve = (
+    hand: number,
+    si: number,
+    startMidi: number,
+    open4 = false,
+  ): StringPlan[] | null => {
     if (si === 6) return [];
     const open = STRING_MIDI[si];
     const lowest = Math.max(1, hand - 1);
     if (startMidi - open < lowest || startMidi - open > hand + 4) return null;
+    // Finger 1 only ever moves outward: if its natural fret holds a scale
+    // note, the string must start there rather than leave that note to the
+    // string below and pull finger 1 in.
+    const finger1Skipped =
+      startMidi - open > hand && corePcs.has((open + hand) % 12);
 
     let best: StringPlan[] | null = null;
     let bestCost = Infinity;
@@ -490,16 +502,26 @@ export function get3NPSPositions(
       used.add(finger);
       frets.push(fret);
 
-      // Reaching finger 4 up is easier than pulling finger 1 back, so on a
-      // tie the forward stretch wins.
+      // Keeping finger 4 stretched from the string below is the cheapest
+      // reach; opening it fresh on a single string costs more than handing
+      // the note to the next string.
       const stretches = frets.reduce(
-        (sum, f) => sum + (f === hand - 1 ? 3 : f === hand + 4 ? 2 : 0),
+        (sum, f) => sum + (f === hand - 1 ? 3 : f === hand + 4 ? (open4 ? 2 : 5) : 0),
         0,
       );
       // The G→B major third makes the B string the natural home for a
       // two-note string, worth a stretch elsewhere to keep the others at three.
-      const cost = Math.abs(frets.length - 3) * (si === 4 ? 4 : 8) + stretches;
-      const rest = solve(hand, si + 1, nextScaleMidi(midi));
+      // A two-note string that skips a finger (2 and 4, say) leaves the hand
+      // hanging; better to give that string's note to a neighbour.
+      const skipsFinger =
+        frets.length === 2 &&
+        fingerFor(frets[1], hand) - fingerFor(frets[0], hand) > 1;
+      const cost =
+        Math.abs(frets.length - 3) * (si === 4 ? 4 : 8) +
+        stretches +
+        (skipsFinger ? 2.5 : 0) +
+        (finger1Skipped ? 20 : 0);
+      const rest = solve(hand, si + 1, nextScaleMidi(midi), fret === hand + 4);
       if (!rest) continue;
       const total = rest.reduce((sum, r) => sum + r.cost, cost);
       if (total < bestCost) {
@@ -569,5 +591,8 @@ export function get3NPSPositions(
     });
   }
 
-  return positions;
+  // Number positions left to right along the neck, not by scale degree.
+  return positions
+    .sort((a, b) => a.handFret - b.handFret)
+    .map((p, i) => ({ ...p, index: i + 1 }));
 }

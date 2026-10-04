@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePracticeNote } from "@/lib/use-practice-note";
+import { useStoredState } from "@/lib/use-stored-state";
 import { KEY_OPTIONS, degreeSpeller } from "@/lib/music";
 import {
   SCALES,
@@ -93,15 +94,22 @@ type ScaleExplorerProps = {
 };
 
 type ViewMode = "full" | "position" | "caged";
+const VIEW_MODES: ViewMode[] = ["full", "position", "caged"];
 
 export function ScaleExplorer({ scale: scaleSlug }: ScaleExplorerProps) {
   const [practiceNote, setPracticeNote] = usePracticeNote();
   const [root, setRootLocal] = useState(0);
-  const [view, setView] = useState<ViewMode>("full");
-  const [position, setPosition] = useState(1);
+  // View and label choices persist across visits and scale pages.
+  const [storedView, setView] = useStoredState<ViewMode>("scale-explorer:view", "full");
+  const [storedPosition, setPosition] = useStoredState("scale-explorer:position", 1);
   const [cagedIndex, setCagedIndex] = useState(0);
-  const [showNotes, setShowNotes] = useState(true);
-  const [showFingers, setShowFingers] = useState(false);
+  const [storedShowNotes, setShowNotes] = useStoredState("scale-explorer:notes", true);
+  const [storedShowFingers, setShowFingers] = useStoredState("scale-explorer:fingers", false);
+  const view = VIEW_MODES.includes(storedView) ? storedView : "full";
+  const position =
+    Number.isInteger(storedPosition) && storedPosition >= 1 ? storedPosition : 1;
+  const showNotes = storedShowNotes !== false;
+  const showFingers = storedShowFingers === true;
   const locale = useLocale();
   const t = useMessages(messages);
 
