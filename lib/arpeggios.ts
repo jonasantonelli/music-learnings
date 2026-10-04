@@ -145,7 +145,14 @@ export function getCagedShapes(
       high: r5 + 1,
       stringBounds: { 3: { high: 3 } },
     },
-    { name: "A", low: r5, high: r5 + 4 },
+    // A shape: the maj7 sits on the 5th string one fret behind the root
+    // rather than on the 6th string at the top of the shape.
+    {
+      name: "A",
+      low: r5,
+      high: r5 + 4,
+      stringBounds: { 6: { high: 3 }, 5: { low: -1 } },
+    },
     {
       name: "G",
       low: r6 - 3,
