@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePracticeNote } from "@/lib/use-practice-note";
-import { KEY_OPTIONS, type DegreeSpeller } from "@/lib/music";
+import { KEY_OPTIONS, keyName, type DegreeSpeller } from "@/lib/music";
 import {
   ARPEGGIO_SUFFIXES,
   ARPEGGIO_INTERVAL_LABELS,
@@ -82,7 +82,7 @@ export function ArpeggioExplorer({ mode }: ArpeggioExplorerProps) {
   const qualityOptions =
     mode === "triads" ? TRIAD_OPTIONS : TETRAD_OPTIONS;
 
-  const speller = arpeggioSpeller(root, quality);
+  const speller = arpeggioSpeller(root, quality, keyName(root));
   const rootName = speller.root;
   const suffix = ARPEGGIO_SUFFIXES[quality];
 

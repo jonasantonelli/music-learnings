@@ -61,12 +61,17 @@ export const ARPEGGIO_INTERVAL_LABELS: Record<number, string> = {
 };
 
 /** Spells an arpeggio's notes by chord degree (e.g. C°7 → C E♭ G♭ B𝄫). */
-export function arpeggioSpeller(root: number, quality: ArpeggioQuality): DegreeSpeller {
+export function arpeggioSpeller(
+  root: number,
+  quality: ArpeggioQuality,
+  rootName?: string,
+): DegreeSpeller {
   return degreeSpeller(
     root,
     Object.fromEntries(
       ARPEGGIO_FORMULAS[quality].map((iv) => [iv, ARPEGGIO_INTERVAL_LABELS[iv]]),
     ),
+    rootName,
   );
 }
 

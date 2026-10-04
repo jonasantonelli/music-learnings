@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { usePracticeNote } from "@/lib/use-practice-note";
-import { KEY_OPTIONS, type DegreeSpeller } from "@/lib/music";
+import { KEY_OPTIONS, keyName, type DegreeSpeller } from "@/lib/music";
 import {
   CHORD_FAMILIES,
   ROOT_STRING_OPTIONS,
@@ -134,7 +134,7 @@ function FamilyGroup({
       </h3>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 justify-items-center">
         {voicings.map(({ quality, voicing }) => {
-          const speller = tetradSpeller(root, quality);
+          const speller = tetradSpeller(root, quality, keyName(root));
           return (
             <VoicingDiagram
               key={quality}

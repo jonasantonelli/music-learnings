@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { usePracticeNote } from "@/lib/use-practice-note";
 import {
   KEY_OPTIONS,
+  keyName,
   QUALITY_LABELS,
   QUALITY_FAMILIES,
   CHORD_COLORS,
@@ -60,7 +61,7 @@ export function Drop2Explorer() {
 
   const colorId = color || undefined;
   const colors = CHORD_COLORS[quality] ?? [];
-  const speller = chordSpeller(root, quality, undefined, colorId);
+  const speller = chordSpeller(root, quality, keyName(root), colorId);
   const chordName = speller.root + (getChordColor(quality, colorId)?.suffix ?? QUALITY_LABELS[quality]);
   const tones = resolveChordTones(quality, colorId);
 

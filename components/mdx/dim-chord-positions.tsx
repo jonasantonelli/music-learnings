@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePracticeNote } from "@/lib/use-practice-note";
-import { KEY_OPTIONS, dominantFlat9Speller } from "@/lib/music";
+import { KEY_OPTIONS, dominantFlat9Speller, keyName } from "@/lib/music";
 import { VoicingDiagram } from "./voicing-diagram";
 import { ControlBar, NoteGrid, SegmentedControl } from "./control-group";
 
@@ -89,7 +89,7 @@ export function DimChordPositions() {
   const bassStringIdx = shape.strings[0];
   const bases = basesForString(root, OPEN_PC[bassStringIdx]);
 
-  const speller = dominantFlat9Speller(root);
+  const speller = dominantFlat9Speller(root, keyName(root));
   const dimRootName = speller.spell(1);
 
   return (
