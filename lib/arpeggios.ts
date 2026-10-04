@@ -137,7 +137,14 @@ export function getCagedShapes(
     high: number;
     stringBounds?: Record<number, { low?: number; high?: number }>;
   }[] = [
-    { name: "C", low: r5 - 3, high: r5 + 1 },
+    // C shape: the 3rd string stops at the root fret (the maj7 is already
+    // on the 5th and 2nd strings).
+    {
+      name: "C",
+      low: r5 - 3,
+      high: r5 + 1,
+      stringBounds: { 3: { high: 3 } },
+    },
     { name: "A", low: r5, high: r5 + 4 },
     {
       name: "G",
