@@ -5,6 +5,26 @@ import { usePracticeNote } from "@/lib/use-practice-note";
 import { KEY_OPTIONS, dominantFlat9Speller, keyName } from "@/lib/music";
 import { VoicingDiagram } from "./voicing-diagram";
 import { ControlBar, NoteGrid, SegmentedControl } from "./control-group";
+import { defineMessages } from "@/lib/i18n";
+import { useMessages } from "@/components/locale-provider";
+
+const messages = defineMessages({
+  en: {
+    v7Root: "V7 Root",
+    strings: "Strings",
+    bass: (note: string) => `bass: ${note}`,
+  },
+  pt: {
+    v7Root: "Fundamental do V7",
+    strings: "Cordas",
+    bass: (note: string) => `baixo: ${note}`,
+  },
+  es: {
+    v7Root: "Fundamental del V7",
+    strings: "Cuerdas",
+    bass: (note: string) => `bajo: ${note}`,
+  },
+});
 
 const V7_INTERVAL_LABEL: Record<number, string> = {
   1: "♭9",
@@ -72,6 +92,7 @@ function buildVoicing(root: number, shape: Shape, base: number) {
 }
 
 export function DimChordPositions() {
+  const t = useMessages(messages);
   const [practiceNote, setPracticeNote] = usePracticeNote();
   const [root, setRootLocal] = useState(0);
   const [stringSet, setStringSet] = useState<StringSetKey>("1-2-3-4");
@@ -96,13 +117,13 @@ export function DimChordPositions() {
     <div className="my-8">
       <ControlBar>
         <NoteGrid
-          label="V7 Root"
+          label={t.v7Root}
           options={KEY_OPTIONS.map((k) => ({ label: k.name, value: k.value }))}
           value={root}
           onChange={setRoot}
         />
         <SegmentedControl
-          label="Strings"
+          label={t.strings}
           options={STRING_SET_OPTIONS}
           value={stringSet}
           onChange={setStringSet}
@@ -118,7 +139,7 @@ export function DimChordPositions() {
             <VoicingDiagram
               key={i}
               name={`${dimRootName}°7`}
-              subtitle={`bass: ${bassName}`}
+              subtitle={t.bass(bassName)}
               frets={v.frets}
               labels={v.labels}
               highlights={v.highlights}

@@ -9,7 +9,6 @@ import {
   QUALITY_FAMILIES,
   CHORD_COLORS,
   STRING_SETS,
-  INVERSION_NAMES,
   allDrop2Positions,
   computeDrop2Voicing,
   chordSpeller,
@@ -21,7 +20,7 @@ import {
 } from "@/lib/music";
 import { NoteText } from "@/components/note-text";
 import { VoicingDiagram } from "./voicing-diagram";
-import { drop2DiagramMarks } from "./drop-2-shared";
+import { drop2DiagramMarks, drop2Messages } from "./drop-2-shared";
 import {
   ChipGroup,
   NoteGrid,
@@ -30,6 +29,44 @@ import {
   ToggleSwitch,
   ControlBar,
 } from "./control-group";
+import { defineMessages } from "@/lib/i18n";
+import { useMessages } from "@/components/locale-provider";
+
+const messages = defineMessages({
+  en: {
+    color: "Color",
+    basic: "Basic",
+    all: "All",
+    view: "View",
+    inversions: "Inversions",
+    fullNeck: "Full neck",
+    fret: (n: number) => `fr ${n}`,
+    rootless:
+      "Rootless voicing — the 9 takes the root's place; the bass or the harmonic context supplies the root.",
+  },
+  pt: {
+    color: "Cor",
+    basic: "Básico",
+    all: "Todos",
+    view: "Visualização",
+    inversions: "Inversões",
+    fullNeck: "Braço inteiro",
+    fret: (n: number) => `casa ${n}`,
+    rootless:
+      "Voicing sem fundamental — a 9 ocupa o lugar da fundamental; o baixo ou o contexto harmônico fornece a fundamental.",
+  },
+  es: {
+    color: "Color",
+    basic: "Básico",
+    all: "Todos",
+    view: "Vista",
+    inversions: "Inversiones",
+    fullNeck: "Mástil completo",
+    fret: (n: number) => `traste ${n}`,
+    rootless:
+      "Voicing sin fundamental — la 9 ocupa el lugar de la fundamental; el bajo o el contexto armónico aporta la fundamental.",
+  },
+});
 
 const ALL_SETS = -1;
 const BASIC = "";
@@ -37,6 +74,8 @@ const BASIC = "";
 type View = "inversions" | "neck";
 
 export function Drop2Explorer() {
+  const t = useMessages(messages);
+  const s = useMessages(drop2Messages);
   const [practiceNote, setPracticeNote] = usePracticeNote();
   const [root, setRootLocal] = useState(0);
 
@@ -78,7 +117,7 @@ export function Drop2Explorer() {
     <div className="my-8">
       <ControlBar>
         <NoteGrid
-          label="Root"
+          label={s.root}
           options={KEY_OPTIONS.map((k) => ({ label: k.name, value: k.value }))}
           value={root}
           onChange={setRoot}
@@ -87,7 +126,7 @@ export function Drop2Explorer() {
         {QUALITY_FAMILIES.map((family) => (
           <ChipGroup
             key={family.label}
-            label={family.label}
+            label={s.qualityFamilies[family.label] ?? family.label}
             options={family.qualities.map((q) => ({ label: QUALITY_LABELS[q], value: q }))}
             value={quality}
             onChange={setQuality}
@@ -96,9 +135,9 @@ export function Drop2Explorer() {
 
         {colors.length > 0 && (
           <ChipGroup
-            label="Color"
+            label={t.color}
             options={[
-              { label: "Basic", value: BASIC },
+              { label: t.basic, value: BASIC },
               ...colors.map((c) => ({ label: c.suffix, value: c.id })),
             ]}
             value={color}
@@ -107,28 +146,28 @@ export function Drop2Explorer() {
         )}
 
         <StringSetControl
-          label="Strings"
+          label={s.strings}
           options={[
-            ...STRING_SETS.map((s, i) => ({ label: s.label, value: i })),
-            { label: "All", value: ALL_SETS },
+            ...STRING_SETS.map((set, i) => ({ label: set.label, value: i })),
+            { label: t.all, value: ALL_SETS },
           ]}
           value={stringSet}
           onChange={setStringSet}
         />
 
         <SegmentedControl
-          label="View"
+          label={t.view}
           options={[
-            { label: "Inversions", value: "inversions" as const },
-            { label: "Full neck", value: "neck" as const },
+            { label: t.inversions, value: "inversions" as const },
+            { label: t.fullNeck, value: "neck" as const },
           ]}
           value={view}
           onChange={setView}
         />
 
         <ToggleSwitch
-          labelOff="Intervals"
-          labelOn="Notes"
+          labelOff={s.intervals}
+          labelOn={s.notes}
           value={showNotes}
           onChange={setShowNotes}
         />
@@ -147,8 +186,7 @@ export function Drop2Explorer() {
         ))}
         {colorId && !tones.intervals.includes(0) && (
           <span className="block mt-1 text-xs">
-            Rootless voicing — the 9 takes the root&apos;s place; the bass or the
-            harmonic context supplies the root.
+            {t.rootless}
           </span>
         )}
       </p>
@@ -157,7 +195,7 @@ export function Drop2Explorer() {
         <section key={ss} className="mb-6">
           {setsToShow.length > 1 && (
             <h4 className="mb-2 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-              Strings {STRING_SETS[ss].label}
+              {s.stringsHeading(STRING_SETS[ss].label)}
             </h4>
           )}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 justify-items-center">
@@ -169,8 +207,8 @@ export function Drop2Explorer() {
                   name={chordName}
                   subtitle={
                     view === "neck"
-                      ? `${INVERSION_NAMES[v.inversionIndex]} · fr ${lowestFret(v)}`
-                      : INVERSION_NAMES[v.inversionIndex]
+                      ? `${s.inversionNames[v.inversionIndex]} · ${t.fret(lowestFret(v))}`
+                      : s.inversionNames[v.inversionIndex]
                   }
                   frets={v.frets}
                   labels={marks.labels}

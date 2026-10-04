@@ -3,6 +3,8 @@ import path from "node:path";
 import matter from "gray-matter";
 import { z } from "zod";
 import { recordingSchema } from "./recordings";
+import { contentRoot, resolveContentFile } from "./content";
+import { defaultLocale, localizeHref, type Locale } from "./i18n";
 
 export {
   parseChordSymbol,
@@ -17,7 +19,6 @@ export {
   type FlatChord,
 } from "./song-analysis";
 
-export const SONGS_DIR = path.join(process.cwd(), "content", "songs");
 
 export const songFrontmatterSchema = z.object({
   title: z.string().min(1),
@@ -38,23 +39,31 @@ export type Song = {
   slug: string;
   href: string;
   filePath: string;
+  /** Locale the file was actually read from (differs when falling back). */
+  contentLang: Locale;
   frontmatter: SongFrontmatter;
 };
 
-let _songs: Song[] | null = null;
+const _songs = new Map<Locale, Song[]>();
 
-export function getAllSongs(): Song[] {
-  if (_songs) return _songs;
-  if (!fs.existsSync(SONGS_DIR)) return [];
+// English decides which songs exist; each locale overlays translated charts.
+export function getAllSongs(lang: Locale): Song[] {
+  const cached = _songs.get(lang);
+  if (cached) return cached;
+  const songsDir = path.join(contentRoot(defaultLocale), "songs");
+  if (!fs.existsSync(songsDir)) return [];
 
-  const entries = fs.readdirSync(SONGS_DIR, { withFileTypes: true });
+  const entries = fs.readdirSync(songsDir, { withFileTypes: true });
   const songs: Song[] = [];
 
   for (const entry of entries) {
     if (!entry.isFile() || !/\.mdx?$/.test(entry.name)) continue;
     if (entry.name.startsWith("_") || entry.name.startsWith(".")) continue;
 
-    const fullPath = path.join(SONGS_DIR, entry.name);
+    const { filePath: fullPath, contentLang } = resolveContentFile(
+      lang,
+      path.join("songs", entry.name),
+    );
     const raw = fs.readFileSync(fullPath, "utf8");
     const { data } = matter(raw);
     const parsed = songFrontmatterSchema.safeParse(data);
@@ -67,8 +76,9 @@ export function getAllSongs(): Song[] {
     const slug = entry.name.replace(/\.mdx?$/, "");
     songs.push({
       slug,
-      href: `/songs/${slug}`,
+      href: localizeHref(lang, `/songs/${slug}`),
       filePath: fullPath,
+      contentLang,
       frontmatter: parsed.data,
     });
   }
@@ -76,13 +86,13 @@ export function getAllSongs(): Song[] {
   songs.sort((a, b) => {
     if (a.frontmatter.order !== b.frontmatter.order)
       return a.frontmatter.order - b.frontmatter.order;
-    return a.frontmatter.title.localeCompare(b.frontmatter.title);
+    return a.frontmatter.title.localeCompare(b.frontmatter.title, lang);
   });
 
-  _songs = songs;
+  _songs.set(lang, songs);
   return songs;
 }
 
-export function getSongBySlug(slug: string): Song | undefined {
-  return getAllSongs().find((s) => s.slug === slug);
+export function getSongBySlug(lang: Locale, slug: string): Song | undefined {
+  return getAllSongs(lang).find((s) => s.slug === slug);
 }

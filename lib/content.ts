@@ -2,13 +2,39 @@ import fs from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
 import { frontmatterSchema, type Frontmatter } from "./schema";
+import { defaultLocale, localizeHref, type Locale } from "./i18n";
 
 export const CONTENT_DIR = path.join(process.cwd(), "content");
 
+/** Root of one locale's content, e.g. content/pt. */
+export function contentRoot(lang: Locale): string {
+  return path.join(CONTENT_DIR, lang);
+}
+
+/**
+ * Resolves a content file for a locale, falling back to the English source
+ * when it has not been translated yet. `rel` is relative to the locale root.
+ */
+export function resolveContentFile(
+  lang: Locale,
+  rel: string,
+): { filePath: string; contentLang: Locale } {
+  const localized = path.join(contentRoot(lang), rel);
+  if (lang !== defaultLocale && fs.existsSync(localized)) {
+    return { filePath: localized, contentLang: lang };
+  }
+  return {
+    filePath: path.join(contentRoot(defaultLocale), rel),
+    contentLang: defaultLocale,
+  };
+}
+
 export type Lesson = {
   slug: string[]; // e.g. ["theory", "intervals"]
-  href: string; // e.g. "/lessons/theory/intervals"
+  href: string; // e.g. "/pt/lessons/theory/intervals"
   filePath: string;
+  /** Locale the file was actually read from (differs when falling back). */
+  contentLang: Locale;
   frontmatter: Frontmatter;
 };
 
@@ -34,8 +60,8 @@ function titleize(name: string): string {
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-function readMeta(dir: string): SectionMeta {
-  const metaPath = path.join(dir, "_meta.json");
+function readMeta(lang: Locale, rel: string): SectionMeta {
+  const metaPath = resolveContentFile(lang, path.join(rel, "_meta.json")).filePath;
   if (!fs.existsSync(metaPath)) return {};
   try {
     return JSON.parse(fs.readFileSync(metaPath, "utf8")) as SectionMeta;
@@ -44,7 +70,10 @@ function readMeta(dir: string): SectionMeta {
   }
 }
 
-function walk(dir: string, slug: string[]): TreeNode[] {
+// The English tree is canonical: it decides which sections and lessons exist,
+// and each locale overlays its translated files and _meta.json titles.
+function walk(lang: Locale, slug: string[]): TreeNode[] {
+  const dir = path.join(contentRoot(defaultLocale), ...slug);
   if (!fs.existsSync(dir)) return [];
   const entries = fs.readdirSync(dir, { withFileTypes: true });
   const nodes: TreeNode[] = [];
@@ -53,30 +82,32 @@ function walk(dir: string, slug: string[]): TreeNode[] {
     if (entry.name.startsWith("_") || entry.name.startsWith(".")) continue;
     if (slug.length === 0 && entry.name === "songs") continue;
 
-    const fullPath = path.join(dir, entry.name);
-
     if (entry.isDirectory()) {
       const childSlug = [...slug, entry.name];
-      const meta = readMeta(fullPath);
+      const meta = readMeta(lang, childSlug.join("/"));
       nodes.push({
         kind: "section",
         name: entry.name,
         title: meta.title ?? titleize(entry.name),
         order: meta.order ?? 999,
         slug: childSlug,
-        children: walk(fullPath, childSlug),
+        children: walk(lang, childSlug),
       });
       continue;
     }
 
     if (!/\.mdx?$/.test(entry.name)) continue;
 
-    const raw = fs.readFileSync(fullPath, "utf8");
+    const { filePath, contentLang } = resolveContentFile(
+      lang,
+      path.join(...slug, entry.name),
+    );
+    const raw = fs.readFileSync(filePath, "utf8");
     const { data } = matter(raw);
     const parsed = frontmatterSchema.safeParse(data);
     if (!parsed.success) {
       throw new Error(
-        `Invalid frontmatter in ${path.relative(process.cwd(), fullPath)}:\n${parsed.error.message}`,
+        `Invalid frontmatter in ${path.relative(process.cwd(), filePath)}:\n${parsed.error.message}`,
       );
     }
 
@@ -86,8 +117,9 @@ function walk(dir: string, slug: string[]): TreeNode[] {
       kind: "lesson",
       lesson: {
         slug: lessonSlug,
-        href: "/lessons/" + lessonSlug.join("/"),
-        filePath: fullPath,
+        href: localizeHref(lang, "/lessons/" + lessonSlug.join("/")),
+        filePath,
+        contentLang,
         frontmatter: parsed.data,
       },
     });
@@ -99,20 +131,23 @@ function walk(dir: string, slug: string[]): TreeNode[] {
     if (orderA !== orderB) return orderA - orderB;
     const nameA = a.kind === "lesson" ? a.lesson.frontmatter.title : a.title;
     const nameB = b.kind === "lesson" ? b.lesson.frontmatter.title : b.title;
-    return nameA.localeCompare(nameB);
+    return nameA.localeCompare(nameB, lang);
   });
 
   return nodes;
 }
 
-let _tree: TreeNode[] | null = null;
-export function getTree(): TreeNode[] {
-  if (_tree) return _tree;
-  _tree = walk(CONTENT_DIR, []);
-  return _tree;
+const _trees = new Map<Locale, TreeNode[]>();
+export function getTree(lang: Locale): TreeNode[] {
+  let tree = _trees.get(lang);
+  if (!tree) {
+    tree = walk(lang, []);
+    _trees.set(lang, tree);
+  }
+  return tree;
 }
 
-export function getAllLessons(): Lesson[] {
+export function getAllLessons(lang: Locale): Lesson[] {
   const out: Lesson[] = [];
   const visit = (nodes: TreeNode[]) => {
     for (const n of nodes) {
@@ -120,17 +155,33 @@ export function getAllLessons(): Lesson[] {
       else visit(n.children);
     }
   };
-  visit(getTree());
+  visit(getTree(lang));
   return out;
 }
 
-export function getLessonBySlug(slug: string[]): Lesson | undefined {
+export function getLessonBySlug(lang: Locale, slug: string[]): Lesson | undefined {
   const target = slug.join("/");
-  return getAllLessons().find((l) => l.slug.join("/") === target);
+  return getAllLessons(lang).find((l) => l.slug.join("/") === target);
 }
 
-export function getTopSections(): Extract<TreeNode, { kind: "section" }>[] {
-  return getTree().filter(
+export function getTopSections(lang: Locale): Extract<TreeNode, { kind: "section" }>[] {
+  return getTree(lang).filter(
     (n): n is Extract<TreeNode, { kind: "section" }> => n.kind === "section",
   );
+}
+
+/** Titles of the sections containing a lesson, e.g. ["Scales", "Greek Modes"]. */
+export function getSectionTrail(lang: Locale, slug: string[]): string[] {
+  const trail: string[] = [];
+  let nodes = getTree(lang);
+  for (const name of slug.slice(0, -1)) {
+    const section = nodes.find(
+      (n): n is Extract<TreeNode, { kind: "section" }> =>
+        n.kind === "section" && n.name === name,
+    );
+    if (!section) break;
+    trail.push(section.title);
+    nodes = section.children;
+  }
+  return trail;
 }

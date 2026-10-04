@@ -1,4 +1,6 @@
-export type ChordFunction = "tonic" | "subdominant" | "dominant" | "other";
+import type { Locale } from "./i18n";
+
+export type ChordFunction ="tonic" | "subdominant" | "dominant" | "other";
 export type ChordCategory = "maj" | "min" | "dom" | "dim" | "hdim" | "aug" | "other";
 
 export type ParsedChord = {
@@ -165,4 +167,31 @@ export function parseKeyName(key: string): number {
   }
 
   return 0;
+}
+
+const KEY_MODE_NAMES: Record<string, Record<Locale, string>> = {
+  major: { en: "major", pt: "maior", es: "mayor" },
+  minor: { en: "minor", pt: "menor", es: "menor" },
+  dorian: { en: "Dorian", pt: "dórico", es: "dórico" },
+  phrygian: { en: "Phrygian", pt: "frígio", es: "frigio" },
+  lydian: { en: "Lydian", pt: "lídio", es: "lidio" },
+  mixolydian: { en: "Mixolydian", pt: "mixolídio", es: "mixolidio" },
+  aeolian: { en: "Aeolian", pt: "eólio", es: "eólico" },
+  locrian: { en: "Locrian", pt: "lócrio", es: "locrio" },
+};
+
+/**
+ * Renders an English key name for display: the note letter stays, accidentals
+ * become ♭/♯ and the mode word is translated ("Bb major" → pt "B♭ maior").
+ * Words it doesn't know (e.g. "sus") are kept as written. Parsing, matching
+ * and filtering keep using the raw English string.
+ */
+export function formatKey(key: string, lang: Locale): string {
+  const match = key.trim().match(/^([A-G])([#b♯♭]?)(?:\s+(.*))?$/);
+  if (!match) return key;
+  const [, letter, accidental, rest = ""] = match;
+  const acc =
+    accidental === "#" || accidental === "♯" ? "♯" : accidental ? "♭" : "";
+  const mode = KEY_MODE_NAMES[rest.toLowerCase()]?.[lang] ?? rest;
+  return mode ? `${letter}${acc} ${mode}` : `${letter}${acc}`;
 }

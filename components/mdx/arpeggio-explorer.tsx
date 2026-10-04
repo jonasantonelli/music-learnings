@@ -19,17 +19,59 @@ import {
   SegmentedControl,
   ToggleSwitch,
 } from "./control-group";
+import { defineMessages } from "@/lib/i18n";
+import { useMessages } from "@/components/locale-provider";
+
+const messages = defineMessages({
+  en: {
+    root: "Root",
+    quality: "Quality",
+    view: "View",
+    fullNeck: "Full neck",
+    intervals: "Intervals",
+    notes: "Notes",
+    major: "Major",
+    minor: "Minor",
+    dim: "Dim",
+    aug: "Aug",
+    captionFull: (chord: string) => `${chord} arpeggio — full neck`,
+    captionShape: (shape: string) => `${shape} shape`,
+  },
+  pt: {
+    root: "Fundamental",
+    quality: "Qualidade",
+    view: "Visualização",
+    fullNeck: "Braço inteiro",
+    intervals: "Intervalos",
+    notes: "Notas",
+    major: "Maior",
+    minor: "Menor",
+    dim: "Dim",
+    aug: "Aum",
+    captionFull: (chord: string) => `Arpejo de ${chord} — braço inteiro`,
+    captionShape: (shape: string) => `Forma de ${shape}`,
+  },
+  es: {
+    root: "Fundamental",
+    quality: "Calidad",
+    view: "Vista",
+    fullNeck: "Mástil completo",
+    intervals: "Intervalos",
+    notes: "Notas",
+    major: "Mayor",
+    minor: "Menor",
+    dim: "Dism",
+    aug: "Aum",
+    captionFull: (chord: string) => `Arpegio de ${chord} — mástil completo`,
+    captionShape: (shape: string) => `Forma de ${shape}`,
+  },
+});
 
 type ArpeggioExplorerProps = {
   mode: "triads" | "tetrads";
 };
 
-const TRIAD_OPTIONS: { label: string; value: ArpeggioQuality }[] = [
-  { label: "Major", value: "major" },
-  { label: "Minor", value: "minor" },
-  { label: "Dim", value: "dim" },
-  { label: "Aug", value: "aug" },
-];
+const TRIAD_QUALITIES = ["major", "minor", "dim", "aug"] as const;
 
 const TETRAD_OPTIONS: { label: string; value: ArpeggioQuality }[] = [
   { label: "Maj7", value: "maj7" },
@@ -69,6 +111,7 @@ export function ArpeggioExplorer({ mode }: ArpeggioExplorerProps) {
   );
   const [view, setView] = useState<ViewMode>("full");
   const [showNotes, setShowNotes] = useState(false);
+  const t = useMessages(messages);
 
   const setRoot = (n: number) => {
     setRootLocal(n);
@@ -80,7 +123,9 @@ export function ArpeggioExplorer({ mode }: ArpeggioExplorerProps) {
   }, [practiceNote]);
 
   const qualityOptions =
-    mode === "triads" ? TRIAD_OPTIONS : TETRAD_OPTIONS;
+    mode === "triads"
+      ? TRIAD_QUALITIES.map((q) => ({ label: t[q], value: q as ArpeggioQuality }))
+      : TETRAD_OPTIONS;
 
   const speller = arpeggioSpeller(root, quality, keyName(root));
   const rootName = speller.root;
@@ -90,23 +135,23 @@ export function ArpeggioExplorer({ mode }: ArpeggioExplorerProps) {
     <div className="my-8">
       <ControlBar>
         <NoteGrid
-          label="Root"
+          label={t.root}
           options={KEY_OPTIONS.map((k) => ({ label: k.name, value: k.value }))}
           value={root}
           onChange={setRoot}
         />
 
         <SegmentedControl
-          label="Quality"
+          label={t.quality}
           options={qualityOptions}
           value={quality}
           onChange={(v) => setQuality(v as ArpeggioQuality)}
         />
 
         <SegmentedControl
-          label="View"
+          label={t.view}
           options={[
-            { label: "Full neck", value: "full" as ViewMode },
+            { label: t.fullNeck, value: "full" as ViewMode },
             { label: "CAGED", value: "caged" as ViewMode },
           ]}
           value={view}
@@ -114,8 +159,8 @@ export function ArpeggioExplorer({ mode }: ArpeggioExplorerProps) {
         />
 
         <ToggleSwitch
-          labelOff="Intervals"
-          labelOn="Notes"
+          labelOff={t.intervals}
+          labelOn={t.notes}
           value={showNotes}
           onChange={setShowNotes}
         />
@@ -130,7 +175,7 @@ export function ArpeggioExplorer({ mode }: ArpeggioExplorerProps) {
             speller,
             showNotes,
           )}
-          caption={`${rootName}${suffix} arpeggio — full neck`}
+          caption={t.captionFull(`${rootName}${suffix}`)}
         />
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -147,7 +192,7 @@ export function ArpeggioExplorer({ mode }: ArpeggioExplorerProps) {
                     speller,
                     showNotes,
                   )}
-                  caption={`${shape.name} shape`}
+                  caption={t.captionShape(shape.name)}
                 />
               </div>
             );

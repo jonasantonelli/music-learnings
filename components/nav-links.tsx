@@ -3,21 +3,33 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { defineMessages } from "@/lib/i18n";
+import { useLocalizedHref, useMessages } from "@/components/locale-provider";
+
+const messages = defineMessages({
+  en: { lessons: "Lessons", songs: "Songs", practice: "Practice", chordId: "Chord ID" },
+  pt: { lessons: "Lições", songs: "Músicas", practice: "Prática", chordId: "Identificar acorde" },
+  es: { lessons: "Lecciones", songs: "Canciones", practice: "Práctica", chordId: "Identificar acorde" },
+});
 
 const links = [
-  { href: "/lessons", label: "Lessons", match: "/lessons" },
-  { href: "/songs", label: "Songs", match: "/songs" },
-  { href: "/practice", label: "Practice", match: "/practice" },
-  { href: "/chord-id", label: "Chord ID", match: "/chord-id" },
-];
+  { path: "/lessons", key: "lessons" },
+  { path: "/songs", key: "songs" },
+  { path: "/practice", key: "practice" },
+  { path: "/chord-id", key: "chordId" },
+] as const;
 
 export function NavLinks() {
   const pathname = usePathname();
+  const t = useMessages(messages);
+  const localize = useLocalizedHref();
 
   return (
     <>
-      {links.map(({ href, label, match }) => {
-        const active = pathname.startsWith(match);
+      {links.map(({ path, key }) => {
+        const href = localize(path);
+        const label = t[key];
+        const active = pathname.startsWith(href);
         return (
           <Link
             key={href}

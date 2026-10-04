@@ -5,7 +5,6 @@ import { usePracticeNote } from "@/lib/use-practice-note";
 import {
   KEY_OPTIONS,
   STRING_SETS,
-  INVERSION_NAMES,
   HARMONIZED_SCALES,
   diatonicDrop2Run,
   chordLabel,
@@ -14,7 +13,7 @@ import {
   type HarmonizedScaleId,
 } from "@/lib/music";
 import { VoicingDiagram } from "./voicing-diagram";
-import { drop2DiagramMarks } from "./drop-2-shared";
+import { drop2DiagramMarks, drop2Messages } from "./drop-2-shared";
 import {
   NoteGrid,
   SegmentedControl,
@@ -22,8 +21,33 @@ import {
   ToggleSwitch,
   ControlBar,
 } from "./control-group";
+import { defineMessages } from "@/lib/i18n";
+import { useMessages } from "@/components/locale-provider";
+
+const messages = defineMessages({
+  en: {
+    scale: "Scale",
+    bassNote: "Bass note",
+    everyChordIn: "Every chord in",
+    stepsUp: "— each voice steps up to the next note of the scale.",
+  },
+  pt: {
+    scale: "Escala",
+    bassNote: "Nota no baixo",
+    everyChordIn: "Todos os acordes em",
+    stepsUp: "— cada voz sobe para a próxima nota da escala.",
+  },
+  es: {
+    scale: "Escala",
+    bassNote: "Nota en el bajo",
+    everyChordIn: "Todos los acordes en",
+    stepsUp: "— cada voz sube a la siguiente nota de la escala.",
+  },
+});
 
 export function Drop2Diatonic() {
+  const t = useMessages(messages);
+  const s = useMessages(drop2Messages);
   const [practiceNote, setPracticeNote] = usePracticeNote();
   const [key, setKeyLocal] = useState(0);
 
@@ -49,44 +73,46 @@ export function Drop2Diatonic() {
     <div className="my-8">
       <ControlBar>
         <NoteGrid
-          label="Key"
+          label={s.key}
           options={KEY_OPTIONS.map((k) => ({ label: k.name, value: k.value }))}
           value={key}
           onChange={setKey}
         />
 
         <SegmentedControl
-          label="Scale"
-          options={HARMONIZED_SCALES.map((s) => ({ label: s.label, value: s.id }))}
+          label={t.scale}
+          options={HARMONIZED_SCALES.map((sc) => ({
+            label: s.scales[sc.id] ?? sc.label,
+            value: sc.id,
+          }))}
           value={scale}
           onChange={setScale}
         />
 
         <SegmentedControl
-          label="Bass note"
+          label={t.bassNote}
           options={["R", "3", "5", "7"].map((label, i) => ({ label, value: i }))}
           value={inversion}
           onChange={setInversion}
         />
 
         <StringSetControl
-          label="Strings"
-          options={STRING_SETS.map((s, i) => ({ label: s.label, value: i }))}
+          label={s.strings}
+          options={STRING_SETS.map((set, i) => ({ label: set.label, value: i }))}
           value={stringSet}
           onChange={setStringSet}
         />
 
         <ToggleSwitch
-          labelOff="Intervals"
-          labelOn="Notes"
+          labelOff={s.intervals}
+          labelOn={s.notes}
           value={showNotes}
           onChange={setShowNotes}
         />
       </ControlBar>
 
       <p className="mb-4 text-sm text-muted-foreground">
-        Every chord in <strong>{INVERSION_NAMES[inversion]}</strong> — each voice
-        steps up to the next note of the scale.
+        {t.everyChordIn} <strong>{s.inversionNames[inversion]}</strong> {t.stepsUp}
       </p>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 justify-items-center">

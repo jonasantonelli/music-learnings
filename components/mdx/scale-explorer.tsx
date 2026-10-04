@@ -10,8 +10,11 @@ import {
   get3NPSPositions,
   getCAGEDScalePositions,
   getFullNeckMarkers,
+  scaleName,
   type ScaleMarker,
 } from "@/lib/scales";
+import { defineMessages } from "@/lib/i18n";
+import { useLocale, useMessages } from "@/components/locale-provider";
 import { Fretboard } from "./fretboard";
 import {
   ControlBar,
@@ -19,6 +22,72 @@ import {
   SegmentedControl,
   ToggleSwitch,
 } from "./control-group";
+
+const messages = defineMessages({
+  en: {
+    unknownScale: "Unknown scale:",
+    root: "Root",
+    view: "View",
+    fullNeck: "Full neck",
+    shape: "Shape",
+    position: "Position",
+    degrees: "Degrees",
+    fingers: "Fingers",
+    intervals: "Intervals",
+    notes: "Notes",
+    captionFull: (scale: string) => `${scale} — full neck`,
+    captionCaged: (scale: string, shape: string) => `${scale} — ${shape} shape (CAGED)`,
+    captionPosition: (scale: string, n: number) => `${scale} — position ${n} (3NPS)`,
+    legendRoot: "Root",
+    legendGuide: "Guide tones (3rd, 7th)",
+    legendColor: "Color tone",
+    legendColorWith: (degrees: string) => `Color tone (${degrees})`,
+    legendTone: "Scale tone",
+    legendPassing: "Passing tone",
+  },
+  pt: {
+    unknownScale: "Escala desconhecida:",
+    root: "Fundamental",
+    view: "Visualização",
+    fullNeck: "Braço inteiro",
+    shape: "Forma",
+    position: "Posição",
+    degrees: "Graus",
+    fingers: "Dedos",
+    intervals: "Intervalos",
+    notes: "Notas",
+    captionFull: (scale: string) => `${scale} — braço inteiro`,
+    captionCaged: (scale: string, shape: string) => `${scale} — forma de ${shape} (CAGED)`,
+    captionPosition: (scale: string, n: number) => `${scale} — posição ${n} (3NPS)`,
+    legendRoot: "Fundamental",
+    legendGuide: "Notas-guia (3ª, 7ª)",
+    legendColor: "Nota característica",
+    legendColorWith: (degrees: string) => `Nota característica (${degrees})`,
+    legendTone: "Nota da escala",
+    legendPassing: "Nota de passagem",
+  },
+  es: {
+    unknownScale: "Escala desconocida:",
+    root: "Fundamental",
+    view: "Vista",
+    fullNeck: "Mástil completo",
+    shape: "Forma",
+    position: "Posición",
+    degrees: "Grados",
+    fingers: "Dedos",
+    intervals: "Intervalos",
+    notes: "Notas",
+    captionFull: (scale: string) => `${scale} — mástil completo`,
+    captionCaged: (scale: string, shape: string) => `${scale} — forma de ${shape} (CAGED)`,
+    captionPosition: (scale: string, n: number) => `${scale} — posición ${n} (3NPS)`,
+    legendRoot: "Fundamental",
+    legendGuide: "Notas guía (3.ª, 7.ª)",
+    legendColor: "Nota característica",
+    legendColorWith: (degrees: string) => `Nota característica (${degrees})`,
+    legendTone: "Nota de la escala",
+    legendPassing: "Nota de paso",
+  },
+});
 
 type ScaleExplorerProps = {
   scale: string;
@@ -41,6 +110,8 @@ export function ScaleExplorer({ scale: scaleSlug }: ScaleExplorerProps) {
     Number.isInteger(storedPosition) && storedPosition >= 1 ? storedPosition : 1;
   const showNotes = storedShowNotes !== false;
   const showFingers = storedShowFingers === true;
+  const locale = useLocale();
+  const t = useMessages(messages);
 
   const setRoot = (n: number) => {
     setRootLocal(n);
@@ -55,7 +126,7 @@ export function ScaleExplorer({ scale: scaleSlug }: ScaleExplorerProps) {
   if (!definition) {
     return (
       <div className="my-8 rounded-card border border-border bg-card p-4 text-sm text-muted-foreground">
-        Unknown scale: <code>{scaleSlug}</code>
+        {t.unknownScale} <code>{scaleSlug}</code>
       </div>
     );
   }
@@ -87,21 +158,22 @@ export function ScaleExplorer({ scale: scaleSlug }: ScaleExplorerProps) {
   let scaleMarkers: (ScaleMarker & { finger?: number })[];
   let caption: string;
   let frets = 15;
+  const fullName = `${speller.root} ${scaleName(definition.slug, locale)}`;
 
   if (view === "full") {
     scaleMarkers = getFullNeckMarkers(definition, root, 15, 0);
-    caption = `${speller.root} ${definition.name} — full neck`;
+    caption = t.captionFull(fullName);
   } else if (view === "caged") {
     const shapes = getCAGEDScalePositions(definition, root);
     const chosen = shapes[cagedIndex] ?? shapes[0];
     scaleMarkers = chosen?.markers ?? [];
-    caption = `${speller.root} ${definition.name} — ${chosen?.name ?? "C"} shape (CAGED)`;
+    caption = t.captionCaged(fullName, chosen?.name ?? "C");
   } else {
     const positions = get3NPSPositions(definition, root);
     const safeIndex = Math.min(position, positions.length) - 1;
     const chosen = positions[safeIndex];
     scaleMarkers = chosen?.markers ?? [];
-    caption = `${speller.root} ${definition.name} — position ${position} (3NPS)`;
+    caption = t.captionPosition(fullName, position);
     // Positions near the nut fall back an octave up and can pass fret 15.
     frets = Math.max(frets, chosen?.maxFret ?? 0);
   }
@@ -138,16 +210,16 @@ export function ScaleExplorer({ scale: scaleSlug }: ScaleExplorerProps) {
     <div className="my-8">
       <ControlBar>
         <NoteGrid
-          label="Root"
+          label={t.root}
           options={KEY_OPTIONS.map((k) => ({ label: k.name, value: k.value }))}
           value={root}
           onChange={setRoot}
         />
 
         <SegmentedControl
-          label="View"
+          label={t.view}
           options={[
-            { label: "Full neck", value: "full" },
+            { label: t.fullNeck, value: "full" },
             { label: "3NPS", value: "position" },
             { label: "CAGED", value: "caged" },
           ]}
@@ -158,7 +230,7 @@ export function ScaleExplorer({ scale: scaleSlug }: ScaleExplorerProps) {
 
         {view === "caged" && (
           <SegmentedControl
-            label="Shape"
+            label={t.shape}
             options={getCAGEDScalePositions(definition, root).map((s, i) => ({
               label: s.name,
               value: i,
@@ -171,7 +243,7 @@ export function ScaleExplorer({ scale: scaleSlug }: ScaleExplorerProps) {
 
         {view === "position" && (
           <SegmentedControl
-            label="Position"
+            label={t.position}
             options={get3NPSPositions(definition, root).map((p) => ({
               label: String(p.index),
               value: p.index,
@@ -184,16 +256,16 @@ export function ScaleExplorer({ scale: scaleSlug }: ScaleExplorerProps) {
 
         {view === "position" && (
           <ToggleSwitch
-            labelOff="Degrees"
-            labelOn="Fingers"
+            labelOff={t.degrees}
+            labelOn={t.fingers}
             value={showFingers}
             onChange={setShowFingers}
           />
         )}
 
         <ToggleSwitch
-          labelOff="Intervals"
-          labelOn="Notes"
+          labelOff={t.intervals}
+          labelOn={t.notes}
           value={showNotes}
           onChange={setShowNotes}
         />
@@ -204,24 +276,18 @@ export function ScaleExplorer({ scale: scaleSlug }: ScaleExplorerProps) {
         showPassing={passingTones.size > 0}
         colorLabel={
           colorTones.size > 0
-            ? `Color tone (${definition.intervals
-                .map((iv, i) => (colorTones.has(iv) ? definition.degrees[i] : null))
-                .filter(Boolean)
-                .join(", ")})`
+            ? t.legendColorWith(
+                definition.intervals
+                  .map((iv, i) => (colorTones.has(iv) ? definition.degrees[i] : null))
+                  .filter(Boolean)
+                  .join(", "),
+              )
             : undefined
         }
       />
     </div>
   );
 }
-
-const LEGEND = [
-  { role: "root", label: "Root" },
-  { role: "guide", label: "Guide tones (3rd, 7th)" },
-  { role: "color", label: "Color tone" },
-  { role: "tone", label: "Scale tone" },
-  { role: "passing", label: "Passing tone" },
-] as const;
 
 function DegreeLegend({
   showPassing,
@@ -230,7 +296,15 @@ function DegreeLegend({
   showPassing: boolean;
   colorLabel?: string;
 }) {
-  const items = LEGEND.filter(
+  const t = useMessages(messages);
+  const legend = [
+    { role: "root", label: t.legendRoot },
+    { role: "guide", label: t.legendGuide },
+    { role: "color", label: t.legendColor },
+    { role: "tone", label: t.legendTone },
+    { role: "passing", label: t.legendPassing },
+  ] as const;
+  const items = legend.filter(
     (l) =>
       (showPassing || l.role !== "passing") && (colorLabel || l.role !== "color"),
   ).map((l) => (l.role === "color" && colorLabel ? { ...l, label: colorLabel } : l));

@@ -1,6 +1,13 @@
 import { getTopSections, type TreeNode } from "./content";
 import { getAllSongs } from "./songs";
 import { sectionTone, type Tone } from "./tones";
+import { defineMessages, type Locale } from "./i18n";
+
+const messages = defineMessages({
+  en: { songs: "Songs" },
+  pt: { songs: "Músicas" },
+  es: { songs: "Canciones" },
+});
 
 export type SearchItem = {
   title: string;
@@ -13,14 +20,15 @@ export type SearchItem = {
   tone: Tone;
 };
 
-let _index: SearchItem[] | null = null;
+const _indexes = new Map<Locale, SearchItem[]>();
 
 /** Flat list of every lesson and song, for the header search. */
-export function getSearchIndex(): SearchItem[] {
-  if (_index) return _index;
+export function getSearchIndex(lang: Locale): SearchItem[] {
+  const cached = _indexes.get(lang);
+  if (cached) return cached;
   const items: SearchItem[] = [];
 
-  getTopSections().forEach((section, i) => {
+  getTopSections(lang).forEach((section, i) => {
     const tone = sectionTone(section.slug.join("/"), i);
     const visit = (nodes: TreeNode[], trail: string[]) => {
       for (const n of nodes) {
@@ -42,18 +50,18 @@ export function getSearchIndex(): SearchItem[] {
     visit(section.children, [section.title]);
   });
 
-  for (const song of getAllSongs()) {
+  for (const song of getAllSongs(lang)) {
     const fm = song.frontmatter;
     items.push({
       title: fm.title,
       href: song.href,
-      context: `Songs / ${fm.composer}`,
+      context: `${messages[lang].songs} / ${fm.composer}`,
       description: `${fm.key} · ${fm.form} · ${fm.tempo_feel}`,
       keywords: [fm.composer, fm.style, ...fm.tags].join(" "),
       tone: "butter",
     });
   }
 
-  _index = items;
+  _indexes.set(lang, items);
   return items;
 }

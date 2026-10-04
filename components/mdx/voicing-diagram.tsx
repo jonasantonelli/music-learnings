@@ -1,4 +1,28 @@
+"use client";
+
 import { NoteText } from "@/components/note-text";
+import { defineMessages } from "@/lib/i18n";
+import { useMessages } from "@/components/locale-provider";
+
+const messages = defineMessages({
+  en: {
+    voicingOf: (name: string) => `${name} voicing`,
+    diagram: "Voicing diagram",
+    /** Compact fret-position marker beside the grid; keep it ~4 characters. */
+    baseFret: (n: number) => `${n}fr`,
+  },
+  pt: {
+    voicingOf: (name: string) => `Voicing de ${name}`,
+    diagram: "Diagrama de voicing",
+    baseFret: (n: number) => `${n}ª`,
+  },
+  es: {
+    voicingOf: (name: string) => `Voicing de ${name}`,
+    diagram: "Diagrama de voicing",
+    baseFret: (n: number) => `${n}.º`,
+  },
+});
+
 type VoicingDiagramProps = {
   name?: string;
   subtitle?: string;
@@ -16,6 +40,7 @@ export function VoicingDiagram({
   highlights,
   numFrets = 5,
 }: VoicingDiagramProps) {
+  const t = useMessages(messages);
   const strings = frets.length;
   const played = frets.filter((f): f is number => f !== null);
   const minFret = played.length ? Math.min(...played) : 0;
@@ -46,7 +71,7 @@ export function VoicingDiagram({
     <figure className="my-2 inline-flex flex-col mx-1 align-top" style={{ width: width * 1.6 }}>
       <svg
         role="img"
-        aria-label={name ? `${name} voicing` : "Voicing diagram"}
+        aria-label={name ? t.voicingOf(name) : t.diagram}
         viewBox={`0 0 ${width} ${height}`}
         className="text-foreground w-full h-auto"
       >
@@ -92,7 +117,7 @@ export function VoicingDiagram({
             fill="currentColor"
             opacity={0.7}
           >
-            {baseFret}fr
+            {t.baseFret(baseFret)}
           </text>
         )}
 

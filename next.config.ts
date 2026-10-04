@@ -3,6 +3,11 @@ import createMDX from "@next/mdx";
 
 const nextConfig: NextConfig = {
   pageExtensions: ["ts", "tsx", "md", "mdx"],
+  experimental: {
+    // The root layout lives under app/[lang], so unmatched URLs need a
+    // standalone 404 (app/global-not-found.tsx).
+    globalNotFound: true,
+  },
 };
 
 const withMDX = createMDX({
