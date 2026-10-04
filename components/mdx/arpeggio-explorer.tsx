@@ -41,10 +41,6 @@ const TETRAD_OPTIONS: { label: string; value: ArpeggioQuality }[] = [
 
 type ViewMode = "full" | "caged";
 
-function markerLabelColor(intervalPc: number): string | undefined {
-  return intervalPc === 0 ? "var(--accent-contrast)" : undefined;
-}
-
 function buildFretboardMarkers(
   markers: ArpeggioMarker[],
   speller: DegreeSpeller,
@@ -58,10 +54,9 @@ function buildFretboardMarkers(
       label: showNotes
         ? speller.spell(m.intervalPc)
         : ARPEGGIO_INTERVAL_LABELS[m.intervalPc] ?? String(m.intervalPc),
-      // accent-dot, not accent-9: in light mode accent-9 is the same ink as
-      // the other markers, so the root would not stand out.
-      color: isRoot ? "var(--accent-dot)" : "currentColor",
-      labelColor: markerLabelColor(m.intervalPc),
+      color: isRoot ? "var(--degree-root-bg)" : "var(--arpeggio-tone-bg)",
+      labelColor: isRoot ? "var(--degree-root-fg)" : "var(--arpeggio-tone-fg)",
+      stroke: isRoot ? undefined : "var(--arpeggio-tone-border)",
     };
   });
 }
