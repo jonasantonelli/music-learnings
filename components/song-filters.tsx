@@ -3,6 +3,42 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { defineMessages } from "@/lib/i18n";
+import { formatKey } from "@/lib/song-analysis";
+import { useLocale, useMessages } from "@/components/locale-provider";
+
+const messages = defineMessages({
+  en: {
+    search: "Search by title or composer…",
+    searchLabel: "Search songs",
+    key: "Key",
+    tag: "Tag",
+    style: "Style",
+    results: (n: number) => `${n} result${n === 1 ? "" : "s"}`,
+    clear: "Clear filters",
+    noMatch: "No songs match your filters.",
+  },
+  pt: {
+    search: "Buscar por título ou compositor…",
+    searchLabel: "Buscar músicas",
+    key: "Tom",
+    tag: "Tag",
+    style: "Estilo",
+    results: (n: number) => `${n} resultado${n === 1 ? "" : "s"}`,
+    clear: "Limpar filtros",
+    noMatch: "Nenhuma música corresponde aos seus filtros.",
+  },
+  es: {
+    search: "Buscar por título o compositor…",
+    searchLabel: "Buscar canciones",
+    key: "Tonalidad",
+    tag: "Etiqueta",
+    style: "Estilo",
+    results: (n: number) => `${n} resultado${n === 1 ? "" : "s"}`,
+    clear: "Borrar filtros",
+    noMatch: "Ninguna canción coincide con tus filtros.",
+  },
+});
 
 type SongItem = {
   slug: string;
@@ -24,6 +60,8 @@ type Props = {
 };
 
 export function SongFilters({ songs, allTags, allKeys, allStyles }: Props) {
+  const lang = useLocale();
+  const t = useMessages(messages);
   const [search, setSearch] = useState("");
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
@@ -55,7 +93,8 @@ export function SongFilters({ songs, allTags, allKeys, allStyles }: Props) {
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by title or composer…"
+          placeholder={t.search}
+          aria-label={t.searchLabel}
           className="flex-1 rounded-control border border-border bg-card px-4 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent-7 transition-colors"
         />
         <div className="flex flex-wrap gap-2">
@@ -63,19 +102,20 @@ export function SongFilters({ songs, allTags, allKeys, allStyles }: Props) {
             value={selectedKey}
             onChange={setSelectedKey}
             options={allKeys}
-            placeholder="Key"
+            formatOption={(k) => formatKey(k, lang)}
+            placeholder={t.key}
           />
           <FilterSelect
             value={selectedTag}
             onChange={setSelectedTag}
             options={allTags}
-            placeholder="Tag"
+            placeholder={t.tag}
           />
           <FilterSelect
             value={selectedStyle}
             onChange={setSelectedStyle}
             options={allStyles}
-            placeholder="Style"
+            placeholder={t.style}
           />
         </div>
       </div>
@@ -83,7 +123,7 @@ export function SongFilters({ songs, allTags, allKeys, allStyles }: Props) {
       {hasFilters && (
         <div className="mt-3 flex items-center gap-2">
           <span className="text-xs text-muted-foreground">
-            {filtered.length} result{filtered.length === 1 ? "" : "s"}
+            {t.results(filtered.length)}
           </span>
           <button
             type="button"
@@ -95,7 +135,7 @@ export function SongFilters({ songs, allTags, allKeys, allStyles }: Props) {
             }}
             className="text-xs text-accent-11 hover:text-accent-12 transition-colors"
           >
-            Clear filters
+            {t.clear}
           </button>
         </div>
       )}
@@ -113,7 +153,7 @@ export function SongFilters({ songs, allTags, allKeys, allStyles }: Props) {
             </div>
             <div className="mt-3 flex flex-wrap gap-1.5 font-mono text-[11px]">
               <span className="rounded-md bg-tone-butter px-2 py-0.5 text-tone-butter-fg">
-                {song.songKey}
+                {formatKey(song.songKey, lang)}
               </span>
               <span className="rounded-md bg-muted px-2 py-0.5 text-muted-foreground">
                 {song.form}
@@ -128,7 +168,7 @@ export function SongFilters({ songs, allTags, allKeys, allStyles }: Props) {
 
       {filtered.length === 0 && songs.length > 0 && (
         <p className="mt-8 text-center text-sm text-muted-foreground">
-          No songs match your filters.
+          {t.noMatch}
         </p>
       )}
     </div>
@@ -139,17 +179,20 @@ function FilterSelect({
   value,
   onChange,
   options,
+  formatOption = (o) => o,
   placeholder,
 }: {
   value: string | null;
   onChange: (v: string | null) => void;
   options: string[];
+  formatOption?: (option: string) => string;
   placeholder: string;
 }) {
   if (options.length === 0) return null;
 
   return (
     <select
+      aria-label={placeholder}
       value={value ?? ""}
       onChange={(e) => onChange(e.target.value || null)}
       className={cn(
@@ -167,7 +210,7 @@ function FilterSelect({
       <option value="">{placeholder}</option>
       {options.map((o) => (
         <option key={o} value={o}>
-          {o}
+          {formatOption(o)}
         </option>
       ))}
     </select>

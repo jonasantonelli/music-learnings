@@ -2,6 +2,32 @@
 
 import { useRef, useState, useEffect, useCallback } from "react";
 import { NOTE_NAMES_FLAT } from "@/lib/music";
+import { defineMessages } from "@/lib/i18n";
+import { useMessages } from "@/components/locale-provider";
+
+const messages = defineMessages({
+  en: {
+    wheelLanded: (note: string) => `Spinning wheel landed on ${note}`,
+    wheelIdle: "Spinning wheel with 12 musical notes. Click to spin.",
+    practiceNote: "Practice note",
+    spinAgain: "Tap the wheel to spin again",
+    pickNote: "Tap the wheel to pick a note",
+  },
+  pt: {
+    wheelLanded: (note: string) => `A roda parou em ${note}`,
+    wheelIdle: "Roda giratória com as 12 notas musicais. Clique para girar.",
+    practiceNote: "Nota de prática",
+    spinAgain: "Toque na roda para girar de novo",
+    pickNote: "Toque na roda para sortear uma nota",
+  },
+  es: {
+    wheelLanded: (note: string) => `La rueda se detuvo en ${note}`,
+    wheelIdle: "Rueda giratoria con las 12 notas musicales. Haz clic para girar.",
+    practiceNote: "Nota de práctica",
+    spinAgain: "Toca la rueda para girar de nuevo",
+    pickNote: "Toca la rueda para elegir una nota",
+  },
+});
 
 const SEGMENT_COUNT = 12;
 const SEGMENT_ANGLE = (2 * Math.PI) / SEGMENT_COUNT;
@@ -103,6 +129,7 @@ function drawWheel(
 }
 
 export function NoteWheel() {
+  const t = useMessages(messages);
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [rotation, setRotation] = useState(0);
@@ -287,9 +314,7 @@ export function NoteWheel() {
           className={canSpin ? "cursor-pointer touch-manipulation" : "cursor-default"}
           role="img"
           aria-label={
-            result
-              ? `Spinning wheel landed on ${result}`
-              : "Spinning wheel with 12 musical notes. Click to spin."
+            result ? t.wheelLanded(result) : t.wheelIdle
           }
         />
       </div>
@@ -298,16 +323,16 @@ export function NoteWheel() {
         {result ? (
           <>
             <p className="text-sm font-medium uppercase tracking-widest text-muted-foreground">
-              Practice note
+              {t.practiceNote}
             </p>
             <p className="mt-2 text-5xl sm:text-6xl font-bold text-accent-11">{result}</p>
             <p className="mt-3 text-sm text-muted-foreground">
-              Tap the wheel to spin again
+              {t.spinAgain}
             </p>
           </>
         ) : mounted ? (
           <p className="text-muted-foreground">
-            Tap the wheel to pick a note
+            {t.pickNote}
           </p>
         ) : null}
       </div>

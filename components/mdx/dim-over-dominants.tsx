@@ -5,6 +5,26 @@ import { usePracticeNote } from "@/lib/use-practice-note";
 import { KEY_OPTIONS, dominantFlat9Speller } from "@/lib/music";
 import { Fretboard } from "./fretboard";
 import { ControlBar, NoteGrid } from "./control-group";
+import { defineMessages } from "@/lib/i18n";
+import { useMessages } from "@/components/locale-provider";
+
+const messages = defineMessages({
+  en: {
+    v7Root: "V7 Root",
+    caption: (dominant: string, dim: string) =>
+      `${dominant} — ${dim} arpeggio on strings 2–3–4`,
+  },
+  pt: {
+    v7Root: "Fundamental do V7",
+    caption: (dominant: string, dim: string) =>
+      `${dominant} — arpejo de ${dim} nas cordas 2–3–4`,
+  },
+  es: {
+    v7Root: "Fundamental del V7",
+    caption: (dominant: string, dim: string) =>
+      `${dominant} — arpegio de ${dim} en las cuerdas 2–3–4`,
+  },
+});
 
 const TARGET_INTERVALS = [1, 4, 7, 10] as const;
 
@@ -56,6 +76,7 @@ function buildMarkers(root: number): Marker[] {
 }
 
 export function DimOverDominants() {
+  const t = useMessages(messages);
   const [practiceNote, setPracticeNote] = usePracticeNote();
   const [root, setRootLocal] = useState(0);
 
@@ -71,13 +92,13 @@ export function DimOverDominants() {
   const speller = dominantFlat9Speller(root);
   const rootName = speller.root;
   const dimRootName = speller.spell(1);
-  const caption = `${rootName}7♭9 — ${dimRootName}°7 arpeggio on strings 2–3–4`;
+  const caption = t.caption(`${rootName}7♭9`, `${dimRootName}°7`);
 
   return (
     <div className="my-8">
       <ControlBar>
         <NoteGrid
-          label="V7 Root"
+          label={t.v7Root}
           options={KEY_OPTIONS.map((k) => ({ label: k.name, value: k.value }))}
           value={root}
           onChange={setRoot}

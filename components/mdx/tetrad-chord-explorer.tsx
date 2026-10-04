@@ -8,11 +8,15 @@ import {
   ROOT_STRING_OPTIONS,
   TETRAD_CHORD_LABELS,
   TETRAD_INTERVAL_LABELS,
+  chordFamilyName,
   computeTetradVoicing,
+  rootStringLabel,
   tetradSpeller,
   type TetradChordQuality,
   type TetradVoicing,
 } from "@/lib/tetrad-chords";
+import { defineMessages } from "@/lib/i18n";
+import { useLocale, useMessages } from "@/components/locale-provider";
 import { VoicingDiagram } from "./voicing-diagram";
 import {
   NoteGrid,
@@ -20,6 +24,27 @@ import {
   ToggleSwitch,
   ControlBar,
 } from "./control-group";
+
+const messages = defineMessages({
+  en: {
+    root: "Root",
+    rootString: "Root String",
+    intervals: "Intervals",
+    notes: "Notes",
+  },
+  pt: {
+    root: "Fundamental",
+    rootString: "Corda da fundamental",
+    intervals: "Intervalos",
+    notes: "Notas",
+  },
+  es: {
+    root: "Fundamental",
+    rootString: "Cuerda de la fundamental",
+    intervals: "Intervalos",
+    notes: "Notas",
+  },
+});
 
 function buildLabels(
   voicing: TetradVoicing,
@@ -55,6 +80,8 @@ export function TetradChordExplorer() {
   const [root, setRootLocal] = useState(0);
   const [rootString, setRootString] = useState(0);
   const [showNotes, setShowNotes] = useState(false);
+  const locale = useLocale();
+  const t = useMessages(messages);
 
   const setRoot = (n: number) => {
     setRootLocal(n);
@@ -69,23 +96,26 @@ export function TetradChordExplorer() {
     <div className="my-8">
       <ControlBar>
         <NoteGrid
-          label="Root"
+          label={t.root}
           options={KEY_OPTIONS.map((k) => ({ label: k.name, value: k.value }))}
           value={root}
           onChange={setRoot}
         />
 
         <SegmentedControl
-          label="Root String"
-          options={ROOT_STRING_OPTIONS.map((s) => ({ label: s.label, value: s.value }))}
+          label={t.rootString}
+          options={ROOT_STRING_OPTIONS.map((s) => ({
+            label: rootStringLabel(s.value, locale),
+            value: s.value,
+          }))}
           value={rootString}
           onChange={setRootString}
           size="sm"
         />
 
         <ToggleSwitch
-          labelOff="Intervals"
-          labelOn="Notes"
+          labelOff={t.intervals}
+          labelOn={t.notes}
           value={showNotes}
           onChange={setShowNotes}
         />
@@ -93,8 +123,8 @@ export function TetradChordExplorer() {
 
       {CHORD_FAMILIES.map((family) => (
         <FamilyGroup
-          key={family.name}
-          familyName={family.name}
+          key={family.id}
+          familyName={chordFamilyName(family.id, locale)}
           qualities={family.qualities}
           root={root}
           rootString={rootString}

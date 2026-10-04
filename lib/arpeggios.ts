@@ -1,4 +1,5 @@
 import { STRING_MIDI, degreeSpeller, type DegreeSpeller } from "./music";
+import { defineMessages, type Locale } from "./i18n";
 
 export type TriadQuality = "major" | "minor" | "dim" | "aug";
 export type TetradQuality = "maj7" | "m7" | "7" | "m7b5" | "dim7";
@@ -24,17 +25,49 @@ export const ARPEGGIO_FORMULAS: Record<ArpeggioQuality, readonly number[]> = {
   ...TETRAD_FORMULAS,
 };
 
-export const ARPEGGIO_LABELS: Record<ArpeggioQuality, string> = {
-  major: "Major",
-  minor: "Minor",
-  dim: "Diminished",
-  aug: "Augmented",
-  maj7: "Major 7",
-  m7: "Minor 7",
-  "7": "Dominant 7",
-  m7b5: "Minor 7♭5",
-  dim7: "Diminished 7",
-};
+/** Localized quality names; use `arpeggioLabel(quality, locale)` in UI code. */
+export const ARPEGGIO_LABEL_MESSAGES = defineMessages<Record<ArpeggioQuality, string>>({
+  en: {
+    major: "Major",
+    minor: "Minor",
+    dim: "Diminished",
+    aug: "Augmented",
+    maj7: "Major 7",
+    m7: "Minor 7",
+    "7": "Dominant 7",
+    m7b5: "Minor 7♭5",
+    dim7: "Diminished 7",
+  },
+  pt: {
+    major: "Maior",
+    minor: "Menor",
+    dim: "Diminuto",
+    aug: "Aumentado",
+    maj7: "Maior com 7ª maior",
+    m7: "Menor com 7ª",
+    "7": "Dominante",
+    m7b5: "Meio-diminuto (m7♭5)",
+    dim7: "Diminuto com 7ª",
+  },
+  es: {
+    major: "Mayor",
+    minor: "Menor",
+    dim: "Disminuido",
+    aug: "Aumentado",
+    maj7: "Mayor con 7.ª mayor",
+    m7: "Menor con 7.ª",
+    "7": "Dominante",
+    m7b5: "Semidisminuido (m7♭5)",
+    dim7: "Disminuido con 7.ª",
+  },
+});
+
+/** English quality names (kept for existing callers). */
+export const ARPEGGIO_LABELS: Record<ArpeggioQuality, string> = ARPEGGIO_LABEL_MESSAGES.en;
+
+export function arpeggioLabel(quality: ArpeggioQuality, locale: Locale): string {
+  return ARPEGGIO_LABEL_MESSAGES[locale][quality];
+}
 
 export const ARPEGGIO_SUFFIXES: Record<ArpeggioQuality, string> = {
   major: "",

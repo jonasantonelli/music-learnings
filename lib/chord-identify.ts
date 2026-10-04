@@ -1,4 +1,5 @@
 import { STRING_MIDI, noteName, type Spelling } from "./music";
+import { defineMessages, type Locale } from "./i18n";
 
 export type Fret = number | "x"; // 0 = open string, "x" = muted, n>0 = fretted
 export type FretInput = readonly Fret[]; // length 6, low E → high E
@@ -305,17 +306,34 @@ export function intervalLabelsForMatch(match: ChordMatch): string[] {
   return match.degreeLabels;
 }
 
+const explanationMessages = defineMessages({
+  en: {
+    omits: (degrees: string) => `omits ${degrees}`,
+    inBass: (note: string) => `${note} in the bass`,
+  },
+  pt: {
+    omits: (degrees: string) => `omite ${degrees}`,
+    inBass: (note: string) => `${note} no baixo`,
+  },
+  es: {
+    omits: (degrees: string) => `omite ${degrees}`,
+    inBass: (note: string) => `${note} en el bajo`,
+  },
+});
+
 /** Human-readable explanation appended to alternate names. */
 export function matchExplanation(
   match: ChordMatch,
   spelling?: Spelling,
+  lang: Locale = "en",
 ): string {
+  const t = explanationMessages[lang];
   const parts: string[] = [];
   if (match.omissions.length > 0) {
-    parts.push(`omits ${match.omissions.join(" + ")}`);
+    parts.push(t.omits(match.omissions.join(" + ")));
   }
   if (match.rootPc !== match.bassPc) {
-    parts.push(`${noteName(match.bassPc, spelling)} in the bass`);
+    parts.push(t.inBass(noteName(match.bassPc, spelling)));
   }
   return parts.join("; ");
 }

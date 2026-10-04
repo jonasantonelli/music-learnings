@@ -1,4 +1,5 @@
 import { STRING_MIDI, degreeSpeller, noteName, type DegreeSpeller } from "./music";
+import { defineMessages, type Locale } from "./i18n";
 
 export type TetradChordQuality =
   | "maj7"
@@ -89,19 +90,52 @@ export const TETRAD_INTERVAL_LABELS: Record<number, string> = {
   21: "13",
 };
 
+export type ChordFamilyId = "major" | "minor" | "dominant" | "diminished" | "suspended";
+
 export type ChordFamily = {
+  id: ChordFamilyId;
+  /** English display name; use `chordFamilyName(id, locale)` in UI code. */
   name: string;
   qualities: TetradChordQuality[];
 };
 
 export const CHORD_FAMILIES: ChordFamily[] = [
-  { name: "Major", qualities: ["maj7", "6", "add4", "maj7#11", "maj7(9)", "maj7(13)"] },
-  { name: "Minor", qualities: ["m7", "m6", "m7b5", "mMaj7", "m9"] },
-  { name: "Dominant", qualities: ["7", "7+", "7b5", "7b9", "7(9)", "7sus4"] },
-  { name: "Diminished", qualities: ["dim7"] },
-  { name: "Suspended", qualities: ["sus2", "7sus2", "maj7sus2"] },
+  { id: "major", name: "Major", qualities: ["maj7", "6", "add4", "maj7#11", "maj7(9)", "maj7(13)"] },
+  { id: "minor", name: "Minor", qualities: ["m7", "m6", "m7b5", "mMaj7", "m9"] },
+  { id: "dominant", name: "Dominant", qualities: ["7", "7+", "7b5", "7b9", "7(9)", "7sus4"] },
+  { id: "diminished", name: "Diminished", qualities: ["dim7"] },
+  { id: "suspended", name: "Suspended", qualities: ["sus2", "7sus2", "maj7sus2"] },
 ];
 
+const CHORD_FAMILY_NAMES = defineMessages<Record<ChordFamilyId, string>>({
+  en: {
+    major: "Major",
+    minor: "Minor",
+    dominant: "Dominant",
+    diminished: "Diminished",
+    suspended: "Suspended",
+  },
+  pt: {
+    major: "Maior",
+    minor: "Menor",
+    dominant: "Dominante",
+    diminished: "Diminuto",
+    suspended: "Suspenso",
+  },
+  es: {
+    major: "Mayor",
+    minor: "Menor",
+    dominant: "Dominante",
+    diminished: "Disminuido",
+    suspended: "Suspendido",
+  },
+});
+
+export function chordFamilyName(id: ChordFamilyId, locale: Locale): string {
+  return CHORD_FAMILY_NAMES[locale][id];
+}
+
+/** Root-string options; `label` is English — use `rootStringLabel` in UI code. */
 export const ROOT_STRING_OPTIONS = [
   { label: "6th", value: 0 },
   { label: "5th", value: 1 },
@@ -110,6 +144,17 @@ export const ROOT_STRING_OPTIONS = [
   { label: "2nd", value: 4 },
   { label: "1st", value: 5 },
 ];
+
+/** Ordinal string names, indexed by ROOT_STRING_OPTIONS value (0 = 6th string). */
+const ROOT_STRING_LABELS = defineMessages<readonly string[]>({
+  en: ["6th", "5th", "4th", "3rd", "2nd", "1st"],
+  pt: ["6ª", "5ª", "4ª", "3ª", "2ª", "1ª"],
+  es: ["6.ª", "5.ª", "4.ª", "3.ª", "2.ª", "1.ª"],
+});
+
+export function rootStringLabel(value: number, locale: Locale): string {
+  return ROOT_STRING_LABELS[locale][value] ?? ROOT_STRING_OPTIONS[value]?.label ?? "";
+}
 
 export type TetradVoicing = {
   frets: (number | null)[];

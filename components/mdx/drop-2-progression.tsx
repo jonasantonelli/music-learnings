@@ -5,7 +5,6 @@ import { usePracticeNote } from "@/lib/use-practice-note";
 import {
   KEY_OPTIONS,
   STRING_SETS,
-  INVERSION_NAMES,
   PROGRESSIONS,
   computeDrop2Voicing,
   findBestVoiceLeading,
@@ -21,7 +20,7 @@ import {
 } from "@/lib/music";
 import { NoteText } from "@/components/note-text";
 import { VoicingDiagram } from "./voicing-diagram";
-import { drop2DiagramMarks } from "./drop-2-shared";
+import { drop2DiagramMarks, drop2Messages } from "./drop-2-shared";
 import {
   ChipGroup,
   NoteGrid,
@@ -30,6 +29,38 @@ import {
   ToggleSwitch,
   ControlBar,
 } from "./control-group";
+import { defineMessages } from "@/lib/i18n";
+import { useMessages } from "@/components/locale-provider";
+
+const messages = defineMessages({
+  en: {
+    progression: "Progression",
+    tonicChord: "i chord",
+    chords: "Chords",
+    sevenths: "7ths",
+    extended: "Extended",
+    startingFrom: (inversion: string, degree: string) =>
+      `Starting from ${inversion} of ${degree}`,
+  },
+  pt: {
+    progression: "Progressão",
+    tonicChord: "Acorde i",
+    chords: "Acordes",
+    sevenths: "Tétrades",
+    extended: "Com tensões",
+    startingFrom: (inversion: string, degree: string) =>
+      `Começando do ${degree} em ${inversion.toLocaleLowerCase("pt-BR")}`,
+  },
+  es: {
+    progression: "Progresión",
+    tonicChord: "Acorde i",
+    chords: "Acordes",
+    sevenths: "Cuatríadas",
+    extended: "Con tensiones",
+    startingFrom: (inversion: string, degree: string) =>
+      `Empezando desde ${degree} en ${inversion.toLocaleLowerCase("es")}`,
+  },
+});
 
 type ProgressionProps = {
   /** Initial progression, so a lesson page can open on the one it discusses. */
@@ -37,6 +68,8 @@ type ProgressionProps = {
 };
 
 export function Drop2Progression({ progression: initial = "major-251" }: ProgressionProps) {
+  const t = useMessages(messages);
+  const s = useMessages(drop2Messages);
   const [practiceNote, setPracticeNote] = usePracticeNote();
   const [key, setKeyLocal] = useState(0);
 
@@ -104,22 +137,25 @@ export function Drop2Progression({ progression: initial = "major-251" }: Progres
     <div className="my-8">
       <ControlBar>
         <NoteGrid
-          label="Key"
+          label={s.key}
           options={KEY_OPTIONS.map((k) => ({ label: k.name, value: k.value }))}
           value={key}
           onChange={setKey}
         />
 
         <ChipGroup
-          label="Progression"
-          options={PROGRESSIONS.map((p) => ({ label: p.label, value: p.id }))}
+          label={t.progression}
+          options={PROGRESSIONS.map((p) => ({
+            label: s.progressions[p.id] ?? p.label,
+            value: p.id,
+          }))}
           value={progId}
           onChange={setProgId}
         />
 
         {progId === "minor-251" && (
           <SegmentedControl
-            label="i chord"
+            label={t.tonicChord}
             options={[
               { label: "m7", value: "m7" as const },
               { label: "m6", value: "m6" as const },
@@ -131,25 +167,25 @@ export function Drop2Progression({ progression: initial = "major-251" }: Progres
         )}
 
         <SegmentedControl
-          label="Chords"
+          label={t.chords}
           options={[
-            { label: "7ths", value: "basic" as const },
-            { label: "Extended", value: "extended" as const },
+            { label: t.sevenths, value: "basic" as const },
+            { label: t.extended, value: "extended" as const },
           ]}
           value={extended ? "extended" : "basic"}
           onChange={(v) => setExtended(v === "extended")}
         />
 
         <StringSetControl
-          label="Strings"
-          options={STRING_SETS.map((s, i) => ({ label: s.label, value: i }))}
+          label={s.strings}
+          options={STRING_SETS.map((set, i) => ({ label: set.label, value: i }))}
           value={stringSet}
           onChange={setStringSet}
         />
 
         <ToggleSwitch
-          labelOff="Intervals"
-          labelOn="Notes"
+          labelOff={s.intervals}
+          labelOn={s.notes}
           value={showNotes}
           onChange={setShowNotes}
         />
@@ -167,7 +203,7 @@ export function Drop2Progression({ progression: initial = "major-251" }: Progres
       {paths.map((path, pathIdx) => (
         <div key={pathIdx} className="mb-8">
           <h4 className="text-sm font-medium mb-2 text-muted-foreground">
-            Starting from {INVERSION_NAMES[path[0].inversionIndex]} of {chords[0].degree}
+            {t.startingFrom(s.inversionNames[path[0].inversionIndex], chords[0].degree)}
           </h4>
           <div className="flex flex-wrap items-start gap-1">
             {path.map((voicing, chordIdx) => {
@@ -181,7 +217,7 @@ export function Drop2Progression({ progression: initial = "major-251" }: Progres
                   )}
                   <VoicingDiagram
                     name={name(c)}
-                    subtitle={`${c.degree} · ${INVERSION_NAMES[voicing.inversionIndex]}`}
+                    subtitle={`${c.degree} · ${s.inversionNames[voicing.inversionIndex]}`}
                     frets={voicing.frets}
                     labels={marks.labels}
                     highlights={marks.highlights}

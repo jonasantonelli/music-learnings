@@ -1,3 +1,5 @@
+import { defineMessages, type Locale } from "./i18n";
+
 export const NOTE_NAMES_SHARP = [
   "C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "A♯", "B",
 ];
@@ -196,12 +198,29 @@ export const QUALITY_SUFFIXES: Record<ChordQuality, string> = {
   dim7: "°7",
 };
 
-export const QUALITY_FAMILIES: { label: string; qualities: ChordQuality[] }[] = [
-  { label: "Major", qualities: ["maj7", "6", "maj7#5"] },
-  { label: "Minor", qualities: ["m7", "m6", "mMaj7"] },
-  { label: "Dominant", qualities: ["7", "7sus4", "7#5", "7b5"] },
-  { label: "Diminished", qualities: ["m7b5", "dim7"] },
+export type QualityFamilyId = "major" | "minor" | "dominant" | "diminished";
+
+/** `label` is English; use `qualityFamilyLabel(id, locale)` in UI code. */
+export const QUALITY_FAMILIES: {
+  id: QualityFamilyId;
+  label: string;
+  qualities: ChordQuality[];
+}[] = [
+  { id: "major", label: "Major", qualities: ["maj7", "6", "maj7#5"] },
+  { id: "minor", label: "Minor", qualities: ["m7", "m6", "mMaj7"] },
+  { id: "dominant", label: "Dominant", qualities: ["7", "7sus4", "7#5", "7b5"] },
+  { id: "diminished", label: "Diminished", qualities: ["m7b5", "dim7"] },
 ];
+
+const QUALITY_FAMILY_LABELS = defineMessages<Record<QualityFamilyId, string>>({
+  en: { major: "Major", minor: "Minor", dominant: "Dominant", diminished: "Diminished" },
+  pt: { major: "Maior", minor: "Menor", dominant: "Dominante", diminished: "Diminuto" },
+  es: { major: "Mayor", minor: "Menor", dominant: "Dominante", diminished: "Disminuido" },
+});
+
+export function qualityFamilyLabel(id: QualityFamilyId, locale: Locale): string {
+  return QUALITY_FAMILY_LABELS[locale][id];
+}
 
 export const INTERVAL_LABELS: Record<number, string> = {
   0: "R",
@@ -360,12 +379,19 @@ export const DROP2_VOICES: readonly (readonly number[])[] = [
   [3, 1, 2, 0], // 3rd inversion: 7 3 5 R  (close 3 5 7 R)
 ];
 
-export const INVERSION_NAMES = [
-  "Root Position",
-  "1st Inversion",
-  "2nd Inversion",
-  "3rd Inversion",
-];
+/** Inversion names per locale, indexed by inversion (0 = root position). */
+export const INVERSION_NAMES_BY_LOCALE = defineMessages<readonly string[]>({
+  en: ["Root Position", "1st Inversion", "2nd Inversion", "3rd Inversion"],
+  pt: ["Posição fundamental", "1ª inversão", "2ª inversão", "3ª inversão"],
+  es: ["Posición fundamental", "1.ª inversión", "2.ª inversión", "3.ª inversión"],
+});
+
+/** English inversion names (kept for existing callers). */
+export const INVERSION_NAMES = INVERSION_NAMES_BY_LOCALE.en;
+
+export function inversionName(index: number, locale: Locale): string {
+  return INVERSION_NAMES_BY_LOCALE[locale][index] ?? INVERSION_NAMES[index] ?? "";
+}
 
 export type Voicing = {
   frets: (number | null)[]; // 6 elements, null = muted
@@ -625,6 +651,36 @@ export const PROGRESSIONS: {
   },
 ];
 
+/** Progression labels per locale; roman numerals stay as-is. */
+const PROGRESSION_LABELS = defineMessages<Record<ProgressionId, string>>({
+  en: {
+    "major-251": "ii–V–I",
+    "minor-251": "Minor ii–V–i",
+    turnaround: "I–vi–ii–V",
+    rhythm: "I–VI7–ii–V",
+    "iii-vi-ii-v": "iii–VI7–ii–V–I",
+  },
+  pt: {
+    "major-251": "ii–V–I",
+    "minor-251": "ii–V–i menor",
+    turnaround: "I–vi–ii–V",
+    rhythm: "I–VI7–ii–V",
+    "iii-vi-ii-v": "iii–VI7–ii–V–I",
+  },
+  es: {
+    "major-251": "ii–V–I",
+    "minor-251": "ii–V–i menor",
+    turnaround: "I–vi–ii–V",
+    rhythm: "I–VI7–ii–V",
+    "iii-vi-ii-v": "iii–VI7–ii–V–I",
+  },
+});
+
+/** The progression's label in `locale` (`PROGRESSIONS[].label` is English). */
+export function progressionLabel(id: ProgressionId, locale: Locale): string {
+  return PROGRESSION_LABELS[locale][id];
+}
+
 export function getProgression(
   id: ProgressionId,
   key: number,
@@ -688,6 +744,17 @@ export const HARMONIZED_SCALES: {
     ],
   },
 ];
+
+const HARMONIZED_SCALE_LABELS = defineMessages<Record<HarmonizedScaleId, string>>({
+  en: { major: "Major", "melodic-minor": "Melodic minor", "harmonic-minor": "Harmonic minor" },
+  pt: { major: "Maior", "melodic-minor": "Menor melódica", "harmonic-minor": "Menor harmônica" },
+  es: { major: "Mayor", "melodic-minor": "Menor melódica", "harmonic-minor": "Menor armónica" },
+});
+
+/** The harmonized scale's label in `locale` (`HARMONIZED_SCALES[].label` is English). */
+export function harmonizedScaleLabel(id: HarmonizedScaleId, locale: Locale): string {
+  return HARMONIZED_SCALE_LABELS[locale][id];
+}
 
 export type DiatonicVoicing = { chord: ProgressionChord; voicing: Voicing };
 

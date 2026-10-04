@@ -24,11 +24,13 @@ import {
   computeTetradVoicing,
   tetradChordLabel,
   TETRAD_INTERVAL_LABELS,
-  ROOT_STRING_OPTIONS,
   type TetradChordQuality,
   type TetradVoicing,
 } from "@/lib/tetrad-chords";
 import { VoicingDiagram } from "./voicing-diagram";
+import { drop2Messages } from "./drop-2-shared";
+import { defineMessages } from "@/lib/i18n";
+import { useMessages } from "@/components/locale-provider";
 
 export type SongBar = {
   chord?: string;
@@ -58,16 +60,76 @@ const FUNCTION_COLORS: Record<ChordFunction, string> = {
   other: "bg-card border-border text-foreground",
 };
 
-const FUNCTION_LABELS: Record<ChordFunction, string> = {
-  tonic: "T",
-  subdominant: "SD",
-  dominant: "D",
-  other: "",
-};
+type FunctionName = Exclude<ChordFunction, "other">;
+
+const messages = defineMessages({
+  en: {
+    functions: "Functions:",
+    functionNames: {
+      tonic: "tonic",
+      subdominant: "subdominant",
+      dominant: "dominant",
+    } satisfies Record<FunctionName, string>,
+    functionAbbr: { tonic: "T", subdominant: "SD", dominant: "D" } satisfies Record<
+      FunctionName,
+      string
+    >,
+    showVoicings: (chord: string) => `Show voicings for ${chord}`,
+    popoverSubtitle: "Tetrad & drop-2 voicings",
+    close: "Close",
+    tetrad: "Tetrad",
+    drop2: "Drop-2",
+    stringSets: "String set",
+    rootOnString: (n: number) => `Root on string ${n}`,
+  },
+  pt: {
+    functions: "Funções:",
+    functionNames: {
+      tonic: "tônica",
+      subdominant: "subdominante",
+      dominant: "dominante",
+    },
+    functionAbbr: { tonic: "T", subdominant: "SD", dominant: "D" },
+    showVoicings: (chord: string) => `Mostrar voicings de ${chord}`,
+    popoverSubtitle: "Voicings de tétrade e drop-2",
+    close: "Fechar",
+    tetrad: "Tétrade",
+    drop2: "Drop-2",
+    stringSets: "Grupo de cordas",
+    rootOnString: (n: number) => `Fundamental na ${n}ª corda`,
+  },
+  es: {
+    functions: "Funciones:",
+    functionNames: {
+      tonic: "tónica",
+      subdominant: "subdominante",
+      dominant: "dominante",
+    },
+    functionAbbr: { tonic: "T", subdominant: "SD", dominant: "D" },
+    showVoicings: (chord: string) => `Mostrar voicings de ${chord}`,
+    popoverSubtitle: "Voicings de cuatríada y drop-2",
+    close: "Cerrar",
+    tetrad: "Cuatríada",
+    drop2: "Drop-2",
+    stringSets: "Grupo de cuerdas",
+    rootOnString: (n: number) => `Fundamental en la ${n}.ª cuerda`,
+  },
+});
+
+function FunctionTag({ fn, className }: { fn: ChordFunction; className: string }) {
+  const t = useMessages(messages);
+  if (fn === "other") return null;
+  return (
+    <abbr title={t.functionNames[fn]} className={cn("no-underline", className)}>
+      {t.functionAbbr[fn]}
+    </abbr>
+  );
+}
 
 type IIVILookup = Map<string, { label: string }>;
 
 export function SongChart({ sections, songKey }: Props) {
+  const t = useMessages(messages);
   const keyRoot = parseKeyName(songKey);
   const [popover, setPopover] = useState<PopoverState>(null);
 
@@ -110,7 +172,7 @@ export function SongChart({ sections, songKey }: Props) {
   return (
     <div className="not-prose space-y-6">
       <div className="flex flex-wrap items-center gap-4 text-xs">
-        <span className="font-medium text-muted-foreground">Functions:</span>
+        <span className="font-medium text-muted-foreground">{t.functions}</span>
         {(["tonic", "subdominant", "dominant"] as const).map((fn) => (
           <span key={fn} className="flex items-center gap-1.5">
             <span
@@ -119,7 +181,9 @@ export function SongChart({ sections, songKey }: Props) {
                 FUNCTION_COLORS[fn],
               )}
             />
-            <span className="text-muted-foreground capitalize">{fn}</span>
+            <span className="text-muted-foreground capitalize">
+              {t.functionNames[fn]}
+            </span>
           </span>
         ))}
         <span className="flex items-center gap-1.5">
@@ -159,6 +223,7 @@ export function SongChart({ sections, songKey }: Props) {
                       key={ci}
                       type="button"
                       onClick={() => openVoicings(chord)}
+                      aria-label={t.showVoicings(chord)}
                       className={cn(
                         "flex flex-1 flex-col items-center justify-center p-1.5 sm:p-2 cursor-pointer hover:brightness-95 dark:hover:brightness-110 transition-all",
                         FUNCTION_COLORS[fn],
@@ -169,11 +234,10 @@ export function SongChart({ sections, songKey }: Props) {
                         {chord}
                       </span>
                       <div className="flex items-center gap-1 mt-0.5">
-                        {fn !== "other" && (
-                          <span className="text-[9px] font-medium opacity-70">
-                            {FUNCTION_LABELS[fn]}
-                          </span>
-                        )}
+                        <FunctionTag
+                          fn={fn}
+                          className="text-[9px] font-medium opacity-70"
+                        />
                         {iiviInfo && (
                           <span className="text-[9px] font-bold text-accent-11">
                             {iiviInfo.label}
@@ -233,6 +297,7 @@ function SingleChordCell({
   iiviInfo?: { label: string };
   onChordClick: (chord: string) => void;
 }) {
+  const t = useMessages(messages);
   const parsed = parseChordSymbol(chord);
   const fn = parsed ? getChordFunction(parsed, keyRoot) : "other";
 
@@ -240,17 +305,14 @@ function SingleChordCell({
     <button
       type="button"
       onClick={() => onChordClick(chord)}
+      aria-label={t.showVoicings(chord)}
       className="flex flex-col items-center justify-center p-2 sm:p-3 w-full cursor-pointer hover:brightness-95 dark:hover:brightness-110 transition-all"
     >
       <span className="text-sm sm:text-base font-semibold leading-tight">
         {chord}
       </span>
       <div className="flex items-center gap-1 mt-0.5">
-        {fn !== "other" && (
-          <span className="text-[10px] font-medium opacity-70">
-            {FUNCTION_LABELS[fn]}
-          </span>
-        )}
+        <FunctionTag fn={fn} className="text-[10px] font-medium opacity-70" />
         {iiviInfo && (
           <span className="text-[10px] font-bold text-accent-11">
             {iiviInfo.label}
@@ -331,6 +393,8 @@ function ChordVoicingPopover({
   chordSymbol: string;
   onClose: () => void;
 }) {
+  const t = useMessages(messages);
+  const d2 = useMessages(drop2Messages);
   const [stringSet, setStringSet] = useState(1);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -357,8 +421,8 @@ function ChordVoicingPopover({
   const tetradVoicings = TETRAD_ROOT_STRINGS.flatMap((rs) => {
     const v = computeTetradVoicing(root, tetradQuality, rs);
     if (!v) return [];
-    const label = ROOT_STRING_OPTIONS.find((o) => o.value === rs)?.label ?? "";
-    return [{ rootString: rs, voicing: v, label }];
+    // String indices count from the low E (0 = 6th string).
+    return [{ rootString: rs, voicing: v, label: t.rootOnString(6 - rs) }];
   });
 
   const chordName = `${noteName(root, root)}${QUALITY_LABELS[quality]}`;
@@ -373,12 +437,12 @@ function ChordVoicingPopover({
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h3 className="text-base font-semibold">{chordSymbol}</h3>
-            <p className="text-xs text-muted-foreground">Tetrad &amp; drop-2 voicings</p>
+            <p className="text-xs text-muted-foreground">{t.popoverSubtitle}</p>
           </div>
           <button
             onClick={onClose}
             className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-            aria-label="Close"
+            aria-label={t.close}
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M4 4l8 8M12 4l-8 8" />
@@ -389,14 +453,14 @@ function ChordVoicingPopover({
         {tetradVoicings.length > 0 && (
           <section className="mb-6">
             <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Tetrad
+              {t.tetrad}
             </h4>
             <div className="grid grid-cols-3 gap-2 justify-items-center">
               {tetradVoicings.map(({ rootString, voicing, label }) => (
                 <VoicingDiagram
                   key={rootString}
                   name={tetradName}
-                  subtitle={`${label} string root`}
+                  subtitle={label}
                   frets={voicing.frets}
                   labels={buildTetradLabels(voicing)}
                   highlights={buildTetradHighlights(voicing)}
@@ -409,9 +473,12 @@ function ChordVoicingPopover({
         <section>
           <div className="mb-2 flex items-center justify-between gap-2">
             <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Drop-2
+              {t.drop2}
             </h4>
-            <div className="inline-flex gap-0.5 rounded-control bg-muted p-[3px] dark:border dark:border-border dark:bg-background">
+            <div
+              role="group"
+              aria-label={t.stringSets}
+              className="inline-flex gap-0.5 rounded-control bg-muted p-[3px] dark:border dark:border-border dark:bg-background">
               {STRING_SETS.map((s, i) => (
                 <button
                   key={s.label}
@@ -434,7 +501,7 @@ function ChordVoicingPopover({
               <VoicingDiagram
                 key={i}
                 name={chordName}
-                subtitle={INVERSION_NAMES[v.inversionIndex]}
+                subtitle={d2.inversionNames[v.inversionIndex] ?? INVERSION_NAMES[v.inversionIndex]}
                 frets={v.frets}
                 labels={buildPopoverLabels(v, root, stringSet)}
                 highlights={buildPopoverHighlights(v, stringSet)}

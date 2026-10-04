@@ -13,6 +13,95 @@ import {
   type FretInput,
 } from "@/lib/chord-identify";
 import { ChordDiagram } from "./mdx/chord-diagram";
+import { defineMessages } from "@/lib/i18n";
+import { useLocale, useMessages } from "@/components/locale-provider";
+
+const messages = defineMessages({
+  en: {
+    spelling: "Spelling",
+    spellingGroup: "Accidental spelling",
+    flats: "♭ Flats",
+    sharps: "♯ Sharps",
+    clear: "Clear",
+    fretboardLabel:
+      "Interactive guitar fretboard. Click a fret to place a note on that string; click the circle at the left of each string to toggle open or muted.",
+    stringStatus: (string: string, state: string) =>
+      `${string} string: ${state}. Toggle open or muted.`,
+    muted: "muted",
+    open: "open",
+    fret: (n: number) => `fret ${n}`,
+    cellTitle: (string: string, fret: number, note: string) =>
+      `${string} string, fret ${fret} — ${note}`,
+    emptyHint:
+      "Click the fretboard to place notes. Use ○ for open strings and × to mute.",
+    noChord: "No chord identified",
+    addThree: "Add at least three different notes.",
+    needThree: (notes: string) =>
+      `Played: ${notes}. Need three distinct pitch classes.`,
+    noMatch: (notes: string) =>
+      `Played: ${notes}. No standard chord matches this set of notes.`,
+    mostLikely: "Most likely",
+    notes: "Notes",
+    intervals: "Intervals",
+    otherInterpretations: "Other interpretations",
+  },
+  pt: {
+    spelling: "Acidentes",
+    spellingGroup: "Grafia dos acidentes",
+    flats: "♭ Bemóis",
+    sharps: "♯ Sustenidos",
+    clear: "Limpar",
+    fretboardLabel:
+      "Braço de guitarra interativo. Clique em uma casa para colocar uma nota naquela corda; clique no círculo à esquerda de cada corda para alternar entre solta e abafada.",
+    stringStatus: (string: string, state: string) =>
+      `Corda ${string}: ${state}. Alternar entre solta e abafada.`,
+    muted: "abafada",
+    open: "solta",
+    fret: (n: number) => `casa ${n}`,
+    cellTitle: (string: string, fret: number, note: string) =>
+      `Corda ${string}, casa ${fret} — ${note}`,
+    emptyHint:
+      "Clique no braço para colocar notas. Use ○ para cordas soltas e × para abafar.",
+    noChord: "Nenhum acorde identificado",
+    addThree: "Adicione pelo menos três notas diferentes.",
+    needThree: (notes: string) =>
+      `Tocadas: ${notes}. São necessárias três notas distintas.`,
+    noMatch: (notes: string) =>
+      `Tocadas: ${notes}. Nenhum acorde padrão corresponde a este conjunto de notas.`,
+    mostLikely: "Mais provável",
+    notes: "Notas",
+    intervals: "Intervalos",
+    otherInterpretations: "Outras interpretações",
+  },
+  es: {
+    spelling: "Alteraciones",
+    spellingGroup: "Grafía de las alteraciones",
+    flats: "♭ Bemoles",
+    sharps: "♯ Sostenidos",
+    clear: "Limpiar",
+    fretboardLabel:
+      "Mástil de guitarra interactivo. Haz clic en un traste para colocar una nota en esa cuerda; haz clic en el círculo a la izquierda de cada cuerda para alternar entre al aire y apagada.",
+    stringStatus: (string: string, state: string) =>
+      `Cuerda ${string}: ${state}. Alternar entre al aire y apagada.`,
+    muted: "apagada",
+    open: "al aire",
+    fret: (n: number) => `traste ${n}`,
+    cellTitle: (string: string, fret: number, note: string) =>
+      `Cuerda ${string}, traste ${fret} — ${note}`,
+    emptyHint:
+      "Haz clic en el mástil para colocar notas. Usa ○ para cuerdas al aire y × para apagarlas.",
+    noChord: "Ningún acorde identificado",
+    addThree: "Agrega al menos tres notas diferentes.",
+    needThree: (notes: string) =>
+      `Tocadas: ${notes}. Se necesitan tres notas distintas.`,
+    noMatch: (notes: string) =>
+      `Tocadas: ${notes}. Ningún acorde estándar coincide con este conjunto de notas.`,
+    mostLikely: "Más probable",
+    notes: "Notas",
+    intervals: "Intervalos",
+    otherInterpretations: "Otras interpretaciones",
+  },
+});
 
 type Accidental = Extract<Spelling, "flat" | "sharp">;
 
@@ -98,19 +187,20 @@ function Toolbar({
   onAccidentalChange: (v: Accidental) => void;
   onClear: () => void;
 }) {
+  const t = useMessages(messages);
   return (
     <div className="flex flex-wrap items-center gap-3 mb-6">
       <div className="flex items-center gap-2 text-sm">
-        <span className="text-muted-foreground">Spelling</span>
+        <span className="text-muted-foreground">{t.spelling}</span>
         <div
           role="group"
-          aria-label="Accidental spelling"
+          aria-label={t.spellingGroup}
           className="inline-flex rounded-md border border-border bg-muted overflow-hidden"
         >
           {(
             [
-              ["flat", "♭ Flats"],
-              ["sharp", "♯ Sharps"],
+              ["flat", t.flats],
+              ["sharp", t.sharps],
             ] as const
           ).map(([value, label], i) => (
             <button
@@ -135,7 +225,7 @@ function Toolbar({
         onClick={onClear}
         className="ml-auto rounded-md border border-border px-3 py-1.5 text-sm hover:bg-card-hover"
       >
-        Clear
+        {t.clear}
       </button>
     </div>
   );
@@ -182,13 +272,14 @@ function FretboardSvg({
   onCellClick: (stringIdx: number, fret: number) => void;
   onStringToggle: (stringIdx: number) => void;
 }) {
+  const t = useMessages(messages);
   const boardTop = rowY(0);
   const boardBottom = rowY(STRINGS - 1);
 
   return (
     <svg
       role="img"
-      aria-label="Interactive guitar fretboard. Click a fret to place a note on that string; click the circle at the left of each string to toggle open or muted."
+      aria-label={t.fretboardLabel}
       viewBox={`0 0 ${SVG_W} ${SVG_H}`}
       width={SVG_W}
       height={SVG_H}
@@ -311,9 +402,10 @@ function FretboardSvg({
               className="fret-status"
               role="button"
               tabIndex={0}
-              aria-label={`${STRING_NAMES[stringIdx]} string: ${
-                muted ? "muted" : open ? "open" : `fret ${state}`
-              }. Toggle open or muted.`}
+              aria-label={t.stringStatus(
+                STRING_NAMES[stringIdx],
+                muted ? t.muted : open ? t.open : t.fret(state as number),
+              )}
               onClick={() => onStringToggle(stringIdx)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
@@ -392,7 +484,7 @@ function FretboardSvg({
                 fill="transparent"
                 onClick={() => onCellClick(stringIdx, fret)}
               >
-                <title>{`${STRING_NAMES[stringIdx]} string, fret ${fret} — ${name}`}</title>
+                <title>{t.cellTitle(STRING_NAMES[stringIdx], fret, name)}</title>
               </rect>
 
               {isActive ? (
@@ -458,10 +550,12 @@ function ResultPanel({
   frets: Fret[];
   spelling: Spelling;
 }) {
+  const t = useMessages(messages);
+  const lang = useLocale();
   if (result.midi.length === 0) {
     return (
       <div className="mt-8 rounded-card border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-        Click the fretboard to place notes. Use ○ for open strings and × to mute.
+        {t.emptyHint}
       </div>
     );
   }
@@ -471,14 +565,14 @@ function ResultPanel({
     return (
       <div className="mt-8 rounded-card border border-border bg-card p-5 sm:p-6">
         <p className="text-sm uppercase tracking-widest text-muted-foreground">
-          No chord identified
+          {t.noChord}
         </p>
         <p className="mt-3 text-base">
           {result.midi.length < 2
-            ? "Add at least three different notes."
+            ? t.addThree
             : result.pitchClasses.length < 3
-              ? `Played: ${notes}. Need three distinct pitch classes.`
-              : `Played: ${notes}. No standard chord matches this set of notes.`}
+              ? t.needThree(notes)
+              : t.noMatch(notes)}
         </p>
       </div>
     );
@@ -500,33 +594,33 @@ function ResultPanel({
     <div className="mt-8 grid gap-6 sm:grid-cols-[1fr_auto] items-start">
       <div className="rounded-card border border-border bg-card p-5 sm:p-6">
         <p className="text-sm uppercase tracking-widest text-muted-foreground">
-          Most likely
+          {t.mostLikely}
         </p>
         <p className="mt-2 text-5xl sm:text-6xl font-bold text-accent-11 tracking-tight">
           {primaryName}
         </p>
-        {matchExplanation(primary, spelling) && (
+        {matchExplanation(primary, spelling, lang) && (
           <p className="mt-2 text-sm text-muted-foreground">
-            {matchExplanation(primary, spelling)}
+            {matchExplanation(primary, spelling, lang)}
           </p>
         )}
 
         <dl className="mt-6 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
-          <dt className="text-muted-foreground">Notes</dt>
+          <dt className="text-muted-foreground">{t.notes}</dt>
           <dd className="font-mono">{notesLowToHigh}</dd>
-          <dt className="text-muted-foreground">Intervals</dt>
+          <dt className="text-muted-foreground">{t.intervals}</dt>
           <dd className="font-mono">{intervalLabels}</dd>
         </dl>
 
         {alternates.length > 0 && (
           <div className="mt-6">
             <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">
-              Other interpretations
+              {t.otherInterpretations}
             </p>
             <ul className="space-y-1.5">
               {alternates.slice(0, 6).map((m, i) => {
                 const name = chordName(m, spelling);
-                const why = matchExplanation(m, spelling);
+                const why = matchExplanation(m, spelling, lang);
                 return (
                   <li
                     key={`${name}-${i}`}

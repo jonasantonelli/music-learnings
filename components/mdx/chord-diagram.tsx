@@ -1,5 +1,28 @@
+"use client";
+
 import * as React from "react";
 import { NoteText } from "@/components/note-text";
+import { defineMessages } from "@/lib/i18n";
+import { useMessages } from "@/components/locale-provider";
+
+const messages = defineMessages({
+  en: {
+    diagram: "Chord diagram",
+    namedDiagram: (name: string) => `${name} chord diagram`,
+    // Kept short: it sits beside a narrow diagram.
+    baseFret: (fret: number) => `${fret}fr`,
+  },
+  pt: {
+    diagram: "Diagrama de acorde",
+    namedDiagram: (name: string) => `Diagrama do acorde ${name}`,
+    baseFret: (fret: number) => `${fret}ª`,
+  },
+  es: {
+    diagram: "Diagrama de acorde",
+    namedDiagram: (name: string) => `Diagrama del acorde ${name}`,
+    baseFret: (fret: number) => `${fret}.º`,
+  },
+});
 
 type ChordDiagramProps = {
   name?: string;
@@ -30,6 +53,7 @@ export function ChordDiagram({
   baseFret = 1,
   numFrets = 5,
 }: ChordDiagramProps) {
+  const t = useMessages(messages);
   const parsed = parseFrets(frets);
   const strings = parsed.length; // 6 for guitar
   const cellW = 22;
@@ -59,7 +83,7 @@ export function ChordDiagram({
     <figure className="my-4 inline-block mx-2 align-top">
       <svg
         role="img"
-        aria-label={name ? `${name} chord diagram` : "Chord diagram"}
+        aria-label={name ? t.namedDiagram(name) : t.diagram}
         viewBox={`0 0 ${width} ${height}`}
         width={width * 1.6}
         height={height * 1.6}
@@ -96,7 +120,7 @@ export function ChordDiagram({
             fill="currentColor"
             opacity={0.7}
           >
-            {shift}fr
+            {t.baseFret(shift)}
           </text>
         )}
 

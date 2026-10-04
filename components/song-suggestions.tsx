@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { ListenLinks, recordingLabel } from "@/components/listen-links";
-import { baseTitle, type SongSuggestion } from "@/lib/song-suggestions";
+import {
+  baseTitle,
+  SUGGESTION_STYLE_LABELS,
+  type SongSuggestion,
+} from "@/lib/song-suggestions";
+import { formatKey } from "@/lib/song-analysis";
 import { defineMessages, type Locale } from "@/lib/i18n";
 
 const messages = defineMessages({
@@ -50,13 +55,13 @@ export function SongSuggestions({
             </div>
             <div className="mt-3 flex flex-wrap gap-1.5 font-mono text-[11px]">
               <span className="rounded-md bg-tone-butter px-2 py-0.5 text-tone-butter-fg">
-                {s.key}
+                {formatKey(s.key, lang)}
               </span>
               <span className="rounded-md bg-muted px-2 py-0.5 text-muted-foreground">
-                {s.style}
+                {SUGGESTION_STYLE_LABELS[s.style][lang]}
               </span>
             </div>
-            <p className="mt-3 text-sm text-foreground/90">{s.why}</p>
+            <p className="mt-3 text-sm text-foreground/90">{s.why[lang]}</p>
             {related.length > 0 && (
               <p className="mt-2 text-xs text-muted-foreground">
                 {messages[lang].buildsOn}{" "}

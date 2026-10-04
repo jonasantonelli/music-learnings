@@ -1,4 +1,5 @@
 import { STRING_MIDI } from "./music";
+import { defineMessages, type Locale } from "./i18n";
 
 export type ScaleDefinition = {
   slug: string;
@@ -158,6 +159,100 @@ export const SCALES: Record<string, ScaleDefinition> = {
     labels: { 8: "♯5" },
   },
 };
+
+/**
+ * Localized display names, keyed by scale slug. `ScaleDefinition.name` stays
+ * the English name (and slugs stay the lookup keys MDX passes in); UI code
+ * should render `scaleName(slug, locale)` instead.
+ */
+const SCALE_NAMES = defineMessages<Record<string, string>>({
+  en: {
+    ionian: "Ionian",
+    dorian: "Dorian",
+    phrygian: "Phrygian",
+    lydian: "Lydian",
+    mixolydian: "Mixolydian",
+    aeolian: "Aeolian",
+    locrian: "Locrian",
+    "melodic-minor": "Melodic Minor",
+    "lydian-b7": "Lydian ♭7",
+    "harmonic-minor": "Harmonic Minor",
+    "mixolydian-b9-b13": "Mixolydian ♭9 ♭13",
+    "bebop-dominant": "Bebop Dominant",
+    "bebop-major": "Bebop Major",
+    "bebop-dorian": "Bebop Dorian",
+    "bebop-melodic-minor": "Bebop Melodic Minor",
+  },
+  pt: {
+    ionian: "Jônio",
+    dorian: "Dórico",
+    phrygian: "Frígio",
+    lydian: "Lídio",
+    mixolydian: "Mixolídio",
+    aeolian: "Eólio",
+    locrian: "Lócrio",
+    "melodic-minor": "Menor Melódica",
+    "lydian-b7": "Lídio ♭7",
+    "harmonic-minor": "Menor Harmônica",
+    "mixolydian-b9-b13": "Mixolídio ♭9 ♭13",
+    "bebop-dominant": "Bebop Dominante",
+    "bebop-major": "Bebop Maior",
+    "bebop-dorian": "Bebop Dórico",
+    "bebop-melodic-minor": "Bebop Menor Melódica",
+  },
+  es: {
+    ionian: "Jónico",
+    dorian: "Dórico",
+    phrygian: "Frigio",
+    lydian: "Lidio",
+    mixolydian: "Mixolidio",
+    aeolian: "Eólico",
+    locrian: "Locrio",
+    "melodic-minor": "Menor Melódica",
+    "lydian-b7": "Lidio ♭7",
+    "harmonic-minor": "Menor Armónica",
+    "mixolydian-b9-b13": "Mixolidio ♭9 ♭13",
+    "bebop-dominant": "Bebop Dominante",
+    "bebop-major": "Bebop Mayor",
+    "bebop-dorian": "Bebop Dórico",
+    "bebop-melodic-minor": "Bebop Menor Melódica",
+  },
+});
+
+/** Localized alternate names, keyed by scale slug (mirrors `altNames`). */
+const SCALE_ALT_NAMES = defineMessages<Record<string, string[]>>({
+  en: {
+    ionian: ["Major Scale"],
+    aeolian: ["Natural Minor"],
+    "lydian-b7": ["Lydian Dominant"],
+    "mixolydian-b9-b13": ["Phrygian Dominant"],
+    "bebop-dorian": ["Bebop Minor"],
+  },
+  pt: {
+    ionian: ["Escala Maior"],
+    aeolian: ["Menor Natural"],
+    "lydian-b7": ["Lídio Dominante"],
+    "mixolydian-b9-b13": ["Frígio Dominante"],
+    "bebop-dorian": ["Bebop Menor"],
+  },
+  es: {
+    ionian: ["Escala Mayor"],
+    aeolian: ["Menor Natural"],
+    "lydian-b7": ["Lidio Dominante"],
+    "mixolydian-b9-b13": ["Frigio Dominante"],
+    "bebop-dorian": ["Bebop Menor"],
+  },
+});
+
+/** The scale's display name in `locale`, falling back to the English name. */
+export function scaleName(slug: string, locale: Locale): string {
+  return SCALE_NAMES[locale][slug] ?? SCALES[slug]?.name ?? slug;
+}
+
+/** The scale's alternate names in `locale`, falling back to English. */
+export function scaleAltNames(slug: string, locale: Locale): string[] {
+  return SCALE_ALT_NAMES[locale][slug] ?? SCALES[slug]?.altNames ?? [];
+}
 
 export const SCALE_INTERVAL_LABELS: Record<number, string> = {
   0: "R",

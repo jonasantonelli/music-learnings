@@ -4,6 +4,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SongSuggestions } from "@/components/song-suggestions";
 import { getAllSongs, getSongBySlug } from "@/lib/songs";
 import { SONG_SUGGESTIONS } from "@/lib/song-suggestions";
+import { formatKey } from "@/lib/song-analysis";
 import { localizedAnchor } from "@/components/mdx/localized-link";
 import { useMDXComponents } from "@/mdx-components";
 import { defineMessages, hasLocale, htmlLang, locales } from "@/lib/i18n";
@@ -89,7 +90,7 @@ export default async function SongPage({
 
           <div className="mt-4 flex flex-wrap gap-1.5 font-mono text-xs">
             <span className="rounded-md bg-tone-butter px-2 py-0.5 text-tone-butter-fg">
-              {fm.key}
+              {formatKey(fm.key, lang)}
             </span>
             <span className="rounded-md bg-muted px-2 py-0.5 text-muted-foreground">
               {fm.time_signature}

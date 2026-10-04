@@ -1,5 +1,24 @@
+"use client";
+
 import * as React from "react";
 import { NoteText } from "@/components/note-text";
+import { defineMessages } from "@/lib/i18n";
+import { useMessages } from "@/components/locale-provider";
+
+const messages = defineMessages({
+  en: {
+    fretboard: "Guitar fretboard",
+    fretNumber: (fret: number) => `${fret}fr`,
+  },
+  pt: {
+    fretboard: "Braço da guitarra",
+    fretNumber: (fret: number) => `${fret}ª casa`,
+  },
+  es: {
+    fretboard: "Mástil de la guitarra",
+    fretNumber: (fret: number) => `traste ${fret}`,
+  },
+});
 
 type Marker = {
   string: number; // 1 = high E (top visual), 6 = low E (bottom)
@@ -29,6 +48,7 @@ export function Fretboard({
   tuning = STRING_NAMES_STD,
   caption,
 }: FretboardProps) {
+  const t = useMessages(messages);
   const cellW = 44;
   const cellH = 26;
   const padX = 36;
@@ -43,7 +63,7 @@ export function Fretboard({
     <figure className="my-6 overflow-x-auto">
       <svg
         role="img"
-        aria-label={caption ?? "Guitar fretboard"}
+        aria-label={caption ?? t.fretboard}
         viewBox={`0 0 ${width} ${height}`}
         className="w-full max-w-full h-auto text-foreground"
       >
@@ -138,7 +158,7 @@ export function Fretboard({
             fill="currentColor"
             opacity={0.6}
           >
-            {startFret + 1}fr
+            {t.fretNumber(startFret + 1)}
           </text>
         )}
 

@@ -16,12 +16,50 @@ import {
   SegmentedControl,
   ToggleSwitch,
 } from "./control-group";
+import { defineMessages } from "@/lib/i18n";
+import { useMessages } from "@/components/locale-provider";
 
-const PROGRESSION_OPTIONS: { label: string; value: ProgressionType }[] = [
-  { label: "ii-V-I Major", value: "major-251" },
-  { label: "ii-V-I Minor", value: "minor-251" },
-  { label: "Single chord", value: "single" },
-];
+const messages = defineMessages({
+  en: {
+    key: "Key",
+    progression: "Progression",
+    pattern: "Pattern",
+    beats: "Beats",
+    notes: "Notes",
+    major251: "ii-V-I Major",
+    minor251: "ii-V-I Minor",
+    single: "Single chord",
+    root: "Root",
+    chordTone: "Chord tone",
+    approach: "Approach",
+  },
+  pt: {
+    key: "Tom",
+    progression: "Progressão",
+    pattern: "Padrão",
+    beats: "Tempos",
+    notes: "Notas",
+    major251: "ii-V-I maior",
+    minor251: "ii-V-I menor",
+    single: "Acorde único",
+    root: "Fundamental",
+    chordTone: "Nota do acorde",
+    approach: "Aproximação",
+  },
+  es: {
+    key: "Tonalidad",
+    progression: "Progresión",
+    pattern: "Patrón",
+    beats: "Tiempos",
+    notes: "Notas",
+    major251: "ii-V-I mayor",
+    minor251: "ii-V-I menor",
+    single: "Acorde único",
+    root: "Fundamental",
+    chordTone: "Nota del acorde",
+    approach: "Aproximación",
+  },
+});
 
 // Beat types reuse the scale-degree roles from globals.css.
 const BEAT_ROLE: Record<BassNote["type"], "root" | "guide" | "passing"> = {
@@ -62,6 +100,12 @@ export function WalkingBassExplorer() {
     useState<ProgressionType>("major-251");
   const [showNotes, setShowNotes] = useState(false);
   const [patternIndex, setPatternIndex] = useState(0);
+  const t = useMessages(messages);
+  const progressionOptions: { label: string; value: ProgressionType }[] = [
+    { label: t.major251, value: "major-251" },
+    { label: t.minor251, value: "minor-251" },
+    { label: t.single, value: "single" },
+  ];
 
   const setKey = (n: number) => {
     setKeyLocal(n);
@@ -89,21 +133,21 @@ export function WalkingBassExplorer() {
     <div className="my-8">
       <ControlBar>
         <NoteGrid
-          label="Key"
+          label={t.key}
           options={KEY_OPTIONS.map((k) => ({ label: k.name, value: k.value }))}
           value={key}
           onChange={setKey}
         />
 
         <SegmentedControl
-          label="Progression"
-          options={PROGRESSION_OPTIONS}
+          label={t.progression}
+          options={progressionOptions}
           value={progression}
           onChange={setProgression}
         />
 
         <SegmentedControl
-          label="Pattern"
+          label={t.pattern}
           options={[
             { label: "1", value: 0 },
             { label: "2", value: 1 },
@@ -115,8 +159,8 @@ export function WalkingBassExplorer() {
         />
 
         <ToggleSwitch
-          labelOff="Beats"
-          labelOn="Notes"
+          labelOff={t.beats}
+          labelOn={t.notes}
           value={showNotes}
           onChange={setShowNotes}
         />
@@ -128,7 +172,7 @@ export function WalkingBassExplorer() {
             className="inline-block h-3 w-3 rounded-full"
             style={{ background: BEAT_COLORS.root }}
           />
-          Root
+          {t.root}
         </span>
         <span className="inline-flex items-center gap-1.5">
           <span
@@ -138,14 +182,14 @@ export function WalkingBassExplorer() {
               boxShadow: "inset 0 0 0 1.5px var(--degree-guide-border)",
             }}
           />
-          Chord tone
+          {t.chordTone}
         </span>
         <span className="inline-flex items-center gap-1.5">
           <span
             className="inline-block h-3 w-3 rounded-full"
             style={{ background: BEAT_COLORS.approach }}
           />
-          Approach
+          {t.approach}
         </span>
       </div>
 
