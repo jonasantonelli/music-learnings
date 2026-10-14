@@ -173,8 +173,8 @@ export function VoicingDiagram({
                   cx={cx}
                   cy={padTop - 10}
                   r={4}
-                  fill={highlights?.[i] ? "var(--accent-9)" : "none"}
-                  stroke={highlights?.[i] ? "var(--accent-9)" : "currentColor"}
+                  fill={highlights?.[i] ? "var(--degree-root-bg)" : "none"}
+                  stroke={highlights?.[i] ? "var(--degree-root-bg)" : "currentColor"}
                   strokeWidth={1.25}
                 />
                 {labels?.[i] && (
@@ -183,7 +183,7 @@ export function VoicingDiagram({
                     y={padTop - 20}
                     textAnchor="middle"
                     fontSize={8}
-                    fill={highlights?.[i] ? "var(--accent-9)" : "currentColor"}
+                    fill={highlights?.[i] ? "var(--degree-root-bg)" : "currentColor"}
                     opacity={0.7}
                   >
                     <NoteText svg text={labels[i]!} />
@@ -204,7 +204,7 @@ export function VoicingDiagram({
           const label = labels?.[i];
           return (
             <g key={`n-${i}`}>
-              <circle cx={cx} cy={cy} r={8.5} fill={highlights?.[i] ? "var(--accent-9)" : "currentColor"} />
+              <circle cx={cx} cy={cy} r={8.5} fill={highlights?.[i] ? "var(--degree-root-bg)" : "currentColor"} />
               {label && (
                 <text
                   x={cx}
@@ -212,7 +212,7 @@ export function VoicingDiagram({
                   textAnchor="middle"
                   fontSize={9}
                   fontWeight={600}
-                  fill={highlights?.[i] ? "var(--accent-contrast)" : "var(--background)"}
+                  fill={highlights?.[i] ? "var(--degree-root-fg)" : "var(--background)"}
                 >
                   <NoteText svg text={label} />
                 </text>
