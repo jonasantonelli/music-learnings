@@ -67,8 +67,8 @@ function buildMarkers(root: number): Marker[] {
         string: stringNum,
         fret,
         label: INTERVAL_LABEL[interval],
-        color: isB9 ? "var(--accent-9)" : "currentColor",
-        labelColor: isB9 ? "var(--accent-contrast)" : undefined,
+        color: isB9 ? "var(--degree-root-bg)" : "currentColor",
+        labelColor: isB9 ? "var(--degree-root-fg)" : undefined,
       });
     }
   }

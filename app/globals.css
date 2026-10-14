@@ -48,8 +48,9 @@
   --tone-butter-border: #ebd57a;
 
   /* Scale-degree roles on diagrams. */
-  --degree-root-bg: var(--accent-9);
-  --degree-root-fg: var(--accent-contrast);
+  /* Roots stand out in lilac: the ink accent would blend with regular tones. */
+  --degree-root-bg: var(--accent-dot);
+  --degree-root-fg: #ffffff;
   --degree-guide-bg: var(--tone-lilac-bg);
   --degree-guide-fg: var(--tone-lilac-fg);
   --degree-guide-border: var(--tone-lilac-border);
@@ -122,6 +123,8 @@
   --tone-butter-fg: #2e2400;
   --tone-butter-border: #f5e19a;
 
+  --degree-root-bg: var(--accent-9);
+  --degree-root-fg: var(--accent-contrast);
   --degree-guide-bg: var(--tone-mint-bg);
   --degree-guide-fg: var(--tone-mint-fg);
   --degree-guide-border: var(--tone-mint-border);
