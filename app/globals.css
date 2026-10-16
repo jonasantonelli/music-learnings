@@ -55,7 +55,7 @@
     Non-root fills keep their pastel hue but are lifted toward white, so the
     purple root stays the loudest dot; borders keep the full colour.
   */
-  --degree-lighten: 50%;
+  --degree-lighten: 65%;
   --degree-guide-bg: color-mix(in oklab, var(--tone-mint-bg), #ffffff var(--degree-lighten));
   --degree-guide-fg: var(--tone-mint-fg);
   --degree-guide-border: var(--tone-mint-border);
@@ -130,10 +130,6 @@
 
   --degree-root-bg: var(--accent-9);
   --degree-root-fg: var(--accent-contrast);
-  /* Guide tones: a dim mint tint with a mint outline, quieter than the solid root. */
-  --degree-guide-bg: #1a2e27;
-  --degree-guide-fg: #9fe8c7;
-  --degree-guide-border: #3d7a62;
   --degree-tone-bg: #1b1b24;
   --degree-tone-fg: #eeeef4;
   --degree-tone-border: #5a5a6e;
