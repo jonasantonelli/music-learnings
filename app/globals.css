@@ -49,7 +49,7 @@
 
   /* Scale-degree roles on diagrams. */
   /* Roots stand out in soft purple: the ink accent would blend with regular tones. */
-  --degree-root-bg: #a58ff2;
+  --degree-root-bg: #c4b3fb;
   --degree-root-fg: #1f1545;
   --degree-guide-bg: var(--tone-lilac-bg);
   --degree-guide-fg: var(--tone-lilac-fg);
