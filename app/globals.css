@@ -52,16 +52,16 @@
   --degree-root-bg: #c4b3fb;
   --degree-root-fg: #1f1545;
   /*
-    Non-root colours are muted slightly toward grey so the purple root stays
-    the loudest dot.
+    Non-root fills keep their pastel hue but are lifted toward white, so the
+    purple root stays the loudest dot; borders keep the full colour.
   */
-  --degree-desaturate: 15%;
-  --degree-guide-bg: color-mix(in oklab, var(--tone-mint-bg), var(--muted-foreground) var(--degree-desaturate));
+  --degree-lighten: 25%;
+  --degree-guide-bg: color-mix(in oklab, var(--tone-mint-bg), #ffffff var(--degree-lighten));
   --degree-guide-fg: var(--tone-mint-fg);
-  --degree-guide-border: color-mix(in oklab, var(--tone-mint-border), var(--muted-foreground) var(--degree-desaturate));
-  --degree-color-bg: color-mix(in oklab, var(--tone-peach-bg), var(--muted-foreground) var(--degree-desaturate));
+  --degree-guide-border: var(--tone-mint-border);
+  --degree-color-bg: color-mix(in oklab, var(--tone-peach-bg), #ffffff var(--degree-lighten));
   --degree-color-fg: var(--tone-peach-fg);
-  --degree-color-border: color-mix(in oklab, var(--tone-peach-border), var(--muted-foreground) var(--degree-desaturate));
+  --degree-color-border: var(--tone-peach-border);
   --degree-tone-bg: #ffffff;
   --degree-tone-fg: #0a0a0a;
   --degree-tone-border: #cfcfcf;
@@ -132,8 +132,8 @@
   --degree-root-fg: var(--accent-contrast);
   /* Guide tones: a dim mint tint with a mint outline, quieter than the solid root. */
   --degree-guide-bg: #1a2e27;
-  --degree-guide-fg: color-mix(in oklab, #9fe8c7, var(--muted-foreground) var(--degree-desaturate));
-  --degree-guide-border: color-mix(in oklab, #3d7a62, var(--muted-foreground) var(--degree-desaturate));
+  --degree-guide-fg: #9fe8c7;
+  --degree-guide-border: #3d7a62;
   --degree-tone-bg: #1b1b24;
   --degree-tone-fg: #eeeef4;
   --degree-tone-border: #5a5a6e;
