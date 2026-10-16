@@ -52,20 +52,30 @@
   --degree-root-bg: #c4b3fb;
   --degree-root-fg: #1f1545;
   /*
-    Non-root fills keep their pastel hue but are lifted toward white, so the
-    purple root stays the loudest dot; borders keep the full colour.
+    Non-root fills keep their pastel hue but are lifted toward white and made
+    slightly translucent, so the purple root stays the loudest dot; borders
+    and labels keep the full colour.
   */
   --degree-lighten: 65%;
-  --degree-guide-bg: color-mix(in oklab, var(--tone-mint-bg), #ffffff var(--degree-lighten));
+  --degree-fill-opacity: 85%;
+  --degree-guide-bg: color-mix(
+    in srgb,
+    color-mix(in oklab, var(--tone-mint-bg), #ffffff var(--degree-lighten)) var(--degree-fill-opacity),
+    transparent
+  );
   --degree-guide-fg: var(--tone-mint-fg);
   --degree-guide-border: var(--tone-mint-border);
-  --degree-color-bg: color-mix(in oklab, var(--tone-peach-bg), #ffffff var(--degree-lighten));
+  --degree-color-bg: color-mix(
+    in srgb,
+    color-mix(in oklab, var(--tone-peach-bg), #ffffff var(--degree-lighten)) var(--degree-fill-opacity),
+    transparent
+  );
   --degree-color-fg: var(--tone-peach-fg);
   --degree-color-border: var(--tone-peach-border);
   --degree-tone-bg: #ffffff;
   --degree-tone-fg: #0a0a0a;
   --degree-tone-border: #cfcfcf;
-  --degree-passing-bg: var(--muted-foreground);
+  --degree-passing-bg: color-mix(in srgb, var(--muted-foreground) var(--degree-fill-opacity), transparent);
   --degree-passing-fg: var(--background);
 
   /* Arpeggio diagrams: non-root notes are hollow so the solid root stands out. */
