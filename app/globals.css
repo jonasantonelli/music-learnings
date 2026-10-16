@@ -51,15 +51,28 @@
   /* Roots stand out in soft purple: the ink accent would blend with regular tones. */
   --degree-root-bg: #c4b3fb;
   --degree-root-fg: #1f1545;
-  /* Non-root fills are translucent so the solid root stays the loudest dot. */
-  --degree-fill-opacity: 60%;
-  /* Guide tones stay quiet: a pale mint that never competes with the purple root. */
-  --degree-guide-bg: color-mix(in srgb, var(--tone-mint-bg) var(--degree-fill-opacity), transparent);
+  /*
+    Non-root colours are muted toward grey and their fills translucent, so the
+    solid root stays the loudest dot. Labels keep full colour for legibility.
+  */
+  --degree-fill-opacity: 40%;
+  --degree-desaturate: 30%;
+  --degree-guide-bg: color-mix(
+    in srgb,
+    color-mix(in oklab, var(--tone-mint-bg), var(--muted-foreground) var(--degree-desaturate))
+      var(--degree-fill-opacity),
+    transparent
+  );
   --degree-guide-fg: var(--tone-mint-fg);
-  --degree-guide-border: var(--tone-mint-border);
-  --degree-color-bg: color-mix(in srgb, var(--tone-peach-bg) var(--degree-fill-opacity), transparent);
+  --degree-guide-border: color-mix(in oklab, var(--tone-mint-border), var(--muted-foreground) var(--degree-desaturate));
+  --degree-color-bg: color-mix(
+    in srgb,
+    color-mix(in oklab, var(--tone-peach-bg), var(--muted-foreground) var(--degree-desaturate))
+      var(--degree-fill-opacity),
+    transparent
+  );
   --degree-color-fg: var(--tone-peach-fg);
-  --degree-color-border: var(--tone-peach-border);
+  --degree-color-border: color-mix(in oklab, var(--tone-peach-border), var(--muted-foreground) var(--degree-desaturate));
   --degree-tone-bg: #ffffff;
   --degree-tone-fg: #0a0a0a;
   --degree-tone-border: #cfcfcf;
@@ -130,8 +143,10 @@
   --degree-root-fg: var(--accent-contrast);
   /* Guide tones: a dim mint tint with a mint outline, quieter than the solid root. */
   --degree-guide-bg: color-mix(in srgb, #1a2e27 var(--degree-fill-opacity), transparent);
-  --degree-guide-fg: #9fe8c7;
-  --degree-guide-border: #3d7a62;
+  --degree-guide-fg: color-mix(in oklab, #9fe8c7, var(--muted-foreground) var(--degree-desaturate));
+  --degree-guide-border: color-mix(in oklab, #3d7a62, var(--muted-foreground) var(--degree-desaturate));
+  /* Translucent peach turns dark here, so tension labels flip to light peach. */
+  --degree-color-fg: color-mix(in oklab, #ffc3a0, var(--muted-foreground) var(--degree-desaturate));
   --degree-tone-bg: #1b1b24;
   --degree-tone-fg: #eeeef4;
   --degree-tone-border: #5a5a6e;
