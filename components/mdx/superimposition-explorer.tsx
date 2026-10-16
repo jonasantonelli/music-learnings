@@ -60,7 +60,7 @@ const messages = defineMessages<{
     triad: "triad",
     over: "over",
     legend: (chord) =>
-      `Coral is the root of ${chord}, plain dots are its other chord tones, peach dots are the tensions the arpeggio adds.`,
+      `The purple dot is the root of ${chord}, plain dots are its other chord tones, peach dots are the tensions the arpeggio adds.`,
     captionFull: (arp, chord) => `${arp} arpeggio over ${chord} — full neck`,
     captionShape: (arp, shape) => `${arp} — ${shape} shape`,
     sounds: {
@@ -94,7 +94,7 @@ const messages = defineMessages<{
     triad: "tríade",
     over: "sobre",
     legend: (chord) =>
-      `Coral é a fundamental de ${chord}, pontos lisos são as outras notas do acorde, pontos pêssego são as tensões que o arpejo acrescenta.`,
+      `O ponto roxo é a fundamental de ${chord}, pontos lisos são as outras notas do acorde, pontos pêssego são as tensões que o arpejo acrescenta.`,
     captionFull: (arp, chord) => `Arpejo de ${arp} sobre ${chord} — braço inteiro`,
     captionShape: (arp, shape) => `${arp} — forma de ${shape}`,
     sounds: {
@@ -128,7 +128,7 @@ const messages = defineMessages<{
     triad: "tríada",
     over: "sobre",
     legend: (chord) =>
-      `Coral es la fundamental de ${chord}, los puntos lisos son sus otras notas, los puntos durazno son las tensiones que añade el arpegio.`,
+      `El punto morado es la fundamental de ${chord}, los puntos lisos son sus otras notas, los puntos durazno son las tensiones que añade el arpegio.`,
     captionFull: (arp, chord) => `Arpegio de ${arp} sobre ${chord} — mástil completo`,
     captionShape: (arp, shape) => `${arp} — forma de ${shape}`,
     sounds: {
