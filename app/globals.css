@@ -48,12 +48,12 @@
   --tone-butter-border: #ebd57a;
 
   /* Scale-degree roles on diagrams. */
-  /* Roots stand out in soft purple: the ink accent would blend with regular tones. */
-  --degree-root-bg: #c4b3fb;
-  --degree-root-fg: #1f1545;
+  /* Roots match the selected-key highlight: solid ink here, lilac in dark mode. */
+  --degree-root-bg: var(--accent-9);
+  --degree-root-fg: var(--accent-contrast);
   /*
     Non-root fills keep their pastel hue but are lifted toward white and made
-    slightly translucent, so the purple root stays the loudest dot; borders
+    slightly translucent, so the solid root stays the loudest dot; borders
     and labels keep the full colour.
   */
   --degree-lighten: 65%;
