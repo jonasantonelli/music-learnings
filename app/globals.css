@@ -51,18 +51,20 @@
   /* Roots stand out in soft purple: the ink accent would blend with regular tones. */
   --degree-root-bg: #c4b3fb;
   --degree-root-fg: #1f1545;
+  /* Non-root fills are translucent so the solid root stays the loudest dot. */
+  --degree-fill-opacity: 60%;
   /* Guide tones stay quiet: a pale mint that never competes with the purple root. */
-  --degree-guide-bg: var(--tone-mint-bg);
+  --degree-guide-bg: color-mix(in srgb, var(--tone-mint-bg) var(--degree-fill-opacity), transparent);
   --degree-guide-fg: var(--tone-mint-fg);
   --degree-guide-border: var(--tone-mint-border);
-  --degree-color-bg: var(--tone-peach-bg);
+  --degree-color-bg: color-mix(in srgb, var(--tone-peach-bg) var(--degree-fill-opacity), transparent);
   --degree-color-fg: var(--tone-peach-fg);
   --degree-color-border: var(--tone-peach-border);
   --degree-tone-bg: #ffffff;
   --degree-tone-fg: #0a0a0a;
   --degree-tone-border: #cfcfcf;
-  --degree-passing-bg: var(--muted-foreground);
-  --degree-passing-fg: var(--background);
+  --degree-passing-bg: color-mix(in srgb, var(--muted-foreground) var(--degree-fill-opacity), transparent);
+  --degree-passing-fg: var(--foreground);
 
   /* Arpeggio diagrams: non-root notes are hollow so the solid root stands out. */
   --arpeggio-tone-bg: var(--degree-tone-bg);
@@ -127,7 +129,7 @@
   --degree-root-bg: var(--accent-9);
   --degree-root-fg: var(--accent-contrast);
   /* Guide tones: a dim mint tint with a mint outline, quieter than the solid root. */
-  --degree-guide-bg: #1a2e27;
+  --degree-guide-bg: color-mix(in srgb, #1a2e27 var(--degree-fill-opacity), transparent);
   --degree-guide-fg: #9fe8c7;
   --degree-guide-border: #3d7a62;
   --degree-tone-bg: #1b1b24;
