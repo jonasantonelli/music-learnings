@@ -51,9 +51,10 @@
   /* Roots stand out in soft purple: the ink accent would blend with regular tones. */
   --degree-root-bg: #c4b3fb;
   --degree-root-fg: #1f1545;
-  --degree-guide-bg: var(--tone-lilac-bg);
-  --degree-guide-fg: var(--tone-lilac-fg);
-  --degree-guide-border: var(--tone-lilac-border);
+  /* Guide tones stay quiet: a pale mint that never competes with the purple root. */
+  --degree-guide-bg: var(--tone-mint-bg);
+  --degree-guide-fg: var(--tone-mint-fg);
+  --degree-guide-border: var(--tone-mint-border);
   --degree-color-bg: var(--tone-peach-bg);
   --degree-color-fg: var(--tone-peach-fg);
   --degree-color-border: var(--tone-peach-border);
@@ -125,9 +126,10 @@
 
   --degree-root-bg: var(--accent-9);
   --degree-root-fg: var(--accent-contrast);
-  --degree-guide-bg: var(--tone-mint-bg);
-  --degree-guide-fg: var(--tone-mint-fg);
-  --degree-guide-border: var(--tone-mint-border);
+  /* Guide tones: a dim mint tint with a mint outline, quieter than the solid root. */
+  --degree-guide-bg: #1a2e27;
+  --degree-guide-fg: #9fe8c7;
+  --degree-guide-border: #3d7a62;
   --degree-tone-bg: #1b1b24;
   --degree-tone-fg: #eeeef4;
   --degree-tone-border: #5a5a6e;
