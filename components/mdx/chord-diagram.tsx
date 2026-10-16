@@ -4,6 +4,7 @@ import * as React from "react";
 import { NoteText } from "@/components/note-text";
 import { defineMessages } from "@/lib/i18n";
 import { useMessages } from "@/components/locale-provider";
+import { degreeMarkerStyle, type DegreeRole } from "@/lib/degree-roles";
 
 const messages = defineMessages({
   en: {
@@ -30,6 +31,8 @@ type ChordDiagramProps = {
   frets: string | Array<number | "x" | null>;
   /** Optional finger numbers, same order, 1-4, 0/null for none */
   fingers?: Array<number | null>;
+  /** Optional degree role per string, same order, to colour each note */
+  roles?: Array<DegreeRole | null>;
   baseFret?: number;
   /** Number of frets to render */
   numFrets?: number;
@@ -50,6 +53,7 @@ export function ChordDiagram({
   name,
   frets,
   fingers,
+  roles,
   baseFret = 1,
   numFrets = 5,
 }: ChordDiagramProps) {
@@ -171,14 +175,16 @@ export function ChordDiagram({
             );
           }
           if (v === 0) {
+            const role = roles?.[i];
+            const style = role ? degreeMarkerStyle(role) : null;
             return (
               <circle
                 key={`m-${i}`}
                 cx={cx}
                 cy={padTop - 10}
                 r={4}
-                fill="none"
-                stroke="currentColor"
+                fill={style?.color ?? "none"}
+                stroke={style?.stroke ?? style?.color ?? "currentColor"}
                 strokeWidth={1.25}
               />
             );
@@ -194,9 +200,18 @@ export function ChordDiagram({
           const cx = padX + i * cellW;
           const cy = padTop + (displayFret - 0.5) * cellH;
           const finger = fingers?.[i];
+          const role = roles?.[i];
+          const style = role ? degreeMarkerStyle(role) : null;
           return (
             <g key={`n-${i}`}>
-              <circle cx={cx} cy={cy} r={8.5} fill="currentColor" />
+              <circle
+                cx={cx}
+                cy={cy}
+                r={8.5}
+                fill={style?.color ?? "currentColor"}
+                stroke={style?.stroke}
+                strokeWidth={style?.stroke ? 1.25 : undefined}
+              />
               {finger ? (
                 <text
                   x={cx}
@@ -204,7 +219,7 @@ export function ChordDiagram({
                   textAnchor="middle"
                   fontSize={10}
                   fontWeight={600}
-                  fill="var(--background)"
+                  fill={style?.labelColor ?? "var(--background)"}
                 >
                   {finger}
                 </text>

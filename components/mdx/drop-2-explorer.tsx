@@ -212,7 +212,7 @@ export function Drop2Explorer() {
                   }
                   frets={v.frets}
                   labels={marks.labels}
-                  highlights={marks.highlights}
+                  roles={marks.roles}
                 />
               );
             })}

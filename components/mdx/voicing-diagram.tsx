@@ -3,6 +3,7 @@
 import { NoteText } from "@/components/note-text";
 import { defineMessages } from "@/lib/i18n";
 import { useMessages } from "@/components/locale-provider";
+import { degreeMarkerStyle, type DegreeRole } from "@/lib/degree-roles";
 
 const messages = defineMessages({
   en: {
@@ -28,7 +29,7 @@ type VoicingDiagramProps = {
   subtitle?: string;
   frets: (number | null)[]; // 6 elements, null = muted
   labels?: (string | null)[]; // 6 elements, text on dots
-  highlights?: (boolean | null)[]; // 6 elements, true = accent color
+  roles?: (DegreeRole | null)[]; // 6 elements, colours each dot by degree
   numFrets?: number;
 };
 
@@ -37,7 +38,7 @@ export function VoicingDiagram({
   subtitle,
   frets,
   labels,
-  highlights,
+  roles,
   numFrets = 5,
 }: VoicingDiagramProps) {
   const t = useMessages(messages);
@@ -166,15 +167,17 @@ export function VoicingDiagram({
                 ×
               </text>
             );
-          if (v === 0)
+          if (v === 0) {
+            const role = roles?.[i];
+            const style = role ? degreeMarkerStyle(role) : null;
             return (
               <g key={`m-${i}`}>
                 <circle
                   cx={cx}
                   cy={padTop - 10}
                   r={4}
-                  fill={highlights?.[i] ? "var(--degree-root-bg)" : "none"}
-                  stroke={highlights?.[i] ? "var(--degree-root-bg)" : "currentColor"}
+                  fill={style?.color ?? "none"}
+                  stroke={style?.stroke ?? style?.color ?? "currentColor"}
                   strokeWidth={1.25}
                 />
                 {labels?.[i] && (
@@ -183,7 +186,7 @@ export function VoicingDiagram({
                     y={padTop - 20}
                     textAnchor="middle"
                     fontSize={8}
-                    fill={highlights?.[i] ? "var(--degree-root-bg)" : "currentColor"}
+                    fill="currentColor"
                     opacity={0.7}
                   >
                     <NoteText svg text={labels[i]!} />
@@ -191,6 +194,7 @@ export function VoicingDiagram({
                 )}
               </g>
             );
+          }
           return null;
         })}
 
@@ -202,9 +206,18 @@ export function VoicingDiagram({
           const cx = padX + i * cellW;
           const cy = padTop + (df - 0.5) * cellH;
           const label = labels?.[i];
+          const role = roles?.[i];
+          const style = role ? degreeMarkerStyle(role) : null;
           return (
             <g key={`n-${i}`}>
-              <circle cx={cx} cy={cy} r={8.5} fill={highlights?.[i] ? "var(--degree-root-bg)" : "currentColor"} />
+              <circle
+                cx={cx}
+                cy={cy}
+                r={8.5}
+                fill={style?.color ?? "currentColor"}
+                stroke={style?.stroke}
+                strokeWidth={style?.stroke ? 1.25 : undefined}
+              />
               {label && (
                 <text
                   x={cx}
@@ -212,7 +225,7 @@ export function VoicingDiagram({
                   textAnchor="middle"
                   fontSize={9}
                   fontWeight={600}
-                  fill={highlights?.[i] ? "var(--degree-root-fg)" : "var(--background)"}
+                  fill={style?.labelColor ?? "var(--background)"}
                 >
                   <NoteText svg text={label} />
                 </text>

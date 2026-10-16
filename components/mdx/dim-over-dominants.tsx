@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePracticeNote } from "@/lib/use-practice-note";
 import { KEY_OPTIONS, dominantFlat9Speller, keyName } from "@/lib/music";
+import { degreeMarkerStyle, roleForDegree } from "@/lib/degree-roles";
 import { Fretboard } from "./fretboard";
 import { ControlBar, NoteGrid } from "./control-group";
 import { defineMessages } from "@/lib/i18n";
@@ -52,6 +53,7 @@ type Marker = {
   label: string;
   color?: string;
   labelColor?: string;
+  stroke?: string;
 };
 
 function buildMarkers(root: number): Marker[] {
@@ -62,13 +64,13 @@ function buildMarkers(root: number): Marker[] {
     for (let fret = 1; fret <= FRET_COUNT; fret++) {
       const interval = ((openPc + fret - root) % 12 + 12) % 12;
       if (!targets.has(interval)) continue;
-      const isB9 = interval === 1;
+      // The ♭9 is the °7 arpeggio's root; the rest read as V7 chord tones.
+      const role = interval === 1 ? "root" : roleForDegree(INTERVAL_LABEL[interval]);
       markers.push({
         string: stringNum,
         fret,
         label: INTERVAL_LABEL[interval],
-        color: isB9 ? "var(--degree-root-bg)" : "currentColor",
-        labelColor: isB9 ? "var(--degree-root-fg)" : undefined,
+        ...degreeMarkerStyle(role),
       });
     }
   }

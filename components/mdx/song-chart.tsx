@@ -27,6 +27,7 @@ import {
   type TetradChordQuality,
   type TetradVoicing,
 } from "@/lib/tetrad-chords";
+import { roleForDegree, type DegreeRole } from "@/lib/degree-roles";
 import { VoicingDiagram } from "./voicing-diagram";
 import { drop2Messages } from "./drop-2-shared";
 import { defineMessages } from "@/lib/i18n";
@@ -342,13 +343,13 @@ function buildPopoverLabels(
   return labels;
 }
 
-function buildPopoverHighlights(voicing: Voicing, stringSetIndex: number): (boolean | null)[] {
-  const highlights: (boolean | null)[] = [null, null, null, null, null, null];
+function buildPopoverRoles(voicing: Voicing, stringSetIndex: number): (DegreeRole | null)[] {
+  const roles: (DegreeRole | null)[] = [null, null, null, null, null, null];
   const indices = STRING_SETS[stringSetIndex].indices;
   for (let i = 0; i < 4; i++) {
-    highlights[indices[i]] = voicing.toneIndices[i] === 0;
+    roles[indices[i]] = roleForDegree(voicing.labels[i]);
   }
-  return highlights;
+  return roles;
 }
 
 type PopoverState = {
@@ -371,15 +372,16 @@ function buildTetradLabels(voicing: TetradVoicing): (string | null)[] {
   return labels;
 }
 
-function buildTetradHighlights(voicing: TetradVoicing): (boolean | null)[] {
-  const highlights: (boolean | null)[] = [null, null, null, null, null, null];
+function buildTetradRoles(voicing: TetradVoicing): (DegreeRole | null)[] {
+  const roles: (DegreeRole | null)[] = [null, null, null, null, null, null];
   let intervalIdx = 0;
   for (let si = 0; si < 6; si++) {
     if (voicing.frets[si] === null) continue;
-    highlights[si] = voicing.intervals[intervalIdx] === 0;
+    const interval = voicing.intervals[intervalIdx];
+    roles[si] = roleForDegree(TETRAD_INTERVAL_LABELS[interval] ?? String(interval));
     intervalIdx++;
   }
-  return highlights;
+  return roles;
 }
 
 function ChordVoicingPopover({
@@ -463,7 +465,7 @@ function ChordVoicingPopover({
                   subtitle={label}
                   frets={voicing.frets}
                   labels={buildTetradLabels(voicing)}
-                  highlights={buildTetradHighlights(voicing)}
+                  roles={buildTetradRoles(voicing)}
                 />
               ))}
             </div>
@@ -504,7 +506,7 @@ function ChordVoicingPopover({
                 subtitle={d2.inversionNames[v.inversionIndex] ?? INVERSION_NAMES[v.inversionIndex]}
                 frets={v.frets}
                 labels={buildPopoverLabels(v, root, stringSet)}
-                highlights={buildPopoverHighlights(v, stringSet)}
+                roles={buildPopoverRoles(v, stringSet)}
               />
             ))}
           </div>

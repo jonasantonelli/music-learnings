@@ -17,6 +17,7 @@ import {
 } from "@/lib/tetrad-chords";
 import { defineMessages } from "@/lib/i18n";
 import { useLocale, useMessages } from "@/components/locale-provider";
+import { roleForDegree, type DegreeRole } from "@/lib/degree-roles";
 import { VoicingDiagram } from "./voicing-diagram";
 import {
   NoteGrid,
@@ -64,15 +65,16 @@ function buildLabels(
   return labels;
 }
 
-function buildHighlights(voicing: TetradVoicing): (boolean | null)[] {
-  const highlights: (boolean | null)[] = [null, null, null, null, null, null];
+function buildRoles(voicing: TetradVoicing): (DegreeRole | null)[] {
+  const roles: (DegreeRole | null)[] = [null, null, null, null, null, null];
   let intervalIdx = 0;
   for (let si = 0; si < 6; si++) {
     if (voicing.frets[si] === null) continue;
-    highlights[si] = voicing.intervals[intervalIdx] === 0;
+    const interval = voicing.intervals[intervalIdx];
+    roles[si] = roleForDegree(TETRAD_INTERVAL_LABELS[interval] ?? String(interval));
     intervalIdx++;
   }
-  return highlights;
+  return roles;
 }
 
 export function TetradChordExplorer() {
@@ -171,7 +173,7 @@ function FamilyGroup({
               name={speller.root + TETRAD_CHORD_LABELS[quality]}
               frets={voicing.frets}
               labels={buildLabels(voicing, speller, showNotes)}
-              highlights={buildHighlights(voicing)}
+              roles={buildRoles(voicing)}
             />
           );
         })}
