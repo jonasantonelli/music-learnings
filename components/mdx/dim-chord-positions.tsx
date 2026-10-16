@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePracticeNote } from "@/lib/use-practice-note";
 import { KEY_OPTIONS, dominantFlat9Speller, keyName } from "@/lib/music";
+import { roleForDegree, type DegreeRole } from "@/lib/degree-roles";
 import { VoicingDiagram } from "./voicing-diagram";
 import { ControlBar, NoteGrid, SegmentedControl } from "./control-group";
 import { defineMessages } from "@/lib/i18n";
@@ -73,7 +74,7 @@ function buildVoicing(root: number, shape: Shape, base: number) {
 
   const frets: (number | null)[] = [null, null, null, null, null, null];
   const labels: (string | null)[] = [null, null, null, null, null, null];
-  const highlights: (boolean | null)[] = [null, null, null, null, null, null];
+  const roles: (DegreeRole | null)[] = [null, null, null, null, null, null];
 
   for (let i = 0; i < shape.strings.length; i++) {
     const si = shape.strings[i];
@@ -82,13 +83,14 @@ function buildVoicing(root: number, shape: Shape, base: number) {
     const pc = (OPEN_PC[si] + fret) % 12;
     const interval = ((pc - root) + 12) % 12;
     labels[si] = V7_INTERVAL_LABEL[interval] ?? "";
-    highlights[si] = interval === 1;
+    // The ♭9 is the °7 chord's root; the rest read as V7 chord tones.
+    roles[si] = interval === 1 ? "root" : roleForDegree(labels[si]!);
   }
 
   const bassStringIdx = shape.strings[0];
   const bassPc = (OPEN_PC[bassStringIdx] + actualBase) % 12;
 
-  return { frets, labels, highlights, bassPc };
+  return { frets, labels, roles, bassPc };
 }
 
 export function DimChordPositions() {
@@ -142,7 +144,7 @@ export function DimChordPositions() {
               subtitle={t.bass(bassName)}
               frets={v.frets}
               labels={v.labels}
-              highlights={v.highlights}
+              roles={v.roles}
             />
           );
         })}

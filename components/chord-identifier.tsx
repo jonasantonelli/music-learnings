@@ -9,9 +9,15 @@ import {
   identifyChord,
   intervalLabelsForMatch,
   matchExplanation,
+  type ChordMatch,
   type Fret,
   type FretInput,
 } from "@/lib/chord-identify";
+import {
+  degreeMarkerStyle,
+  roleForDegree,
+  type DegreeRole,
+} from "@/lib/degree-roles";
 import { ChordDiagram } from "./mdx/chord-diagram";
 import { defineMessages } from "@/lib/i18n";
 import { useLocale, useMessages } from "@/components/locale-provider";
@@ -133,6 +139,24 @@ function freshFrets(): Fret[] {
   return ["x", "x", "x", "x", "x", "x"];
 }
 
+/** Degree role of each sounding string relative to the match's root. */
+function rolesForMatch(
+  frets: Fret[],
+  match: ChordMatch,
+  pitchClasses: number[],
+): (DegreeRole | null)[] {
+  // degreeLabels follow the played intervals from the root, sorted upward.
+  const intervals = [
+    ...new Set(pitchClasses.map((pc) => (pc - match.rootPc + 12) % 12)),
+  ].sort((a, b) => a - b);
+  const labelOf = new Map(intervals.map((iv, i) => [iv, match.degreeLabels[i]]));
+  return frets.map((f, i) => {
+    if (typeof f !== "number") return null;
+    const interval = (STRING_MIDI[i] + f - match.rootPc + 120) % 12;
+    return roleForDegree(labelOf.get(interval) ?? "");
+  });
+}
+
 export function ChordIdentifier() {
   const [frets, setFrets] = useState<Fret[]>(freshFrets);
   const [accidental, setAccidental] = useState<Accidental>("flat");
@@ -155,6 +179,13 @@ export function ChordIdentifier() {
   }, []);
 
   const result = useMemo(() => identifyChord(frets as FretInput), [frets]);
+  const roles = useMemo(
+    () =>
+      result.matches[0]
+        ? rolesForMatch(frets, result.matches[0], result.pitchClasses)
+        : undefined,
+    [frets, result],
+  );
 
   const onClear = () => setFrets(freshFrets());
 
@@ -168,12 +199,18 @@ export function ChordIdentifier() {
 
       <FretboardInput
         frets={frets}
+        roles={roles}
         spelling={accidental}
         onCellClick={onCellClick}
         onStringToggle={onStringToggle}
       />
 
-      <ResultPanel result={result} frets={frets} spelling={accidental} />
+      <ResultPanel
+        result={result}
+        frets={frets}
+        roles={roles}
+        spelling={accidental}
+      />
     </div>
   );
 }
@@ -233,11 +270,13 @@ function Toolbar({
 
 function FretboardInput({
   frets,
+  roles,
   spelling,
   onCellClick,
   onStringToggle,
 }: {
   frets: Fret[];
+  roles?: (DegreeRole | null)[];
   spelling: Spelling;
   onCellClick: (stringIdx: number, fret: number) => void;
   onStringToggle: (stringIdx: number) => void;
@@ -247,6 +286,7 @@ function FretboardInput({
       <div className="min-w-fit">
         <FretboardSvg
           frets={frets}
+          roles={roles}
           spelling={spelling}
           onCellClick={onCellClick}
           onStringToggle={onStringToggle}
@@ -263,11 +303,13 @@ function noteAt(stringIdx: number, fret: number, spelling: Spelling): string {
 
 function FretboardSvg({
   frets,
+  roles,
   spelling,
   onCellClick,
   onStringToggle,
 }: {
   frets: Fret[];
+  roles?: (DegreeRole | null)[];
   spelling: Spelling;
   onCellClick: (stringIdx: number, fret: number) => void;
   onStringToggle: (stringIdx: number) => void;
@@ -474,6 +516,9 @@ function FretboardSvg({
           const cx = fretX(fret);
           const isActive = frets[stringIdx] === fret;
           const name = noteAt(stringIdx, fret, spelling);
+          // Until a chord is recognised, placed notes keep the accent fill.
+          const role = isActive ? roles?.[stringIdx] : null;
+          const style = role ? degreeMarkerStyle(role) : null;
           return (
             <g key={`cell-${stringIdx}-${fret}`} className="fret-cell">
               <rect
@@ -493,7 +538,9 @@ function FretboardSvg({
                     cx={cx}
                     cy={cy}
                     r={NOTE_R}
-                    fill="var(--accent-9)"
+                    fill={style?.color ?? "var(--accent-9)"}
+                    stroke={style?.stroke}
+                    strokeWidth={style?.stroke ? 1.5 : undefined}
                     filter="url(#noteShadow)"
                   />
                   <text
@@ -503,7 +550,7 @@ function FretboardSvg({
                     dominantBaseline="central"
                     fontSize={name.length > 1 ? 9.5 : 11}
                     fontWeight={700}
-                    fill="var(--accent-contrast)"
+                    fill={style?.labelColor ?? "var(--accent-contrast)"}
                   >
                     <NoteText svg text={name} />
                   </text>
@@ -544,10 +591,12 @@ function FretboardSvg({
 function ResultPanel({
   result,
   frets,
+  roles,
   spelling,
 }: {
   result: ReturnType<typeof identifyChord>;
   frets: Fret[];
+  roles?: (DegreeRole | null)[];
   spelling: Spelling;
 }) {
   const t = useMessages(messages);
@@ -639,7 +688,7 @@ function ResultPanel({
       </div>
 
       <div className="justify-self-start sm:justify-self-end">
-        <ChordDiagram name={primaryName} frets={diagramFrets} />
+        <ChordDiagram name={primaryName} frets={diagramFrets} roles={roles} />
       </div>
     </div>
   );
