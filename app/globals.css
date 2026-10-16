@@ -55,7 +55,7 @@
     Non-root fills keep their pastel hue but are lifted toward white, so the
     purple root stays the loudest dot; borders keep the full colour.
   */
-  --degree-lighten: 25%;
+  --degree-lighten: 50%;
   --degree-guide-bg: color-mix(in oklab, var(--tone-mint-bg), #ffffff var(--degree-lighten));
   --degree-guide-fg: var(--tone-mint-fg);
   --degree-guide-border: var(--tone-mint-border);
