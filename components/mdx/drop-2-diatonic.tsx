@@ -127,7 +127,7 @@ export function Drop2Diatonic() {
               subtitle={droppedOctave ? `${chord.degree} · 8va↓` : chord.degree}
               frets={voicing.frets}
               labels={marks.labels}
-              highlights={marks.highlights}
+              roles={marks.roles}
             />
           );
         })}

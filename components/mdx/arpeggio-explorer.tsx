@@ -12,6 +12,7 @@ import {
   type ArpeggioQuality,
   type ArpeggioMarker,
 } from "@/lib/arpeggios";
+import { degreeMarkerStyle, roleForDegree } from "@/lib/degree-roles";
 import { Fretboard } from "./fretboard";
 import {
   ControlBar,
@@ -89,16 +90,12 @@ function buildFretboardMarkers(
   showNotes: boolean,
 ) {
   return markers.map((m) => {
-    const isRoot = m.intervalPc === 0;
+    const degree = ARPEGGIO_INTERVAL_LABELS[m.intervalPc] ?? String(m.intervalPc);
     return {
       string: m.string,
       fret: m.fret,
-      label: showNotes
-        ? speller.spell(m.intervalPc)
-        : ARPEGGIO_INTERVAL_LABELS[m.intervalPc] ?? String(m.intervalPc),
-      color: isRoot ? "var(--degree-root-bg)" : "var(--arpeggio-tone-bg)",
-      labelColor: isRoot ? "var(--degree-root-fg)" : "var(--arpeggio-tone-fg)",
-      stroke: isRoot ? undefined : "var(--arpeggio-tone-border)",
+      label: showNotes ? speller.spell(m.intervalPc) : degree,
+      ...degreeMarkerStyle(roleForDegree(degree)),
     };
   });
 }

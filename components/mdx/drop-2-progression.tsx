@@ -220,7 +220,7 @@ export function Drop2Progression({ progression: initial = "major-251" }: Progres
                     subtitle={`${c.degree} · ${s.inversionNames[voicing.inversionIndex]}`}
                     frets={voicing.frets}
                     labels={marks.labels}
-                    highlights={marks.highlights}
+                    roles={marks.roles}
                   />
                 </div>
               );
