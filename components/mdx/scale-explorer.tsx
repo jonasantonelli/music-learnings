@@ -288,7 +288,7 @@ export function ScaleExplorer({ scale: scaleSlug }: ScaleExplorerProps) {
         startFret={startFret}
         markers={fretboardMarkers}
         caption={caption}
-        fill={view !== "full"}
+        fill
         neckFrets={neckFrets}
       />
       <DegreeLegend
