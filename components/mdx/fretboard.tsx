@@ -38,6 +38,11 @@ type FretboardProps = {
   caption?: string;
   /** Widen the frets so the board spans its container (for short windows). */
   fill?: boolean;
+  /**
+   * With `fill`: when this many frets from the nut fit at natural size, show
+   * the whole neck instead of the `startFret`/`frets` window.
+   */
+  neckFrets?: number;
 };
 
 const STRING_NAMES_STD = ["e", "B", "G", "D", "A", "E"];
@@ -65,6 +70,7 @@ export function Fretboard({
   tuning = STRING_NAMES_STD,
   caption,
   fill = false,
+  neckFrets,
 }: FretboardProps) {
   const t = useMessages(messages);
   const figureRef = React.useRef<HTMLElement>(null);
@@ -82,12 +88,19 @@ export function Fretboard({
   const breakpoint =
     ORIENTATION_BREAKPOINTS.find((b) => b.minWidth >= horizontalWidth * 0.8) ??
     ORIENTATION_BREAKPOINTS[ORIENTATION_BREAKPOINTS.length - 1];
+  const neckFits =
+    fill &&
+    neckFrets !== undefined &&
+    fillWidth !== null &&
+    fillWidth >= HORIZONTAL.padAlong * 2 + HORIZONTAL.cellAlong * neckFrets;
   const props = { frets, strings, markers, startFret, tuning, label: caption ?? t.fretboard };
+  const horizontalProps =
+    neckFits && neckFrets ? { ...props, frets: neckFrets, startFret: 0 } : props;
 
   return (
     <figure ref={figureRef} className="my-6 @container">
       <div className={breakpoint.horizontal}>
-        <FretboardSvg {...props} fillWidth={fill ? fillWidth : null} />
+        <FretboardSvg {...horizontalProps} fillWidth={fill ? fillWidth : null} />
       </div>
       <div className={breakpoint.vertical}>
         <FretboardSvg {...props} vertical />
@@ -101,7 +114,7 @@ export function Fretboard({
   );
 }
 
-type FretboardSvgProps = Required<Omit<FretboardProps, "caption" | "fill">> & {
+type FretboardSvgProps = Required<Omit<FretboardProps, "caption" | "fill" | "neckFrets">> & {
   label: string;
   vertical?: boolean;
   /** Container width to stretch the fret spacing to; null keeps the default. */
