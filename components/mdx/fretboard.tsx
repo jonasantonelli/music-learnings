@@ -58,8 +58,22 @@ const ORIENTATION_BREAKPOINTS = [
   { minWidth: 640, horizontal: "hidden @min-[640px]:block", vertical: "@min-[640px]:hidden" },
 ];
 
-const HORIZONTAL = { cellAlong: 44, cellAcross: 26, padAlong: 36, padAcross: 22 };
-const VERTICAL = { cellAlong: 30, cellAcross: 34, padAlong: 28, padAcross: 26 };
+const HORIZONTAL = {
+  cellAlong: 44,
+  cellAcross: 36,
+  padAlong: 36,
+  padAcross: 26,
+  markerR: 12,
+  labelSize: 11.5,
+};
+const VERTICAL = {
+  cellAlong: 30,
+  cellAcross: 34,
+  padAlong: 28,
+  padAcross: 26,
+  markerR: 10,
+  labelSize: 10,
+};
 const VERTICAL_FRET_NUMBERS = [3, 5, 7, 9, 12, 15, 17, 19, 21, 24];
 
 export function Fretboard({
@@ -132,7 +146,9 @@ function FretboardSvg({
   fillWidth = null,
 }: FretboardSvgProps) {
   const t = useMessages(messages);
-  const { cellAcross, padAlong, padAcross } = vertical ? VERTICAL : HORIZONTAL;
+  const { cellAcross, padAlong, padAcross, markerR, labelSize } = vertical
+    ? VERTICAL
+    : HORIZONTAL;
   // Filling widens only the fret spacing; string spacing and dots keep their
   // size, so the board grows sideways without growing taller.
   const cellAlong = vertical
@@ -289,7 +305,7 @@ function FretboardSvg({
             <circle
               cx={cx}
               cy={cy}
-              r={10}
+              r={markerR}
               fill={m.color ?? "currentColor"}
               stroke={m.stroke}
               strokeWidth={m.stroke ? 1.5 : undefined}
@@ -297,9 +313,9 @@ function FretboardSvg({
             {m.label && (
               <text
                 x={cx}
-                y={cy + 3.5}
+                y={cy + labelSize * 0.35}
                 textAnchor="middle"
-                fontSize={10}
+                fontSize={labelSize}
                 fontWeight={600}
                 fontFamily="var(--app-mono), ui-monospace, monospace"
                 fill={m.labelColor ?? "var(--background)"}
