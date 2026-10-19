@@ -52,7 +52,7 @@ const ORIENTATION_BREAKPOINTS = [
 ];
 
 const HORIZONTAL = { cellAlong: 44, cellAcross: 26, padAlong: 36, padAcross: 22 };
-const VERTICAL = { cellAlong: 36, cellAcross: 40, padAlong: 30, padAcross: 30 };
+const VERTICAL = { cellAlong: 30, cellAcross: 34, padAlong: 28, padAcross: 26 };
 const VERTICAL_FRET_NUMBERS = [3, 5, 7, 9, 12, 15, 17, 19, 21, 24];
 
 export function Fretboard({
@@ -125,11 +125,10 @@ function FretboardSvg({
       role="img"
       aria-label={label}
       viewBox={`0 0 ${width} ${height}`}
-      className={
-        vertical
-          ? "mx-auto block w-full max-w-[18rem] h-auto text-foreground"
-          : "block w-full max-w-full h-auto text-foreground"
-      }
+      className="mx-auto block w-full h-auto text-foreground"
+      // Never scale up past natural size: a short 3NPS/CAGED window would
+      // otherwise balloon to fill the column.
+      style={{ maxWidth: width }}
     >
       {/* Inlays */}
       {inlayFrets
