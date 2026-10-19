@@ -60,19 +60,19 @@ const ORIENTATION_BREAKPOINTS = [
 
 const HORIZONTAL = {
   cellAlong: 44,
-  cellAcross: 36,
+  cellAcross: 40,
   padAlong: 36,
-  padAcross: 26,
-  markerR: 12,
-  labelSize: 11.5,
+  padAcross: 28,
+  markerR: 15,
+  labelSize: 13.5,
 };
 const VERTICAL = {
-  cellAlong: 30,
-  cellAcross: 34,
+  cellAlong: 34,
+  cellAcross: 38,
   padAlong: 28,
   padAcross: 26,
-  markerR: 10,
-  labelSize: 10,
+  markerR: 13,
+  labelSize: 11.5,
 };
 const VERTICAL_FRET_NUMBERS = [3, 5, 7, 9, 12, 15, 17, 19, 21, 24];
 
