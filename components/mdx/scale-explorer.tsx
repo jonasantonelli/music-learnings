@@ -157,19 +157,26 @@ export function ScaleExplorer({ scale: scaleSlug }: ScaleExplorerProps) {
 
   let scaleMarkers: (ScaleMarker & { finger?: number })[];
   let caption: string;
-  let frets = 15;
   const fullName = `${speller.root} ${scaleName(definition.slug, locale)}`;
+  const shapes = getCAGEDScalePositions(definition, root);
+  const positions = get3NPSPositions(definition, root);
+  // The neck runs far enough for every 3NPS position and CAGED shape (they
+  // can pass fret 15 near the octave), and all three views share it.
+  const neckFrets = Math.max(
+    15,
+    ...positions.map((p) => p.maxFret),
+    ...shapes.map((s) => s.maxFret),
+  );
+  let frets = neckFrets;
 
   if (view === "full") {
-    scaleMarkers = getFullNeckMarkers(definition, root, 15, 0);
+    scaleMarkers = getFullNeckMarkers(definition, root, neckFrets, 0);
     caption = t.captionFull(fullName);
   } else if (view === "caged") {
-    const shapes = getCAGEDScalePositions(definition, root);
     const chosen = shapes[cagedIndex] ?? shapes[0];
     scaleMarkers = chosen?.markers ?? [];
     caption = t.captionCaged(fullName, chosen?.name ?? "C");
   } else {
-    const positions = get3NPSPositions(definition, root);
     const safeIndex = Math.min(position, positions.length) - 1;
     const chosen = positions[safeIndex];
     scaleMarkers = chosen?.markers ?? [];
@@ -179,15 +186,11 @@ export function ScaleExplorer({ scale: scaleSlug }: ScaleExplorerProps) {
   // A single shape only needs the frets it spans; where the whole neck fits
   // (desktop) the Fretboard shows it instead, so the shape keeps its context.
   let startFret = 0;
-  let neckFrets = frets;
   if (view !== "full" && scaleMarkers.length) {
     const fretted = scaleMarkers.map((m) => m.fret);
     const lowest = Math.min(...fretted);
-    const highest = Math.max(...fretted);
     startFret = lowest <= 1 ? 0 : lowest - 1;
-    frets = highest - startFret;
-    // Positions near the nut fall back an octave up and can pass fret 15.
-    neckFrets = Math.max(neckFrets, highest);
+    frets = Math.max(...fretted) - startFret;
   }
 
   const fretboardMarkers = scaleMarkers.map((m) => {

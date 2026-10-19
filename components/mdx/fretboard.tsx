@@ -39,8 +39,9 @@ type FretboardProps = {
   /** Widen the frets so the board spans its container (for short windows). */
   fill?: boolean;
   /**
-   * With `fill`: when this many frets from the nut fit at natural size, show
-   * the whole neck instead of the `startFret`/`frets` window.
+   * With `fill`: where a board this many frets long would render
+   * horizontally, show the whole neck (narrowing the frets as needed)
+   * instead of the `startFret`/`frets` window.
    */
   neckFrets?: number;
 };
@@ -75,6 +76,17 @@ const VERTICAL = {
   labelSize: 11.5,
 };
 const VERTICAL_FRET_NUMBERS = [3, 5, 7, 9, 12, 15, 17, 19, 21, 24];
+// Narrowest fret a filled board may squeeze to: markers on neighbouring frets
+// (2 × markerR = 30) still keep a small gap. Below it the board scales down.
+const MIN_FILL_CELL = 34;
+
+function orientationBreakpoint(frets: number) {
+  const horizontalWidth = HORIZONTAL.padAlong * 2 + HORIZONTAL.cellAlong * frets;
+  return (
+    ORIENTATION_BREAKPOINTS.find((b) => b.minWidth >= horizontalWidth * 0.8) ??
+    ORIENTATION_BREAKPOINTS[ORIENTATION_BREAKPOINTS.length - 1]
+  );
+}
 
 export function Fretboard({
   frets = 12,
@@ -98,15 +110,14 @@ export function Fretboard({
     return () => observer.disconnect();
   }, [fill]);
 
-  const horizontalWidth = HORIZONTAL.padAlong * 2 + HORIZONTAL.cellAlong * frets;
-  const breakpoint =
-    ORIENTATION_BREAKPOINTS.find((b) => b.minWidth >= horizontalWidth * 0.8) ??
-    ORIENTATION_BREAKPOINTS[ORIENTATION_BREAKPOINTS.length - 1];
+  const breakpoint = orientationBreakpoint(frets);
+  // Show the whole neck wherever a full-neck board of the same length would
+  // render horizontally, so every view of one scale shares the same board.
   const neckFits =
     fill &&
     neckFrets !== undefined &&
     fillWidth !== null &&
-    fillWidth >= HORIZONTAL.padAlong * 2 + HORIZONTAL.cellAlong * neckFrets;
+    fillWidth >= orientationBreakpoint(neckFrets).minWidth;
   const props = { frets, strings, markers, startFret, tuning, label: caption ?? t.fretboard };
   const horizontalProps =
     neckFits && neckFrets ? { ...props, frets: neckFrets, startFret: 0 } : props;
@@ -149,12 +160,13 @@ function FretboardSvg({
   const { cellAcross, padAlong, padAcross, markerR, labelSize } = vertical
     ? VERTICAL
     : HORIZONTAL;
-  // Filling widens only the fret spacing; string spacing and dots keep their
-  // size, so the board grows sideways without growing taller.
+  // Filling changes only the fret spacing (wider, or narrower down to
+  // MIN_FILL_CELL); string spacing and dots keep their size, so the board
+  // spans the container without changing height.
   const cellAlong = vertical
     ? VERTICAL.cellAlong
     : fillWidth
-      ? Math.max(HORIZONTAL.cellAlong, (fillWidth - padAlong * 2) / frets)
+      ? Math.max(MIN_FILL_CELL, (fillWidth - padAlong * 2) / frets)
       : HORIZONTAL.cellAlong;
   const boardAlong = cellAlong * frets;
   const boardAcross = cellAcross * (strings - 1);
