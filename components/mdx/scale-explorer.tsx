@@ -278,7 +278,13 @@ export function ScaleExplorer({ scale: scaleSlug }: ScaleExplorerProps) {
         />
       </ControlBar>
 
-      <Fretboard frets={frets} startFret={startFret} markers={fretboardMarkers} caption={caption} />
+      <Fretboard
+        frets={frets}
+        startFret={startFret}
+        markers={fretboardMarkers}
+        caption={caption}
+        fill={view !== "full"}
+      />
       <DegreeLegend
         showPassing={passingTones.size > 0}
         colorLabel={

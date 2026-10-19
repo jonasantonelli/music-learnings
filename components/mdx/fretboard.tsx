@@ -36,6 +36,8 @@ type FretboardProps = {
   startFret?: number;
   tuning?: string[]; // high to low
   caption?: string;
+  /** Widen the frets so the board spans its container (for short windows). */
+  fill?: boolean;
 };
 
 const STRING_NAMES_STD = ["e", "B", "G", "D", "A", "E"];
@@ -62,8 +64,20 @@ export function Fretboard({
   startFret = 0,
   tuning = STRING_NAMES_STD,
   caption,
+  fill = false,
 }: FretboardProps) {
   const t = useMessages(messages);
+  const figureRef = React.useRef<HTMLElement>(null);
+  const [fillWidth, setFillWidth] = React.useState<number | null>(null);
+
+  React.useEffect(() => {
+    const el = figureRef.current;
+    if (!fill || !el) return;
+    const observer = new ResizeObserver(([entry]) => setFillWidth(entry.contentRect.width));
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [fill]);
+
   const horizontalWidth = HORIZONTAL.padAlong * 2 + HORIZONTAL.cellAlong * frets;
   const breakpoint =
     ORIENTATION_BREAKPOINTS.find((b) => b.minWidth >= horizontalWidth * 0.8) ??
@@ -71,9 +85,9 @@ export function Fretboard({
   const props = { frets, strings, markers, startFret, tuning, label: caption ?? t.fretboard };
 
   return (
-    <figure className="my-6 @container">
+    <figure ref={figureRef} className="my-6 @container">
       <div className={breakpoint.horizontal}>
-        <FretboardSvg {...props} />
+        <FretboardSvg {...props} fillWidth={fill ? fillWidth : null} />
       </div>
       <div className={breakpoint.vertical}>
         <FretboardSvg {...props} vertical />
@@ -87,9 +101,11 @@ export function Fretboard({
   );
 }
 
-type FretboardSvgProps = Required<Omit<FretboardProps, "caption">> & {
+type FretboardSvgProps = Required<Omit<FretboardProps, "caption" | "fill">> & {
   label: string;
   vertical?: boolean;
+  /** Container width to stretch the fret spacing to; null keeps the default. */
+  fillWidth?: number | null;
 };
 
 function FretboardSvg({
@@ -100,9 +116,17 @@ function FretboardSvg({
   tuning,
   label,
   vertical = false,
+  fillWidth = null,
 }: FretboardSvgProps) {
   const t = useMessages(messages);
-  const { cellAlong, cellAcross, padAlong, padAcross } = vertical ? VERTICAL : HORIZONTAL;
+  const { cellAcross, padAlong, padAcross } = vertical ? VERTICAL : HORIZONTAL;
+  // Filling widens only the fret spacing; string spacing and dots keep their
+  // size, so the board grows sideways without growing taller.
+  const cellAlong = vertical
+    ? VERTICAL.cellAlong
+    : fillWidth
+      ? Math.max(HORIZONTAL.cellAlong, (fillWidth - padAlong * 2) / frets)
+      : HORIZONTAL.cellAlong;
   const boardAlong = cellAlong * frets;
   const boardAcross = cellAcross * (strings - 1);
   const width = vertical ? padAcross * 2 + boardAcross : padAlong * 2 + boardAlong;
@@ -126,8 +150,8 @@ function FretboardSvg({
       aria-label={label}
       viewBox={`0 0 ${width} ${height}`}
       className="mx-auto block w-full h-auto text-foreground"
-      // Never scale up past natural size: a short 3NPS/CAGED window would
-      // otherwise balloon to fill the column.
+      // Never scale up past natural size: a short window would otherwise
+      // balloon in both directions (use `fill` to widen it instead).
       style={{ maxWidth: width }}
     >
       {/* Inlays */}
