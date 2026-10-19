@@ -185,17 +185,27 @@ export function getCagedShapes(
     },
     // A shape: the maj7 and the 3rd sit one fret behind the root (on the
     // 5th and 4th strings) rather than at the top of the shape on the 6th
-    // and 5th strings.
+    // and 5th strings. For m7b5 the ♭5 moves from the top of the 2nd string
+    // to the 1st string, one fret behind the root.
     {
       name: "A",
       low: r5,
       high: r5 + 4,
-      stringBounds: {
-        6: { high: 3 },
-        5: { low: -1, high: 3 },
-        4: { low: -1 },
-        1: { high: 3 },
-      },
+      stringBounds:
+        quality === "m7b5"
+          ? {
+              6: { high: 3 },
+              5: { low: -1, high: 3 },
+              4: { low: -1 },
+              2: { high: 3 },
+              1: { low: -1, high: 3 },
+            }
+          : {
+              6: { high: 3 },
+              5: { low: -1, high: 3 },
+              4: { low: -1 },
+              1: { high: 3 },
+            },
     },
     {
       name: "G",
