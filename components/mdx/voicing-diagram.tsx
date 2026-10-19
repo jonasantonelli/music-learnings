@@ -69,7 +69,11 @@ export function VoicingDiagram({
   const height = padTop + padBottom + cellH * displayFrets;
 
   return (
-    <figure className="my-2 inline-flex flex-col mx-1 align-top" style={{ width: width * 1.6 }}>
+    <figure
+      className="my-2 inline-flex min-w-0 flex-col mx-1 align-top"
+      // Shrinks to fit narrow grid cells and flex rows on phones (minus mx-1).
+      style={{ width: width * 1.6, maxWidth: "calc(100% - 0.5rem)" }}
+    >
       <svg
         role="img"
         aria-label={name ? t.voicingOf(name) : t.diagram}

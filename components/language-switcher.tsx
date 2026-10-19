@@ -41,10 +41,15 @@ export function LanguageSwitcher() {
         aria-hidden
         className="pointer-events-none absolute left-2.5 h-4 w-4 text-muted-foreground"
       />
+      {/* Below sm the trigger shows only the locale code; the native picker
+          still lists the full names. */}
+      <span aria-hidden className="pl-8 pr-2.5 text-[13px] font-medium uppercase sm:hidden">
+        {lang}
+      </span>
       <select
         value={lang}
         onChange={(e) => change(e.target.value as Locale)}
-        className="h-full cursor-pointer appearance-none bg-transparent pl-8 pr-2.5 text-[13px] outline-none"
+        className="absolute inset-0 h-full w-full cursor-pointer appearance-none bg-transparent pl-8 pr-2.5 text-[13px] opacity-0 outline-none sm:static sm:w-auto sm:opacity-100"
       >
         {locales.map((l) => (
           <option key={l} value={l} lang={l}>

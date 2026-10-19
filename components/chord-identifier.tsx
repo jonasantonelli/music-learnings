@@ -116,24 +116,86 @@ const FRETS_SHOWN = 15;
 // index 0 = low E (string 6 visually), index 5 = high e (string 1 visually)
 const STRING_NAMES = ["E", "A", "D", "G", "B", "e"];
 
-const CELL_W = 30;
-const CELL_H = 34;
-const GUTTER = 66; // string label + open/mute status column, left of the nut
-const PAD_Y = 22;
-const PAD_R = 16; // right padding
-const NUT_X = GUTTER;
-const SVG_W = GUTTER + CELL_W * FRETS_SHOWN + PAD_R;
-const SVG_H = PAD_Y + CELL_H * (STRINGS - 1) + 28;
 const NOTE_R = 12.5;
-const LABEL_X = 15;
-const STATUS_CX = 43;
 const STATUS_R = 11;
 
 const INLAY_FRETS = [3, 5, 7, 9, 15, 17, 19, 21];
 const DOUBLE_INLAY = [12, 24];
 
-const rowY = (row: number) => PAD_Y + row * CELL_H;
-const fretX = (fret: number) => NUT_X + (fret - 0.5) * CELL_W;
+type Point = { x: number; y: number };
+
+/**
+ * Board geometry for one orientation. Wide containers get the horizontal
+ * board (strings as rows, low E at the bottom); phones get a vertical one
+ * (strings as columns, low E on the left) so every fret stays visible and
+ * the tap targets stay finger-sized.
+ */
+type BoardLayout = {
+  vertical: boolean;
+  width: number;
+  height: number;
+  /** `along` counts frets from the nut (0 = nut); index 0 = low E. */
+  at: (along: number, stringIdx: number) => Point;
+  /** String name and open/mute button, before the nut. */
+  label: (stringIdx: number) => Point;
+  status: (stringIdx: number) => Point;
+  fretNumber: (fret: number) => Point & { anchor: "middle" | "end" };
+};
+
+const HORIZONTAL_LAYOUT: BoardLayout = (() => {
+  const cellW = 30;
+  const cellH = 34;
+  const nutX = 66; // string label + open/mute status column, left of the nut
+  const padY = 22;
+  const padR = 16;
+  const height = padY + cellH * (STRINGS - 1) + 28;
+  const rowY = (stringIdx: number) => padY + (STRINGS - 1 - stringIdx) * cellH;
+  return {
+    vertical: false,
+    width: nutX + cellW * FRETS_SHOWN + padR,
+    height,
+    at: (along, stringIdx) => ({ x: nutX + along * cellW, y: rowY(stringIdx) }),
+    label: (stringIdx) => ({ x: 15, y: rowY(stringIdx) }),
+    status: (stringIdx) => ({ x: 43, y: rowY(stringIdx) }),
+    fretNumber: (fret) => ({
+      x: nutX + (fret - 0.5) * cellW,
+      y: height - 6,
+      anchor: "middle",
+    }),
+  };
+})();
+
+const VERTICAL_LAYOUT: BoardLayout = (() => {
+  const cellW = 46;
+  const cellH = 36;
+  const nutY = 66; // string label + open/mute status rows, above the nut
+  const padL = 30; // fret numbers
+  const padR = 12;
+  const colX = (stringIdx: number) => padL + cellW / 2 + stringIdx * cellW;
+  return {
+    vertical: true,
+    width: padL + cellW * STRINGS + padR,
+    height: nutY + cellH * FRETS_SHOWN + 12,
+    at: (along, stringIdx) => ({ x: colX(stringIdx), y: nutY + along * cellH }),
+    label: (stringIdx) => ({ x: colX(stringIdx), y: 15 }),
+    status: (stringIdx) => ({ x: colX(stringIdx), y: 43 }),
+    fretNumber: (fret) => ({
+      x: padL - 6,
+      y: nutY + (fret - 0.5) * cellH,
+      anchor: "end",
+    }),
+  };
+})();
+
+/** Axis-aligned rect spanning two neck points, whatever the orientation. */
+function boardRect(a: Point, b: Point) {
+  return {
+    x: Math.min(a.x, b.x),
+    y: Math.min(a.y, b.y),
+    width: Math.abs(b.x - a.x),
+    height: Math.abs(b.y - a.y),
+  };
+}
 
 function freshFrets(): Fret[] {
   return ["x", "x", "x", "x", "x", "x"];
@@ -281,16 +343,14 @@ function FretboardInput({
   onCellClick: (stringIdx: number, fret: number) => void;
   onStringToggle: (stringIdx: number) => void;
 }) {
+  const props = { frets, roles, spelling, onCellClick, onStringToggle };
   return (
-    <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
-      <div className="min-w-fit">
-        <FretboardSvg
-          frets={frets}
-          roles={roles}
-          spelling={spelling}
-          onCellClick={onCellClick}
-          onStringToggle={onStringToggle}
-        />
+    <div className="@container">
+      <div className="hidden @min-[480px]:block">
+        <FretboardSvg layout={HORIZONTAL_LAYOUT} {...props} />
+      </div>
+      <div className="@min-[480px]:hidden">
+        <FretboardSvg layout={VERTICAL_LAYOUT} {...props} />
       </div>
     </div>
   );
@@ -302,12 +362,14 @@ function noteAt(stringIdx: number, fret: number, spelling: Spelling): string {
 }
 
 function FretboardSvg({
+  layout,
   frets,
   roles,
   spelling,
   onCellClick,
   onStringToggle,
 }: {
+  layout: BoardLayout;
   frets: Fret[];
   roles?: (DegreeRole | null)[];
   spelling: Spelling;
@@ -315,20 +377,23 @@ function FretboardSvg({
   onStringToggle: (stringIdx: number) => void;
 }) {
   const t = useMessages(messages);
-  const boardTop = rowY(0);
-  const boardBottom = rowY(STRINGS - 1);
+  const { at } = layout;
+  const shadowId = layout.vertical ? "noteShadowV" : "noteShadowH";
+  const surface = boardRect(at(0, -0.5), at(FRETS_SHOWN, STRINGS - 0.5));
 
   return (
     <svg
       role="img"
       aria-label={t.fretboardLabel}
-      viewBox={`0 0 ${SVG_W} ${SVG_H}`}
-      width={SVG_W}
-      height={SVG_H}
-      className="text-foreground select-none"
+      viewBox={`0 0 ${layout.width} ${layout.height}`}
+      className={cn(
+        "block w-full h-auto text-foreground select-none",
+        layout.vertical && "mx-auto",
+      )}
+      style={{ maxWidth: layout.vertical ? layout.width * 1.15 : layout.width }}
     >
       <defs>
-        <filter id="noteShadow" x="-40%" y="-40%" width="180%" height="180%">
+        <filter id={shadowId} x="-40%" y="-40%" width="180%" height="180%">
           <feDropShadow
             dx="0"
             dy="1"
@@ -340,58 +405,63 @@ function FretboardSvg({
       </defs>
 
       {/* Fretboard surface */}
-      <rect
-        x={NUT_X}
-        y={boardTop - CELL_H / 2}
-        width={CELL_W * FRETS_SHOWN}
-        height={CELL_H * (STRINGS - 1) + CELL_H}
-        rx={4}
-        fill="var(--card)"
-      />
+      <rect {...surface} rx={4} fill="var(--card)" />
 
       {/* Inlays */}
-      {INLAY_FRETS.filter((f) => f <= FRETS_SHOWN).map((f) => (
-        <circle
-          key={`inlay-${f}`}
-          cx={fretX(f)}
-          cy={(boardTop + boardBottom) / 2}
-          r={4.5}
-          fill="currentColor"
-          opacity={0.1}
-        />
-      ))}
-      {DOUBLE_INLAY.filter((f) => f <= FRETS_SHOWN).map((f) => (
-        <g key={`dinlay-${f}`} fill="currentColor" opacity={0.1}>
-          <circle cx={fretX(f)} cy={rowY(1)} r={4.5} />
-          <circle cx={fretX(f)} cy={rowY(STRINGS - 2)} r={4.5} />
-        </g>
-      ))}
+      {INLAY_FRETS.filter((f) => f <= FRETS_SHOWN).map((f) => {
+        const p = at(f - 0.5, (STRINGS - 1) / 2);
+        return (
+          <circle
+            key={`inlay-${f}`}
+            cx={p.x}
+            cy={p.y}
+            r={4.5}
+            fill="currentColor"
+            opacity={0.1}
+          />
+        );
+      })}
+      {DOUBLE_INLAY.filter((f) => f <= FRETS_SHOWN).map((f) => {
+        const a = at(f - 0.5, STRINGS - 2);
+        const b = at(f - 0.5, 1);
+        return (
+          <g key={`dinlay-${f}`} fill="currentColor" opacity={0.1}>
+            <circle cx={a.x} cy={a.y} r={4.5} />
+            <circle cx={b.x} cy={b.y} r={4.5} />
+          </g>
+        );
+      })}
 
       {/* Frets (fret 0 = the nut) */}
-      {Array.from({ length: FRETS_SHOWN + 1 }).map((_, i) => (
-        <line
-          key={`f-${i}`}
-          x1={NUT_X + i * CELL_W}
-          y1={boardTop - CELL_H / 2 + 1}
-          x2={NUT_X + i * CELL_W}
-          y2={boardBottom + CELL_H / 2 - 1}
-          stroke={i === 0 ? "currentColor" : "var(--border)"}
-          strokeWidth={i === 0 ? 4 : 1.25}
-          strokeLinecap="round"
-          opacity={i === 0 ? 0.85 : 1}
-        />
-      ))}
-
-      {/* Strings — thinner (high e) to thicker (low E) */}
-      {Array.from({ length: STRINGS }).map((_, row) => {
-        const stringIdx = STRINGS - 1 - row;
+      {Array.from({ length: FRETS_SHOWN + 1 }).map((_, i) => {
+        const a = at(i, -0.47);
+        const b = at(i, STRINGS - 0.53);
         return (
           <line
-            key={`s-${row}`}
-            x1={NUT_X}
-            y1={rowY(row)}
-            x2={NUT_X + CELL_W * FRETS_SHOWN}
-            y2={rowY(row)}
+            key={`f-${i}`}
+            x1={a.x}
+            y1={a.y}
+            x2={b.x}
+            y2={b.y}
+            stroke={i === 0 ? "currentColor" : "var(--border)"}
+            strokeWidth={i === 0 ? 4 : 1.25}
+            strokeLinecap="round"
+            opacity={i === 0 ? 0.85 : 1}
+          />
+        );
+      })}
+
+      {/* Strings — thinner (high e) to thicker (low E) */}
+      {Array.from({ length: STRINGS }).map((_, stringIdx) => {
+        const a = at(0, stringIdx);
+        const b = at(FRETS_SHOWN, stringIdx);
+        return (
+          <line
+            key={`s-${stringIdx}`}
+            x1={a.x}
+            y1={a.y}
+            x2={b.x}
+            y2={b.y}
             stroke="currentColor"
             strokeWidth={0.7 + (5 - stringIdx) * 0.18}
             opacity={0.28}
@@ -399,15 +469,17 @@ function FretboardSvg({
         );
       })}
 
-      {/* Fret numbers below */}
+      {/* Fret numbers */}
       {Array.from({ length: FRETS_SHOWN }).map((_, i) => {
         const fret = i + 1;
+        const p = layout.fretNumber(fret);
         return (
           <text
             key={`fn-${fret}`}
-            x={fretX(fret)}
-            y={SVG_H - 6}
-            textAnchor="middle"
+            x={p.x}
+            y={p.y}
+            textAnchor={p.anchor}
+            dominantBaseline={layout.vertical ? "central" : undefined}
             fontSize={9}
             fontWeight={INLAY_FRETS.includes(fret) ? 700 : 400}
             fill="currentColor"
@@ -418,10 +490,10 @@ function FretboardSvg({
         );
       })}
 
-      {/* Per-string open / mute status + label, in the left gutter */}
-      {Array.from({ length: STRINGS }).map((_, row) => {
-        const stringIdx = STRINGS - 1 - row;
-        const cy = rowY(row);
+      {/* Per-string open / mute status + label, before the nut */}
+      {Array.from({ length: STRINGS }).map((_, stringIdx) => {
+        const label = layout.label(stringIdx);
+        const { x: cx, y: cy } = layout.status(stringIdx);
         const state = frets[stringIdx];
         const muted = state === "x";
         const open = state === 0;
@@ -429,8 +501,8 @@ function FretboardSvg({
         return (
           <g key={`status-${stringIdx}`}>
             <text
-              x={LABEL_X}
-              y={cy}
+              x={label.x}
+              y={label.y}
               textAnchor="middle"
               dominantBaseline="central"
               fontSize={12}
@@ -456,17 +528,12 @@ function FretboardSvg({
                 }
               }}
             >
-              <circle
-                className="status-bg"
-                cx={STATUS_CX}
-                cy={cy}
-                r={STATUS_R + 3}
-              />
+              <circle className="status-bg" cx={cx} cy={cy} r={STATUS_R + 3} />
               {/* Persistent ring — the always-visible string button. Grey
                   when muted, lime when open. */}
               {!fretted && (
                 <circle
-                  cx={STATUS_CX}
+                  cx={cx}
                   cy={cy}
                   r={STATUS_R - 3}
                   fill="none"
@@ -476,9 +543,7 @@ function FretboardSvg({
                 />
               )}
               {/* Fretted string sounds — a filled marker. */}
-              {fretted && (
-                <circle cx={STATUS_CX} cy={cy} r={4} fill="var(--accent-9)" />
-              )}
+              {fretted && <circle cx={cx} cy={cy} r={4} fill="var(--accent-9)" />}
               {/* The "×" only reveals inside the ring on hover of a muted
                   string (see .status-x in globals.css). */}
               {muted && (
@@ -488,18 +553,8 @@ function FretboardSvg({
                   strokeWidth={1.3}
                   strokeLinecap="round"
                 >
-                  <line
-                    x1={STATUS_CX - 3.2}
-                    y1={cy - 3.2}
-                    x2={STATUS_CX + 3.2}
-                    y2={cy + 3.2}
-                  />
-                  <line
-                    x1={STATUS_CX + 3.2}
-                    y1={cy - 3.2}
-                    x2={STATUS_CX - 3.2}
-                    y2={cy + 3.2}
-                  />
+                  <line x1={cx - 3.2} y1={cy - 3.2} x2={cx + 3.2} y2={cy + 3.2} />
+                  <line x1={cx + 3.2} y1={cy - 3.2} x2={cx - 3.2} y2={cy + 3.2} />
                 </g>
               )}
             </g>
@@ -508,12 +563,10 @@ function FretboardSvg({
       })}
 
       {/* Interactive cells: hover ghost + placed notes */}
-      {Array.from({ length: STRINGS }).flatMap((_, row) => {
-        const stringIdx = STRINGS - 1 - row;
-        const cy = rowY(row);
-        return Array.from({ length: FRETS_SHOWN }).map((__, i) => {
+      {Array.from({ length: STRINGS }).flatMap((_, stringIdx) =>
+        Array.from({ length: FRETS_SHOWN }).map((__, i) => {
           const fret = i + 1;
-          const cx = fretX(fret);
+          const { x: cx, y: cy } = at(fret - 0.5, stringIdx);
           const isActive = frets[stringIdx] === fret;
           const name = noteAt(stringIdx, fret, spelling);
           // Until a chord is recognised, placed notes keep the accent fill.
@@ -522,10 +575,7 @@ function FretboardSvg({
           return (
             <g key={`cell-${stringIdx}-${fret}`} className="fret-cell">
               <rect
-                x={NUT_X + (fret - 1) * CELL_W}
-                y={cy - CELL_H / 2}
-                width={CELL_W}
-                height={CELL_H}
+                {...boardRect(at(fret - 1, stringIdx - 0.5), at(fret, stringIdx + 0.5))}
                 fill="transparent"
                 onClick={() => onCellClick(stringIdx, fret)}
               >
@@ -541,7 +591,7 @@ function FretboardSvg({
                     fill={style?.color ?? "var(--accent-9)"}
                     stroke={style?.stroke}
                     strokeWidth={style?.stroke ? 1.5 : undefined}
-                    filter="url(#noteShadow)"
+                    filter={`url(#${shadowId})`}
                   />
                   <text
                     x={cx}
@@ -582,8 +632,8 @@ function FretboardSvg({
               )}
             </g>
           );
-        });
-      })}
+        }),
+      )}
     </svg>
   );
 }

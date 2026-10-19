@@ -174,8 +174,20 @@ export function ScaleExplorer({ scale: scaleSlug }: ScaleExplorerProps) {
     const chosen = positions[safeIndex];
     scaleMarkers = chosen?.markers ?? [];
     caption = t.captionPosition(fullName, position);
+  }
+
+  // A single shape only needs the frets it spans; where the whole neck fits
+  // (desktop) the Fretboard shows it instead, so the shape keeps its context.
+  let startFret = 0;
+  let neckFrets = frets;
+  if (view !== "full" && scaleMarkers.length) {
+    const fretted = scaleMarkers.map((m) => m.fret);
+    const lowest = Math.min(...fretted);
+    const highest = Math.max(...fretted);
+    startFret = lowest <= 1 ? 0 : lowest - 1;
+    frets = highest - startFret;
     // Positions near the nut fall back an octave up and can pass fret 15.
-    frets = Math.max(frets, chosen?.maxFret ?? 0);
+    neckFrets = Math.max(neckFrets, highest);
   }
 
   const fretboardMarkers = scaleMarkers.map((m) => {
@@ -271,7 +283,14 @@ export function ScaleExplorer({ scale: scaleSlug }: ScaleExplorerProps) {
         />
       </ControlBar>
 
-      <Fretboard frets={frets} startFret={0} markers={fretboardMarkers} caption={caption} />
+      <Fretboard
+        frets={frets}
+        startFret={startFret}
+        markers={fretboardMarkers}
+        caption={caption}
+        fill={view !== "full"}
+        neckFrets={neckFrets}
+      />
       <DegreeLegend
         showPassing={passingTones.size > 0}
         colorLabel={

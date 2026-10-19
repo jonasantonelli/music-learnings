@@ -211,7 +211,7 @@ export function Drop2Progression({ progression: initial = "major-251" }: Progres
               const speller = chordSpeller(c.root, c.quality, noteName(c.root, key), c.color);
               const marks = drop2DiagramMarks(voicing, stringSet, speller, showNotes);
               return (
-                <div key={chordIdx} className="flex items-start gap-1">
+                <div key={chordIdx} className="flex min-w-0 max-w-full items-start gap-1">
                   {chordIdx > 0 && (
                     <span className="text-muted-foreground text-lg mx-1">→</span>
                   )}
