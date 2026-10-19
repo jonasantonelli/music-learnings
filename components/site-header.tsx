@@ -32,7 +32,9 @@ export function SiteHeader({ lang }: { lang: Locale }) {
           >
             <Music className="h-3.5 w-3.5" strokeWidth={2.5} />
           </span>
-          <span className="md:hidden lg:inline">Music Learnings</span>
+          <span className="whitespace-nowrap max-[359px]:sr-only md:hidden lg:inline">
+            Music Learnings
+          </span>
         </Link>
 
         <nav

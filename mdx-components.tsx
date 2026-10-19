@@ -15,6 +15,12 @@ import { WalkingBassExplorer } from "@/components/mdx/walking-bass-explorer";
 
 export function useMDXComponents(components: MDXComponents): MDXComponents {
   return {
+    // Wide tables scroll on their own instead of widening the whole page.
+    table: (props) => (
+      <div className="overflow-x-auto">
+        <table {...props} />
+      </div>
+    ),
     ArpeggioExplorer,
     Fretboard,
     ChordDiagram,
