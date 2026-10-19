@@ -214,12 +214,16 @@ export function getCagedShapes(
       stringBounds: { 6: { low: 3 }, 3: { high: 3 } },
     },
     // E shape: root on the 6th string under the 2nd finger, so the 3rd
-    // falls on the 5th string one fret behind it.
+    // falls on the 5th string one fret behind it. For m7b5 the 2nd string
+    // skips the ♭5 at the bottom of the shape (already on the 3rd string).
     {
       name: "E",
       low: r6 - 1,
       high: r6 + 3,
-      stringBounds: { 6: { low: 1 } },
+      stringBounds:
+        quality === "m7b5"
+          ? { 6: { low: 1 }, 2: { low: 1 } }
+          : { 6: { low: 1 } },
     },
     { name: "D", low: r4 - 1, high: r4 + 3 },
   ];
