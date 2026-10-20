@@ -46,6 +46,8 @@
   --tone-butter-bg: #fff3c4;
   --tone-butter-fg: #6b4f00;
   --tone-butter-border: #ebd57a;
+  /* Note being played in the lick practice views. */
+  --lick-active: #d9480f;
 
   /* Scale-degree roles on diagrams. */
   /* Roots match the selected-key highlight: solid ink here, lilac in dark mode. */
@@ -131,6 +133,7 @@
   --tone-peach-bg: #ffc3a0;
   --tone-peach-fg: #3a1605;
   --tone-peach-border: #ffc3a0;
+  --lick-active: #ffb07a;
   --tone-sky-bg: #a8d4ff;
   --tone-sky-fg: #0b2340;
   --tone-sky-border: #a8d4ff;
@@ -346,4 +349,9 @@ body {
   .fret-status .status-x {
     transition: none;
   }
+}
+
+/* Lick practice: the note being played, on the staff. */
+.lick-staff .lick-note-active {
+  color: var(--lick-active);
 }

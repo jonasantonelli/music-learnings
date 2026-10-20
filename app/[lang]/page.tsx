@@ -3,6 +3,7 @@ import {
   ArrowRight,
   ChartNoAxesColumnIncreasing,
   Grid3x3,
+  AudioLines,
   Layers,
   Music,
   Spline,
@@ -13,6 +14,7 @@ import { SiteHeader } from "@/components/site-header";
 import { notFound } from "next/navigation";
 import { getTopSections, type TreeNode } from "@/lib/content";
 import { getAllSongs } from "@/lib/songs";
+import { getAllLicks } from "@/lib/licks";
 import { TONES, sectionTone, type Tone } from "@/lib/tones";
 import { cn } from "@/lib/utils";
 import { defineMessages, hasLocale, localizeHref } from "@/lib/i18n";
@@ -29,6 +31,9 @@ const messages = defineMessages({
     lessonCount: (n: number) => `${n} ${n === 1 ? "lesson" : "lessons"}`,
     chartCount: (n: number) => `${n} ${n === 1 ? "chart" : "charts"}`,
     songsDescription: "Standards with interactive chord charts",
+    licks: "Licks",
+    lickCount: (n: number) => `${n} ${n === 1 ? "lick" : "licks"}`,
+    licksDescription: "Search, hear and practice jazz phrases",
     tool: "Tool",
     chordId: "Chord Identifier",
     chordIdDescription: "Set notes on the fretboard, get the chord name",
@@ -44,6 +49,9 @@ const messages = defineMessages({
     lessonCount: (n: number) => `${n} ${n === 1 ? "lição" : "lições"}`,
     chartCount: (n: number) => `${n} ${n === 1 ? "cifra" : "cifras"}`,
     songsDescription: "Standards com cifras interativas",
+    licks: "Licks",
+    lickCount: (n: number) => `${n} ${n === 1 ? "lick" : "licks"}`,
+    licksDescription: "Busque, ouça e pratique frases de jazz",
     tool: "Ferramenta",
     chordId: "Identificador de Acordes",
     chordIdDescription: "Marque notas no braço e descubra o nome do acorde",
@@ -59,6 +67,9 @@ const messages = defineMessages({
     lessonCount: (n: number) => `${n} ${n === 1 ? "lección" : "lecciones"}`,
     chartCount: (n: number) => `${n} ${n === 1 ? "cifrado" : "cifrados"}`,
     songsDescription: "Standards con cifrados interactivos",
+    licks: "Licks",
+    lickCount: (n: number) => `${n} ${n === 1 ? "lick" : "licks"}`,
+    licksDescription: "Busca, escucha y practica frases de jazz",
     tool: "Herramienta",
     chordId: "Identificador de Acordes",
     chordIdDescription: "Marca notas en el mástil y obtén el nombre del acorde",
@@ -228,6 +239,15 @@ export default async function Home({ params }: PageProps<"/[lang]">) {
             description={t.songsDescription}
             icon={Music}
             tone="butter"
+          />
+
+          <SectionCard
+            href={localizeHref(lang, "/licks")}
+            title={t.licks}
+            meta={t.lickCount(getAllLicks(lang).length)}
+            description={t.licksDescription}
+            icon={AudioLines}
+            tone="peach"
           />
 
           <Link

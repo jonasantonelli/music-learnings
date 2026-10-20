@@ -7,15 +7,16 @@ import { defineMessages } from "@/lib/i18n";
 import { useLocalizedHref, useMessages } from "@/components/locale-provider";
 
 const messages = defineMessages({
-  en: { lessons: "Lessons", songs: "Songs", practice: "Practice", chordId: "Chord ID", chordIdShort: "Chord ID" },
-  pt: { lessons: "Lições", songs: "Músicas", practice: "Prática", chordId: "Identificar acorde", chordIdShort: "Acordes" },
-  es: { lessons: "Lecciones", songs: "Canciones", practice: "Práctica", chordId: "Identificar acorde", chordIdShort: "Acordes" },
+  en: { lessons: "Lessons", songs: "Songs", licks: "Licks", practice: "Practice", chordId: "Chord ID", chordIdShort: "Chord ID" },
+  pt: { lessons: "Lições", songs: "Músicas", licks: "Licks", practice: "Prática", chordId: "Identificar acorde", chordIdShort: "Acordes" },
+  es: { lessons: "Lecciones", songs: "Canciones", licks: "Licks", practice: "Práctica", chordId: "Identificar acorde", chordIdShort: "Acordes" },
 });
 
-// `short` is shown below sm, where the four links share one phone-width row.
+// `short` is shown below sm, where the links share one phone-width row.
 const links = [
   { path: "/lessons", key: "lessons" },
   { path: "/songs", key: "songs" },
+  { path: "/licks", key: "licks" },
   { path: "/practice", key: "practice" },
   { path: "/chord-id", key: "chordId", short: "chordIdShort" },
 ] as const;

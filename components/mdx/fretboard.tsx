@@ -27,6 +27,9 @@ type Marker = {
   color?: string;
   labelColor?: string;
   stroke?: string;
+  /** Outline drawn just outside the dot, e.g. to mark the note being played. */
+  ring?: string;
+  opacity?: number;
 };
 
 type FretboardProps = {
@@ -313,7 +316,10 @@ function FretboardSvg({
         if (absFret <= 0 || absFret > frets) return null;
         const { x: cx, y: cy } = at(absFret - 0.5, m.string - 1);
         return (
-          <g key={idx}>
+          <g key={idx} opacity={m.opacity}>
+            {m.ring && (
+              <circle cx={cx} cy={cy} r={markerR + 4} fill="none" stroke={m.ring} strokeWidth={3} />
+            )}
             <circle
               cx={cx}
               cy={cy}
