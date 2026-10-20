@@ -48,6 +48,8 @@ function categorizeChord(suffix: string): ChordCategory {
   if (/^dim|^o(?![\d])|^°/.test(s)) return "dim";
   if (/^m7b5|^m7♭5|^ø|^hdim/.test(s)) return "hdim";
   if (/^\+|^aug/.test(s)) return "aug";
+  // The suffix is lowercased, so "maj" must be ruled out before "m" (minor).
+  if (/^maj|^Δ/.test(s)) return "maj";
   if (/^m/.test(s)) return "min";
   if (/^7|^9|^11|^13|^dom/.test(s)) return "dom";
   if (/^maj|^M|^Δ|^$|^6/.test(s)) return "maj";
