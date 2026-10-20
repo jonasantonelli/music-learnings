@@ -362,8 +362,9 @@ export function LickPractice({ lick }: { lick: LickDefinition }) {
 
   const spots = fingering.spots;
   const frets = spots.flatMap((s) => (s ? [s.fret] : []));
-  const startFret = Math.max(0, Math.min(...frets) - 1);
-  const span = Math.max(5, Math.max(...frets) - startFret + 1);
+  // Same board as the other explorers: the neck from the nut at its natural
+  // size, so every lick and position shows at one standard size.
+  const neckFrets = Math.max(NECK_FRETS, ...frets);
   const activeSpot = active !== null ? spots[active] : null;
 
   const markers = React.useMemo(() => {
@@ -522,9 +523,8 @@ export function LickPractice({ lick }: { lick: LickDefinition }) {
       {showFretboard && (
         <Fretboard
           markers={markers}
-          startFret={startFret}
-          frets={span}
-          fill
+          startFret={0}
+          frets={neckFrets}
           caption={t.fretboardCaption(keyLabel(current.key), fingering.position)}
         />
       )}
@@ -587,6 +587,8 @@ export function LickPractice({ lick }: { lick: LickDefinition }) {
     </section>
   );
 }
+
+const NECK_FRETS = 15;
 
 const SELECT =
   "h-10 rounded-control border border-border bg-card px-3 text-sm text-foreground focus:outline-none focus:border-accent-7";
