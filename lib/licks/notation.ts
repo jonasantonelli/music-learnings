@@ -319,8 +319,16 @@ function abcLength(beats: number): string {
   return `${Math.round(eighths * 4)}/4`;
 }
 
-/** Builds an ABC tune (one staff, treble clef) for the lick and its chords. */
-export function toAbc(lick: ParsedLick, key: LickKey, chords: TimedChord[]): string {
+/**
+ * Builds an ABC tune (one staff, treble clef) for the lick and its chords,
+ * starting a new line every `barsPerLine` bars.
+ */
+export function toAbc(
+  lick: ParsedLick,
+  key: LickKey,
+  chords: TimedChord[],
+  barsPerLine = Infinity,
+): string {
   const sig = signature(key);
   const groups = new Map(tripletGroups(lick.notes).map((g) => [g.first, g.count]));
   const chordStarts = [...chords];
@@ -331,7 +339,7 @@ export function toAbc(lick: ParsedLick, key: LickKey, chords: TimedChord[]): str
 
   lick.notes.forEach((n, i) => {
     if (n.bar !== currentBar) {
-      out += " | ";
+      out += n.bar % barsPerLine === 0 ? " |\n" : " | ";
       currentBar = n.bar;
       barState = new Map();
     } else if (i > 0) {
@@ -344,7 +352,9 @@ export function toAbc(lick: ParsedLick, key: LickKey, chords: TimedChord[]): str
     const chord = chordStarts[0];
     if (chord && n.start >= chord.start - EPS) {
       while (chordStarts[0] && n.start >= chordStarts[0].start - EPS) chordStarts.shift();
-      out += `"${displayChord(chord.symbol)}"`;
+      // abcjs typesets the root's accidental itself; only the suffix gets ♭/♯.
+      const [, root, suffix] = chord.symbol.match(/^([A-G][#b]?)(.*)$/) ?? ["", chord.symbol, ""];
+      out += `"${root}${suffix.replace(/b(?=\d)/g, "♭").replace(/#/g, "♯")}"`;
     }
 
     const triplet = groups.get(i);

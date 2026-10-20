@@ -4,7 +4,7 @@ import * as React from "react";
 import { Check, ChevronLeft, ChevronRight, Play, Square, Star } from "lucide-react";
 import { Fretboard } from "@/components/mdx/fretboard";
 import { NoteText } from "@/components/note-text";
-import { LickStaff } from "@/components/licks/lick-staff";
+import { LickStaff, type TabNote } from "@/components/licks/lick-staff";
 import { useMessages } from "@/components/locale-provider";
 import { defineMessages } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -51,7 +51,7 @@ const messages = defineMessages({
     comping: "Chords",
     view: "View",
     fretboard: "Fretboard",
-    staff: "Notation",
+    score: "Notation + TAB",
     both: "Both",
     labels: "Labels",
     degree: "Degree",
@@ -64,7 +64,7 @@ const messages = defineMessages({
     favorite: "Favorite",
     learned: "Learned",
     nowIn: (k: string) => `Now in ${k}`,
-    sequence: "Note sequence",
+    current: (note: string, degree: string, chord: string) => `${note} · ${degree} over ${chord}`,
     fretboardCaption: (k: string, fret: number) => `${k} · position at fret ${fret}`,
   },
   pt: {
@@ -82,7 +82,7 @@ const messages = defineMessages({
     comping: "Acordes",
     view: "Visualização",
     fretboard: "Braço",
-    staff: "Partitura",
+    score: "Partitura + TAB",
     both: "Ambos",
     labels: "Rótulos",
     degree: "Grau",
@@ -95,7 +95,7 @@ const messages = defineMessages({
     favorite: "Favorito",
     learned: "Aprendido",
     nowIn: (k: string) => `Agora em ${k}`,
-    sequence: "Sequência de notas",
+    current: (note: string, degree: string, chord: string) => `${note} · ${degree} sobre ${chord}`,
     fretboardCaption: (k: string, fret: number) => `${k} · posição na ${fret}ª casa`,
   },
   es: {
@@ -113,7 +113,7 @@ const messages = defineMessages({
     comping: "Acordes",
     view: "Vista",
     fretboard: "Mástil",
-    staff: "Partitura",
+    score: "Partitura + TAB",
     both: "Ambos",
     labels: "Etiquetas",
     degree: "Grado",
@@ -126,12 +126,12 @@ const messages = defineMessages({
     favorite: "Favorito",
     learned: "Aprendido",
     nowIn: (k: string) => `Ahora en ${k}`,
-    sequence: "Secuencia de notas",
+    current: (note: string, degree: string, chord: string) => `${note} · ${degree} sobre ${chord}`,
     fretboardCaption: (k: string, fret: number) => `${k} · posición en el traste ${fret}`,
   },
 });
 
-type View = "fretboard" | "staff" | "both";
+type View = "score" | "fretboard" | "both";
 type Labels = "degree" | "note" | "order";
 type Prefs = {
   bpm: number;
@@ -145,7 +145,7 @@ type Prefs = {
 
 const DEFAULT_PREFS: Prefs = {
   bpm: 100,
-  view: "fretboard",
+  view: "score",
   labels: "degree",
   loop: true,
   countIn: true,
@@ -162,7 +162,6 @@ type Arrangement = {
   midis: (number | null)[];
   degrees: ReturnType<typeof lickDegrees>;
   fingerings: ReturnType<typeof lickFingerings>;
-  abc: string;
 };
 
 function arrange(source: ParsedLick, from: LickKey, chords: TimedChord[], pc: number | null): Arrangement {
@@ -177,7 +176,6 @@ function arrange(source: ParsedLick, from: LickKey, chords: TimedChord[], pc: nu
     midis,
     degrees: lickDegrees(lick, moved),
     fingerings: lickFingerings(midis),
-    abc: toAbc(lick, key, moved),
   };
 }
 
@@ -213,7 +211,7 @@ function toSequence(a: Arrangement): PlaySequence {
 
 export function LickPractice({ lick }: { lick: LickDefinition }) {
   const t = useMessages(messages);
-  const [prefs, setPrefs] = useStoredState<Prefs>("lick-practice-prefs", DEFAULT_PREFS);
+  const [prefs, setPrefs] = useStoredState<Prefs>("lick-practice-prefs-v2", DEFAULT_PREFS);
   const update = (patch: Partial<Prefs>) => setPrefs({ ...DEFAULT_PREFS, ...prefs, ...patch });
   const p = { ...DEFAULT_PREFS, ...prefs };
 
@@ -258,6 +256,17 @@ export function LickPractice({ lick }: { lick: LickDefinition }) {
 
   const current = arrangementFor(pcForPass(keyChoice === "cycle" ? cyclePass : 0));
   const fingering = current.fingerings[Math.min(positionIndex, current.fingerings.length - 1)];
+  const abcFor = React.useCallback(
+    (barsPerLine: number) => toAbc(current.lick, current.key, current.chords, barsPerLine),
+    [current],
+  );
+  const tab = React.useMemo<TabNote[]>(
+    () =>
+      fingering.spots.map((spot, i) =>
+        spot ? { ...spot, tied: i > 0 && current.lick.notes[i - 1].tie } : null,
+      ),
+    [fingering, current],
+  );
 
   const playerRef = React.useRef<LickPlayer | null>(null);
   const player = () => (playerRef.current ??= new LickPlayer());
@@ -393,10 +402,13 @@ export function LickPractice({ lick }: { lick: LickDefinition }) {
   }, [spots, active, activeSpot, current, p.labels, soundingOrder]);
 
   const keyLabel = (k: LickKey) => displayChord(keyName(k));
-  const bars = Array.from({ length: current.lick.bars }, (_, b) => b);
-  const showFretboard = p.view !== "staff";
+  const showFretboard = p.view !== "score";
   const showStaff = p.view !== "fretboard";
   const activeOrder = active !== null ? soundingOrder.order[active] : null;
+  const activeNote = active !== null ? current.lick.notes[active] : null;
+  const activeChord = activeNote ? current.chords.find(
+    (c) => activeNote.start >= c.start - 1e-6 && activeNote.start < c.start + c.beats - 1e-6,
+  ) : undefined;
 
   return (
     <section className="mt-8 rounded-card border border-border bg-card p-4 sm:p-6">
@@ -489,8 +501,8 @@ export function LickPractice({ lick }: { lick: LickDefinition }) {
           value={p.view}
           onChange={(view) => update({ view })}
           options={[
+            ["score", t.score],
             ["fretboard", t.fretboard],
-            ["staff", t.staff],
             ["both", t.both],
           ]}
         />
@@ -515,8 +527,8 @@ export function LickPractice({ lick }: { lick: LickDefinition }) {
       )}
 
       {showStaff && (
-        <div className="mt-5">
-          <LickStaff abc={current.abc} active={active} onSelect={select} />
+        <div className="lick-paper mt-5 rounded-card px-3 py-4 sm:px-6 sm:py-6">
+          <LickStaff abc={abcFor} tab={tab} active={active} onSelect={select} />
         </div>
       )}
 
@@ -529,60 +541,30 @@ export function LickPractice({ lick }: { lick: LickDefinition }) {
         />
       )}
 
-      {/* Note sequence, bar by bar: also the step-through control. */}
-      <div className="mt-2" aria-label={t.sequence} role="group">
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {bars.map((b) => (
-            <div key={b} className="rounded-lg border border-border p-2.5">
-              <div className="mb-2 flex gap-3 font-mono text-xs text-muted-foreground">
-                {current.chords
-                  .filter((c) => Math.floor(c.start / BEATS_PER_BAR) === b)
-                  .map((c) => (
-                    <span key={c.start} className="text-foreground">
-                      <NoteText text={displayChord(c.symbol)} />
-                    </span>
-                  ))}
-              </div>
-              <div className="flex flex-wrap gap-1">
-                {current.lick.notes.map((n, i) =>
-                  n.bar !== b ? null : (
-                    <button
-                      key={i}
-                      type="button"
-                      disabled={!n.pitch}
-                      onClick={() => select(i)}
-                      className={cn(
-                        "flex min-w-[2.1rem] flex-col items-center rounded-md px-1.5 py-1 font-mono text-[11px] leading-tight transition-colors",
-                        !n.pitch && "text-muted-foreground/50",
-                        n.pitch && "bg-muted hover:bg-card-hover",
-                        i === active && "ring-2 ring-[var(--lick-active)]",
-                      )}
-                    >
-                      <span className="text-[12px] text-foreground">
-                        {n.pitch ? <NoteText text={pitchName(n.pitch)} /> : "·"}
-                      </span>
-                      <span className="text-muted-foreground">
-                        {n.pitch ? <NoteText text={current.degrees[i]?.label ?? ""} /> : ""}
-                      </span>
-                    </button>
-                  ),
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-          <button type="button" onClick={() => step(-1)} aria-label={t.prev} className={ICON_BUTTON}>
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-          <button type="button" onClick={() => step(1)} aria-label={t.next} className={ICON_BUTTON}>
-            <ChevronRight className="h-4 w-4" />
-          </button>
+      {/* Step through the lick note by note. */}
+      <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+        <button type="button" onClick={() => step(-1)} aria-label={t.prev} className={ICON_BUTTON}>
+          <ChevronLeft className="h-4 w-4" />
+        </button>
+        <button type="button" onClick={() => step(1)} aria-label={t.next} className={ICON_BUTTON}>
+          <ChevronRight className="h-4 w-4" />
+        </button>
+        {activeOrder && activeNote?.pitch ? (
           <span className="font-mono">
-            {activeOrder ? t.noteOf(activeOrder, soundingOrder.count) : t.stepHint}
+            {t.noteOf(activeOrder, soundingOrder.count)} ·{" "}
+            <span className="text-foreground">
+              <NoteText
+                text={t.current(
+                  pitchName(activeNote.pitch),
+                  current.degrees[active!]?.label ?? "",
+                  displayChord(activeChord?.symbol ?? ""),
+                )}
+              />
+            </span>
           </span>
-        </div>
+        ) : (
+          <span className="font-mono">{t.stepHint}</span>
+        )}
       </div>
     </section>
   );

@@ -351,7 +351,20 @@ body {
   }
 }
 
-/* Lick practice: the note being played, on the staff. */
+/* Lick practice: staff + tab printed in black on white in both themes, like
+   sheet music; the note being played is highlighted on both staves. */
+.lick-paper {
+  --lick-active: #d9480f;
+  background: #ffffff;
+  color: #111111;
+}
+.lick-staff .lick-tab-bg {
+  fill: #ffffff;
+}
 .lick-staff .lick-note-active {
   color: var(--lick-active);
+}
+.lick-staff .lick-note-active text {
+  fill: var(--lick-active);
+  font-weight: 700;
 }
