@@ -84,6 +84,8 @@ export function LickStaff({ abc, tab, active, onSelect }: Props) {
         paddingbottom: 8,
         ariaLabel: t.staff,
         tablature: [{ instrument: "guitar", label: "" }],
+        // abcjs's own click selection paints notes red; ours highlights instead.
+        selectTypes: false,
       });
       notesRef.current = applyFingering(el, tab);
       setReady(true);
@@ -102,10 +104,25 @@ export function LickStaff({ abc, tab, active, onSelect }: Props) {
     );
   }, [active, ready, abc, tab, width]);
 
+  // Picks the note (staff or tab) nearest the click, so a click just beside
+  // a small notehead or tab number still lands.
   const onClick = (e: React.MouseEvent) => {
-    const note = (e.target as Element).closest(".abcjs-note");
-    const index = note ? notesRef.current.findIndex((els) => els.includes(note)) : -1;
-    if (index >= 0) onSelect?.(index);
+    let best = -1;
+    let bestDistance = 28;
+    notesRef.current.forEach((els, i) =>
+      els.forEach((el) => {
+        if (el.classList.contains("abcjs-rest")) return;
+        const r = el.getBoundingClientRect();
+        const dx = Math.max(r.left - e.clientX, 0, e.clientX - r.right);
+        const dy = Math.max(r.top - e.clientY, 0, e.clientY - r.bottom);
+        const distance = Math.hypot(dx, dy);
+        if (distance < bestDistance) {
+          bestDistance = distance;
+          best = i;
+        }
+      }),
+    );
+    if (best >= 0) onSelect?.(best);
   };
 
   return (
