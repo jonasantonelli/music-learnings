@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { defineMessages } from "@/lib/i18n";
 import { useLocale, useMessages } from "@/components/locale-provider";
 import { NoteText } from "@/components/note-text";
+import { Select } from "@/components/select";
 import { useStoredState } from "@/lib/use-stored-state";
 import { FAVORITES_KEY, LEARNED_KEY } from "@/lib/licks/storage";
 import { displayChord } from "@/lib/licks/notation";
@@ -38,6 +39,7 @@ const messages = defineMessages({
     favorites: "Favorites",
     learned: "Learned",
     toLearn: "Not learned yet",
+    any: "Any",
     common: "Common bebop vocabulary",
     inStyleOf: (a: string) => `In the style of ${a}`,
     results: (n: number) => `${n} lick${n === 1 ? "" : "s"}`,
@@ -58,6 +60,7 @@ const messages = defineMessages({
     favorites: "Favoritos",
     learned: "Aprendidos",
     toLearn: "Ainda não aprendidos",
+    any: "Qualquer",
     common: "Vocabulário bebop comum",
     inStyleOf: (a: string) => `No estilo de ${a}`,
     results: (n: number) => `${n} lick${n === 1 ? "" : "s"}`,
@@ -78,6 +81,7 @@ const messages = defineMessages({
     favorites: "Favoritos",
     learned: "Aprendidos",
     toLearn: "Aún no aprendidos",
+    any: "Cualquiera",
     common: "Vocabulario bebop común",
     inStyleOf: (a: string) => `Al estilo de ${a}`,
     results: (n: number) => `${n} lick${n === 1 ? "" : "s"}`,
@@ -204,17 +208,17 @@ export function LickLibrary({ licks }: { licks: LickCard[] }) {
       </div>
 
       <div className="mt-3 flex flex-wrap gap-2">
-        <FilterSelect value={artist} onChange={setArtist} placeholder={t.artist}
+        <FilterSelect value={artist} onChange={setArtist} placeholder={t.artist} anyLabel={t.any}
           options={options.artists.map((a) => [a, a])} />
-        <FilterSelect value={style} onChange={setStyle} placeholder={t.style}
+        <FilterSelect value={style} onChange={setStyle} placeholder={t.style} anyLabel={t.any}
           options={options.styles.map((s) => [s, styleLabel(s, lang)])} />
-        <FilterSelect value={technique} onChange={setTechnique} placeholder={t.technique}
+        <FilterSelect value={technique} onChange={setTechnique} placeholder={t.technique} anyLabel={t.any}
           options={options.techniques.map((x) => [x, techniqueLabel(x, lang)])} />
-        <FilterSelect value={rhythm} onChange={setRhythm} placeholder={t.rhythm}
+        <FilterSelect value={rhythm} onChange={setRhythm} placeholder={t.rhythm} anyLabel={t.any}
           options={options.rhythms.map((r) => [r, rhythmLabel(r, lang)])} />
-        <FilterSelect value={level} onChange={setLevel} placeholder={t.level}
+        <FilterSelect value={level} onChange={setLevel} placeholder={t.level} anyLabel={t.any}
           options={options.levels.map((v) => [String(v), levelLabel(v, lang)])} />
-        <FilterSelect value={status} onChange={setStatus} placeholder={t.status}
+        <FilterSelect value={status} onChange={setStatus} placeholder={t.status} anyLabel={t.any}
           options={([["favorites", t.favorites], ["learned", t.learned], ["to-learn", t.toLearn]] as [Status, string][])} />
       </div>
 
@@ -304,34 +308,29 @@ function FilterSelect({
   onChange,
   options,
   placeholder,
+  anyLabel,
 }: {
   value: string | null;
   onChange: (v: string | null) => void;
   options: [string, string][];
   placeholder: string;
+  anyLabel: string;
 }) {
   if (options.length === 0) return null;
+  // "" stands for "no filter": the trigger then just names the filter.
   return (
-    <select
-      aria-label={placeholder}
+    <Select
+      label={placeholder}
       value={value ?? ""}
-      onChange={(e) => onChange(e.target.value || null)}
-      className={cn(
-        "rounded-control border border-border bg-card px-3 py-2 pr-7 text-sm transition-colors focus:outline-none focus:border-accent-7 appearance-none cursor-pointer",
-        value ? "text-accent-11 border-accent-6" : "text-muted-foreground",
-      )}
-      style={{
-        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
-        backgroundRepeat: "no-repeat",
-        backgroundPosition: "right 0.5rem center",
-      }}
-    >
-      <option value="">{placeholder}</option>
-      {options.map(([v, label]) => (
-        <option key={v} value={v}>
-          {label}
-        </option>
-      ))}
-    </select>
+      onChange={(v) => onChange(v || null)}
+      caption={value !== null}
+      highlighted={value !== null}
+      display={value === null ? <span className="text-muted-foreground">{placeholder}</span> : undefined}
+      className="min-w-[9.5rem]"
+      groups={[
+        { options: [{ value: "", label: anyLabel }] },
+        { options: options.map(([v, label]) => ({ value: v, label })) },
+      ]}
+    />
   );
 }

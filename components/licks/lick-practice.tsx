@@ -17,6 +17,7 @@ import {
 import { Fretboard } from "@/components/mdx/fretboard";
 import { NoteText } from "@/components/note-text";
 import { LickStaff, type TabNote } from "@/components/licks/lick-staff";
+import { Select } from "@/components/select";
 import { useMessages } from "@/components/locale-provider";
 import { defineMessages } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -55,6 +56,7 @@ const messages = defineMessages({
     key: "Key",
     original: (k: string) => `Original (${k})`,
     cycle: "Cycle of 4ths (all keys)",
+    keys: "Keys",
     position: "Position",
     positionOption: (fret: number) => `Fret ${fret}`,
     loop: "Loop",
@@ -86,6 +88,7 @@ const messages = defineMessages({
     key: "Tom",
     original: (k: string) => `Original (${k})`,
     cycle: "Ciclo de 4ªs (todos os tons)",
+    keys: "Tonalidades",
     position: "Posição",
     positionOption: (fret: number) => `${fret}ª casa`,
     loop: "Loop",
@@ -117,6 +120,7 @@ const messages = defineMessages({
     key: "Tonalidad",
     original: (k: string) => `Original (${k})`,
     cycle: "Ciclo de 4as (todas las tonalidades)",
+    keys: "Tonalidades",
     position: "Posición",
     positionOption: (fret: number) => `Traste ${fret}`,
     loop: "Bucle",
@@ -356,7 +360,8 @@ export function LickPractice({ lick }: { lick: LickDefinition }) {
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
-      if (target.closest("input, select, textarea, [contenteditable]")) return;
+      // Leave keys alone in fields and in dropdowns (their arrows move the list).
+      if (target.closest("input, select, textarea, [contenteditable], [role=listbox], [aria-haspopup]")) return;
       if (e.key === "ArrowRight") step(1);
       else if (e.key === "ArrowLeft") step(-1);
       // Space on a focused button or link already activates it.
@@ -459,37 +464,45 @@ export function LickPractice({ lick }: { lick: LickDefinition }) {
         </label>
 
         <Field label={t.key}>
-          <select
+          <Select
+            label={t.key}
             value={keyChoice}
-            onChange={(e) => {
-              setKeyChoice(e.target.value);
+            onChange={(choice) => {
+              setKeyChoice(choice);
               setCyclePass(0);
               setActive(null);
             }}
-            className={SELECT}
-          >
-            <option value="original">{t.original(keyLabel(sourceKey))}</option>
-            {Array.from({ length: 12 }, (_, pc) => (
-              <option key={pc} value={pc}>
-                {keyLabel(keyForPitchClass(pc, sourceKey.mode))}
-              </option>
-            ))}
-            <option value="cycle">{t.cycle}</option>
-          </select>
+            className="w-56"
+            groups={[
+              { options: [{ value: "original", label: <NoteText text={t.original(keyLabel(sourceKey))} />, text: "original" }] },
+              {
+                label: t.keys,
+                columns: 4,
+                options: Array.from({ length: 12 }, (_, pc) => {
+                  const name = keyLabel(keyForPitchClass(pc, sourceKey.mode));
+                  return { value: String(pc), label: <NoteText text={name} />, text: name };
+                }),
+              },
+              { options: [{ value: "cycle", label: t.cycle }] },
+            ]}
+          />
         </Field>
 
         <Field label={t.position}>
-          <select
-            value={Math.min(positionIndex, current.fingerings.length - 1)}
-            onChange={(e) => setPositionIndex(Number(e.target.value))}
-            className={SELECT}
-          >
-            {current.fingerings.map((f, i) => (
-              <option key={f.position} value={i}>
-                {t.positionOption(f.position)}
-              </option>
-            ))}
-          </select>
+          <Select
+            label={t.position}
+            value={String(Math.min(positionIndex, current.fingerings.length - 1))}
+            onChange={(i) => setPositionIndex(Number(i))}
+            className="w-36"
+            groups={[
+              {
+                options: current.fingerings.map((f, i) => ({
+                  value: String(i),
+                  label: t.positionOption(f.position),
+                })),
+              },
+            ]}
+          />
         </Field>
 
         <div className="flex items-center gap-1.5 sm:ml-auto">
@@ -597,17 +610,15 @@ export function LickPractice({ lick }: { lick: LickDefinition }) {
 
 const NECK_FRETS = 15;
 
-const SELECT =
-  "h-10 rounded-control border border-border bg-card px-3 text-sm text-foreground focus:outline-none focus:border-accent-7";
 const ICON_BUTTON =
   "inline-flex h-8 w-8 items-center justify-center rounded-control border border-border bg-card text-foreground transition-colors hover:bg-card-hover";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <label className="flex flex-col gap-1 text-xs text-muted-foreground">
-      {label}
+    <div className="flex flex-col gap-1 text-xs text-muted-foreground">
+      <span aria-hidden>{label}</span>
       {children}
-    </label>
+    </div>
   );
 }
 
