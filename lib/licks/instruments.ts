@@ -57,11 +57,15 @@ export function playBass(piano: Piano, time: number, midi: number, seconds: numb
   return playNote(piano, time, midi, seconds, VELOCITY.bass);
 }
 
+/** The mix: `input` is where notes play into, `master` the final level. */
+export type MixBus = { input: GainNode; master: GainNode };
+
 /**
  * Master chain: a little room reverb and gentle compression so the lick,
- * comping and bass sit together. Returns the node instruments play into.
+ * comping and bass sit together, then a master gain that Stop can pull to
+ * silence at once (reverb tail included).
  */
-export function createMixBus(ctx: AudioContext): GainNode {
+export function createMixBus(ctx: AudioContext): MixBus {
   const input = ctx.createGain();
 
   // Warmer, less bright piano: a little more body, softer top end, and a
@@ -95,8 +99,9 @@ export function createMixBus(ctx: AudioContext): GainNode {
 
   tone.connect(comp);
   tone.connect(reverb).connect(wet).connect(comp);
-  comp.connect(ctx.destination);
-  return input;
+  const master = ctx.createGain();
+  comp.connect(master).connect(ctx.destination);
+  return { input, master };
 }
 
 /** Synthetic room response: decaying stereo noise, darker as it fades. */

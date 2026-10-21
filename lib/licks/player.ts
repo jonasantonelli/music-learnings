@@ -8,6 +8,7 @@ import {
   playBass,
   playChord,
   playNote,
+  type MixBus,
   type Piano,
   type Stop,
 } from "./instruments";
@@ -71,7 +72,7 @@ const silent: Stop = () => {};
  * One audio context, mix bus and piano for the whole site, so the piano
  * loads once rather than on every lick page.
  */
-let shared: { ctx: AudioContext; bus: GainNode } | null = null;
+let shared: { ctx: AudioContext; bus: MixBus } | null = null;
 
 function sharedAudio() {
   if (!shared || shared.ctx.state === "closed") {
@@ -91,7 +92,9 @@ function sharedAudio() {
 export class LickPlayer {
   private ctx: AudioContext | null = null;
   private out: GainNode | null = null;
-  private bus: GainNode | null = null;
+  private bus: MixBus | null = null;
+  /** Stop functions for everything scheduled since Play (pruned as it plays). */
+  private handles: { time: number; stop: Stop }[] = [];
   private piano: Piano | null = null;
   private onStateChange: (() => void) | null = null;
   private timer: ReturnType<typeof setInterval> | null = null;
@@ -145,7 +148,7 @@ export class LickPlayer {
     this.out?.disconnect();
     const gain = ctx.createGain();
     gain.gain.value = 0.9;
-    gain.connect(this.bus!);
+    gain.connect(this.bus!.input);
     this.out = gain;
     return gain;
   }
@@ -166,7 +169,7 @@ export class LickPlayer {
   /** Loads the piano (fetching samples the first time). */
   async load(): Promise<void> {
     const ctx = this.context();
-    this.piano ??= await loadPiano(ctx, this.bus!);
+    this.piano ??= await loadPiano(ctx, this.bus!.input);
   }
 
   /** Starts playback; call `load()` first. */
@@ -174,6 +177,7 @@ export class LickPlayer {
     if (!this.piano) throw new Error("LickPlayer.start() before load()");
     this.stop();
     const ctx = this.context();
+    this.unmute();
     this.freshOutput();
     this.options = { ...options };
     this.bpm = options.bpm;
@@ -224,7 +228,12 @@ export class LickPlayer {
     this.addCues();
   }
 
-  stop() {
+  /**
+   * Stops playback. By default it cuts the sound at once (the Stop button);
+   * `ringOut` only ends scheduling and lets the last notes ring, for a lick
+   * that reached its end.
+   */
+  stop(ringOut = false) {
     if (this.timer) clearInterval(this.timer);
     cancelAnimationFrame(this.frame);
     this.timer = null;
@@ -235,8 +244,17 @@ export class LickPlayer {
       setTimeout(() => out.disconnect(), 200);
       this.out = null;
     }
-    // Lift the dampers on anything still ringing (scheduled notes too).
-    this.piano?.stop();
+    // smplr queues future notes and its stop() only reaches voices already
+    // sounding, so cancel every scheduled note through its own stop function,
+    // then damp what rings and pull the master down (reverb tail included).
+    const now = this.ctx?.currentTime;
+    if (!ringOut) for (const h of this.handles) h.stop(now);
+    this.handles = [];
+    if (!ringOut) this.piano?.stop();
+    if (!ringOut && this.ctx && this.bus && this.options) {
+      this.bus.master.gain.cancelScheduledValues(this.ctx.currentTime);
+      this.bus.master.gain.setTargetAtTime(0, this.ctx.currentTime, 0.015);
+    }
     this.options = null;
     this.plan = [];
     this.cues = [];
@@ -245,7 +263,10 @@ export class LickPlayer {
   /** Plays a single note now (for stepping through a lick). */
   preview(midi: number, seconds = 0.8) {
     void this.load()
-      .then(() => playNote(this.piano!, this.ctx!.currentTime + 0.01, midi, seconds, VELOCITY.lead))
+      .then(() => {
+        this.unmute();
+        playNote(this.piano!, this.ctx!.currentTime + 0.01, midi, seconds, VELOCITY.lead);
+      })
       .catch(() => {
         // No samples (e.g. offline): stepping still works, silently.
       });
@@ -263,6 +284,17 @@ export class LickPlayer {
   private schedule(item: Planned) {
     item.time = this.passStart + item.beat * this.beatSeconds;
     item.stop = item.play(item.time, this.beatSeconds);
+    this.handles.push({ time: item.time, stop: item.stop });
+  }
+
+  /** Brings the master back up (after a Stop pulled it to silence). */
+  private unmute() {
+    if (!this.ctx || !this.bus) return;
+    const gain = this.bus.master.gain;
+    const now = this.ctx.currentTime;
+    gain.cancelScheduledValues(now);
+    gain.setValueAtTime(gain.value, now);
+    gain.linearRampToValueAtTime(1, now + 0.01);
   }
 
   private addCues() {
@@ -322,7 +354,7 @@ export class LickPlayer {
       if (ctx.currentTime >= passEnd) {
         const onEnd = opts.onEnd;
         const onNote = opts.onNote;
-        this.stop();
+        this.stop(true);
         onNote(this.pass, null);
         onEnd();
       }
@@ -331,6 +363,7 @@ export class LickPlayer {
     this.pass += 1;
     this.passStart = passEnd;
     this.cues = this.cues.filter((c) => c.end > ctx.currentTime);
+    this.handles = this.handles.filter((h) => h.time > ctx.currentTime - 10);
     this.schedulePass();
   }
 
