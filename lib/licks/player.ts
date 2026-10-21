@@ -1,7 +1,15 @@
 "use client";
 
 import { BEATS_PER_BAR } from "./notation";
-import { VELOCITY, createMixBus, playBass, playChord, playNote, prepare } from "./instruments";
+import {
+  VELOCITY,
+  createMixBus,
+  loadPiano,
+  playBass,
+  playChord,
+  playNote,
+  type Piano,
+} from "./instruments";
 
 /** One note to play: sounding MIDI pitch (null = rest), timed in beats. */
 export type PlayNote = {
@@ -54,8 +62,7 @@ export class LickPlayer {
   private passStart = 0;
   private lastReported: string | null = null;
   private current: PlaySequence | null = null;
-  /** Last pass whose notes were rendered ahead of time. */
-  private prepared = -1;
+  private piano: Piano | null = null;
 
   private context(): AudioContext {
     if (!this.ctx) this.ctx = new AudioContext();
@@ -78,7 +85,21 @@ export class LickPlayer {
     return this.options !== null;
   }
 
+  /** True once the piano samples are loaded. */
+  get ready(): boolean {
+    return this.piano !== null;
+  }
+
+  /** Loads the piano (fetching samples the first time). */
+  async load(): Promise<void> {
+    const ctx = this.context();
+    this.bus ??= createMixBus(ctx);
+    this.piano ??= await loadPiano(ctx, this.bus);
+  }
+
+  /** Starts playback; call `load()` first. */
   start(options: PlayOptions) {
+    if (!this.piano) throw new Error("LickPlayer.start() before load()");
     this.stop();
     const ctx = this.context();
     this.freshOutput();
@@ -86,9 +107,6 @@ export class LickPlayer {
     this.pass = 0;
     this.cues = [];
     this.lastReported = null;
-    this.prepared = -1;
-    this.prepare(0);
-    // Read the clock only after rendering, so the first notes aren't late.
     const beat = 60 / options.bpm;
     let at = ctx.currentTime + 0.08;
     if (options.countIn) {
@@ -116,15 +134,19 @@ export class LickPlayer {
       setTimeout(() => out.disconnect(), 200);
       this.out = null;
     }
+    // Lift the dampers on anything still ringing (scheduled notes too).
+    this.piano?.stop();
     this.options = null;
     this.cues = [];
   }
 
   /** Plays a single note now (for stepping through a lick). */
   preview(midi: number, seconds = 0.8) {
-    const ctx = this.context();
-    if (!this.out) this.freshOutput();
-    playNote(ctx, this.out!, ctx.currentTime + 0.01, midi, seconds, VELOCITY.lead);
+    void this.load()
+      .then(() => playNote(this.piano!, this.ctx!.currentTime + 0.01, midi, seconds, VELOCITY.lead))
+      .catch(() => {
+        // No samples (e.g. offline): stepping still works, silently.
+      });
   }
 
   dispose() {
@@ -132,18 +154,7 @@ export class LickPlayer {
     void this.ctx?.close();
     this.ctx = null;
     this.bus = null;
-  }
-
-  /** Builds the buffers a pass will need (cheap once cached). */
-  private prepare(pass: number) {
-    if (pass <= this.prepared || !this.options || !this.ctx) return;
-    this.prepared = pass;
-    const seq = this.options.sequence(pass);
-    prepare(this.ctx, seq.notes.flatMap((n) => (n.midi === null ? [] : [n.midi])), VELOCITY.lead);
-    if (this.options.comping) {
-      prepare(this.ctx, seq.chords.flatMap((c) => c.voicing), VELOCITY.chord);
-      prepare(this.ctx, seq.chords.flatMap((c) => (c.bass === null ? [] : [c.bass])), VELOCITY.bass);
-    }
+    this.piano = null;
   }
 
   private passLength(seq: PlaySequence): number {
@@ -164,7 +175,7 @@ export class LickPlayer {
         // Extend through any tied continuations.
         let length = n.beats;
         for (let k = seq.notes.indexOf(n) + 1; seq.notes[k]?.tied; k++) length += seq.notes[k].beats;
-        playNote(this.ctx!, this.out!, time, n.midi, length * beat, VELOCITY.lead);
+        playNote(this.piano!, time, n.midi, length * beat, VELOCITY.lead);
       }
     }
     if (opts.comping) {
@@ -180,10 +191,6 @@ export class LickPlayer {
     const ctx = this.ctx;
     if (!opts || !ctx || !this.current) return;
     const passEnd = this.passStart + this.passLength(this.current);
-    // Halfway through a pass, render the next one (it may be in a new key).
-    if (opts.loop && ctx.currentTime > this.passStart + this.passLength(this.current) / 2) {
-      this.prepare(this.pass + 1);
-    }
     if (ctx.currentTime + LOOKAHEAD < passEnd) return;
     if (!opts.loop) {
       if (ctx.currentTime >= passEnd) {
@@ -221,16 +228,15 @@ export class LickPlayer {
    * bar-long span, one hit in a shorter one, with the root on 1 in the bass.
    */
   private comp(t0: number, beat: number, chord: PlayChord) {
-    const ctx = this.ctx!;
-    const out = this.out!;
+    const piano = this.piano!;
     const at = (b: number) => t0 + (chord.start + b) * beat;
-    if (chord.bass !== null) playBass(ctx, out, at(0), chord.bass, Math.min(chord.beats, 2) * beat * 0.95);
+    if (chord.bass !== null) playBass(piano, at(0), chord.bass, Math.min(chord.beats, 2) * beat * 0.95);
     if (chord.voicing.length === 0) return;
     if (chord.beats >= BEATS_PER_BAR) {
-      playChord(ctx, out, at(0), chord.voicing, beat * 1.2);
-      playChord(ctx, out, at(1.5), chord.voicing, beat * 1.6);
+      playChord(piano, at(0), chord.voicing, beat * 1.2);
+      playChord(piano, at(1.5), chord.voicing, beat * 1.6);
     } else {
-      playChord(ctx, out, at(0), chord.voicing, chord.beats * beat * 0.85);
+      playChord(piano, at(0), chord.voicing, chord.beats * beat * 0.85);
     }
   }
 

@@ -6,6 +6,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ListMusic,
+  LoaderCircle,
   Metronome,
   Play,
   Repeat,
@@ -52,6 +53,8 @@ const messages = defineMessages({
   en: {
     play: "Play",
     stop: "Stop",
+    loadingPiano: "Loading piano…",
+    audioFailed: "Couldn't load the piano sounds. Check your connection and try again.",
     tempo: "Tempo",
     key: "Key",
     original: (k: string) => `Original (${k})`,
@@ -84,6 +87,8 @@ const messages = defineMessages({
   pt: {
     play: "Tocar",
     stop: "Parar",
+    loadingPiano: "Carregando piano…",
+    audioFailed: "Não foi possível carregar o som do piano. Verifique sua conexão e tente de novo.",
     tempo: "Andamento",
     key: "Tom",
     original: (k: string) => `Original (${k})`,
@@ -116,6 +121,8 @@ const messages = defineMessages({
   es: {
     play: "Tocar",
     stop: "Parar",
+    loadingPiano: "Cargando piano…",
+    audioFailed: "No se pudo cargar el sonido del piano. Revisa tu conexión e inténtalo de nuevo.",
     tempo: "Tempo",
     key: "Tonalidad",
     original: (k: string) => `Original (${k})`,
@@ -255,6 +262,10 @@ export function LickPractice({ lick }: { lick: LickDefinition }) {
   const [positionIndex, setPositionIndex] = React.useState(0);
   const [active, setActive] = React.useState<number | null>(null);
   const [playing, setPlaying] = React.useState(false);
+  const [loading, setLoading] = React.useState(false);
+  const [audioFailed, setAudioFailed] = React.useState(false);
+  // Set when Stop is pressed while the piano is still loading.
+  const cancelLoad = React.useRef(false);
 
   const cache = React.useRef(new Map<string, Arrangement>());
   const arrangementFor = React.useCallback(
@@ -296,8 +307,23 @@ export function LickPractice({ lick }: { lick: LickDefinition }) {
   const player = () => (playerRef.current ??= new LickPlayer());
   React.useEffect(() => () => playerRef.current?.dispose(), []);
 
-  const start = React.useCallback(() => {
+  const start = React.useCallback(async () => {
     const pl = (playerRef.current ??= new LickPlayer());
+    if (!pl.ready) {
+      // The first play fetches the piano samples.
+      cancelLoad.current = false;
+      setLoading(true);
+      setAudioFailed(false);
+      try {
+        await pl.load();
+      } catch {
+        setAudioFailed(true);
+        return;
+      } finally {
+        setLoading(false);
+      }
+      if (cancelLoad.current) return;
+    }
     setCyclePass(0);
     pl.start({
       bpm: p.bpm,
@@ -319,6 +345,7 @@ export function LickPractice({ lick }: { lick: LickDefinition }) {
   }, [p.bpm, p.loop, p.countIn, p.metronome, p.comping, keyChoice, arrangementFor, pcForPass]);
 
   const stop = React.useCallback(() => {
+    cancelLoad.current = true;
     playerRef.current?.stop();
     setPlaying(false);
     setActive(null);
@@ -441,11 +468,18 @@ export function LickPractice({ lick }: { lick: LickDefinition }) {
       <div className="flex flex-wrap items-end gap-x-4 gap-y-3">
         <button
           type="button"
-          onClick={playing ? stop : start}
+          onClick={playing || loading ? stop : start}
+          aria-busy={loading}
           className="inline-flex h-10 items-center gap-2 rounded-control bg-accent-9 px-4 text-sm font-medium text-accent-contrast transition-colors hover:bg-accent-10"
         >
-          {playing ? <Square className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-          {playing ? t.stop : t.play}
+          {loading ? (
+            <LoaderCircle className="h-4 w-4 animate-spin" />
+          ) : playing ? (
+            <Square className="h-4 w-4" />
+          ) : (
+            <Play className="h-4 w-4" />
+          )}
+          {loading ? t.loadingPiano : playing ? t.stop : t.play}
         </button>
 
         <label className="flex min-w-[180px] flex-1 flex-col gap-1 text-xs text-muted-foreground sm:flex-none">
@@ -557,6 +591,12 @@ export function LickPractice({ lick }: { lick: LickDefinition }) {
           />
         )}
       </div>
+
+      {audioFailed && (
+        <p role="alert" className="mt-4 text-sm text-muted-foreground">
+          {t.audioFailed}
+        </p>
+      )}
 
       {keyChoice === "cycle" && (
         <p className="mt-4 text-sm font-medium" aria-live="polite">
