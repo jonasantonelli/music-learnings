@@ -5,10 +5,8 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
-  Guitar,
   ListMusic,
   Metronome,
-  Piano,
   Play,
   Repeat,
   Square,
@@ -46,7 +44,6 @@ import {
   type TimedChord,
 } from "@/lib/licks/notation";
 import { LickPlayer, type PlaySequence } from "@/lib/licks/player";
-import { COMP_SOUNDS, LEAD_SOUNDS, type CompSound, type LeadSound } from "@/lib/licks/instruments";
 import type { LickDefinition } from "@/lib/licks/catalog";
 import { FAVORITES_KEY, LEARNED_KEY } from "@/lib/licks/storage";
 
@@ -64,15 +61,6 @@ const messages = defineMessages({
     countIn: "Count-in",
     metronome: "Metronome",
     comping: "Chords",
-    leadSound: "Lick sound",
-    compSound: "Backing",
-    sounds: {
-      nylon: "Nylon guitar",
-      "jazz-guitar": "Jazz guitar",
-      "electric-piano": "Electric piano",
-      piano: "Piano",
-      guitar: "Guitar",
-    } as Record<LeadSound | CompSound, string>,
     view: "View",
     fretboard: "Fretboard",
     score: "Notation + TAB",
@@ -104,15 +92,6 @@ const messages = defineMessages({
     countIn: "Contagem",
     metronome: "Metrônomo",
     comping: "Acordes",
-    leadSound: "Timbre do lick",
-    compSound: "Acompanhamento",
-    sounds: {
-      nylon: "Violão nylon",
-      "jazz-guitar": "Guitarra jazz",
-      "electric-piano": "Piano elétrico",
-      piano: "Piano",
-      guitar: "Guitarra",
-    } as Record<LeadSound | CompSound, string>,
     view: "Visualização",
     fretboard: "Braço",
     score: "Partitura + TAB",
@@ -144,15 +123,6 @@ const messages = defineMessages({
     countIn: "Cuenta",
     metronome: "Metrónomo",
     comping: "Acordes",
-    leadSound: "Timbre del lick",
-    compSound: "Acompañamiento",
-    sounds: {
-      nylon: "Guitarra de nylon",
-      "jazz-guitar": "Guitarra jazz",
-      "electric-piano": "Piano eléctrico",
-      piano: "Piano",
-      guitar: "Guitarra",
-    } as Record<LeadSound | CompSound, string>,
     view: "Vista",
     fretboard: "Mástil",
     score: "Partitura + TAB",
@@ -183,8 +153,6 @@ type Prefs = {
   countIn: boolean;
   metronome: boolean;
   comping: boolean;
-  lead: LeadSound;
-  comp: CompSound;
 };
 
 const DEFAULT_PREFS: Prefs = {
@@ -195,8 +163,6 @@ const DEFAULT_PREFS: Prefs = {
   countIn: true,
   metronome: false,
   comping: true,
-  lead: "nylon",
-  comp: "piano",
 };
 
 
@@ -335,8 +301,6 @@ export function LickPractice({ lick }: { lick: LickDefinition }) {
       countIn: p.countIn,
       metronome: p.metronome,
       comping: p.comping,
-      lead: p.lead,
-      comp: p.comp,
       sequence: (pass) => toSequence(arrangementFor(pcForPass(pass))),
       onNote: (pass, index) => {
         setCyclePass(pass);
@@ -348,7 +312,7 @@ export function LickPractice({ lick }: { lick: LickDefinition }) {
       },
     });
     setPlaying(true);
-  }, [p.bpm, p.loop, p.countIn, p.metronome, p.comping, p.lead, p.comp, keyChoice, arrangementFor, pcForPass]);
+  }, [p.bpm, p.loop, p.countIn, p.metronome, p.comping, keyChoice, arrangementFor, pcForPass]);
 
   const stop = React.useCallback(() => {
     playerRef.current?.stop();
@@ -371,9 +335,9 @@ export function LickPractice({ lick }: { lick: LickDefinition }) {
       if (playingRef.current) stop();
       setActive(index);
       const midi = current.midis[index];
-      if (midi !== null) player().preview(midi - 12, p.lead);
+      if (midi !== null) player().preview(midi - 12);
     },
-    [current, stop, p.lead],
+    [current, stop],
   );
 
   const step = React.useCallback(
@@ -557,21 +521,6 @@ export function LickPractice({ lick }: { lick: LickDefinition }) {
           />
           <Toggle on={p.comping} icon={ListMusic} label={t.comping} onClick={() => update({ comping: !p.comping })} />
         </div>
-        <SoundSelect
-          label={t.leadSound}
-          icon={p.lead === "electric-piano" ? Piano : Guitar}
-          value={p.lead}
-          options={LEAD_SOUNDS.map((s) => [s, t.sounds[s]])}
-          onChange={(lead) => update({ lead })}
-        />
-        <SoundSelect
-          label={t.compSound}
-          icon={p.comp === "piano" ? Piano : Guitar}
-          value={p.comp}
-          disabled={!p.comping}
-          options={COMP_SOUNDS.map((s) => [s, t.sounds[s]])}
-          onChange={(comp) => update({ comp })}
-        />
         <Segmented
           label={t.view}
           value={p.view}
@@ -692,42 +641,6 @@ function Toggle({
       {/* Icons alone on phones, so the toolbar stays on one row. */}
       <span className="hidden sm:inline">{label}</span>
     </button>
-  );
-}
-
-function SoundSelect<T extends string>({
-  label,
-  icon: Icon,
-  value,
-  options,
-  onChange,
-  disabled = false,
-}: {
-  label: string;
-  icon: LucideIcon;
-  value: T;
-  options: [T, string][];
-  onChange: (v: T) => void;
-  disabled?: boolean;
-}) {
-  return (
-    <label className={cn("relative flex items-center", disabled && "opacity-50")}>
-      <span className="sr-only">{label}</span>
-      <Icon className="pointer-events-none absolute left-2.5 h-4 w-4 text-muted-foreground" />
-      <select
-        value={value}
-        disabled={disabled}
-        title={label}
-        onChange={(e) => onChange(e.target.value as T)}
-        className="h-9 rounded-control border border-border bg-card pl-8 pr-3 text-xs text-foreground focus:outline-none focus:border-accent-7"
-      >
-        {options.map(([v, text]) => (
-          <option key={v} value={v}>
-            {text}
-          </option>
-        ))}
-      </select>
-    </label>
   );
 }
 

@@ -1,14 +1,7 @@
 "use client";
 
 import { BEATS_PER_BAR } from "./notation";
-import {
-  createMixBus,
-  playBass,
-  playChord,
-  playLead,
-  type CompSound,
-  type LeadSound,
-} from "./instruments";
+import { LEAD_VELOCITY, createMixBus, playBass, playChord, playNote } from "./instruments";
 
 /** One note to play: sounding MIDI pitch (null = rest), timed in beats. */
 export type PlayNote = {
@@ -32,8 +25,6 @@ export type PlayOptions = {
   countIn: boolean;
   metronome: boolean;
   comping: boolean;
-  lead: LeadSound;
-  comp: CompSound;
   /** Sequence for each pass; lets callers change key between loops. */
   sequence: (pass: number) => PlaySequence;
   /** Current note index (null between notes or during the count-in). */
@@ -125,10 +116,10 @@ export class LickPlayer {
   }
 
   /** Plays a single note now (for stepping through a lick). */
-  preview(midi: number, sound: LeadSound, seconds = 0.8) {
+  preview(midi: number, seconds = 0.8) {
     const ctx = this.context();
     if (!this.out) this.freshOutput();
-    playLead(ctx, this.out!, sound, ctx.currentTime + 0.01, midi, seconds);
+    playNote(ctx, this.out!, ctx.currentTime + 0.01, midi, seconds, LEAD_VELOCITY);
   }
 
   dispose() {
@@ -156,11 +147,11 @@ export class LickPlayer {
         // Extend through any tied continuations.
         let length = n.beats;
         for (let k = seq.notes.indexOf(n) + 1; seq.notes[k]?.tied; k++) length += seq.notes[k].beats;
-        playLead(this.ctx!, this.out!, opts.lead, time, n.midi, length * beat);
+        playNote(this.ctx!, this.out!, time, n.midi, length * beat, LEAD_VELOCITY);
       }
     }
     if (opts.comping) {
-      for (const c of seq.chords) this.comp(t0, beat, c, opts.comp);
+      for (const c of seq.chords) this.comp(t0, beat, c);
     }
     if (opts.metronome) {
       for (let b = 0; b < seq.beats; b++) this.click(t0 + b * beat, b % BEATS_PER_BAR === 0);
@@ -205,25 +196,20 @@ export class LickPlayer {
   // --- Sounds --------------------------------------------------------------
 
   /**
-   * Comps one chord span. Piano plays the Charleston (beat 1 and the "and"
-   * of 2) in a bar-long span, one hit in a shorter one; guitar plays short
-   * quarter-note strums, Freddie Green style. The bass takes the root on 1.
+   * Comps one chord span: the Charleston (beat 1 and the "and" of 2) in a
+   * bar-long span, one hit in a shorter one, with the root on 1 in the bass.
    */
-  private comp(t0: number, beat: number, chord: PlayChord, sound: CompSound) {
+  private comp(t0: number, beat: number, chord: PlayChord) {
     const ctx = this.ctx!;
     const out = this.out!;
     const at = (b: number) => t0 + (chord.start + b) * beat;
     if (chord.bass !== null) playBass(ctx, out, at(0), chord.bass, Math.min(chord.beats, 2) * beat * 0.95);
     if (chord.voicing.length === 0) return;
-    if (sound === "guitar") {
-      for (let b = 0; b < chord.beats; b++) playChord(ctx, out, "guitar", at(b), chord.voicing, beat * 0.45);
-      return;
-    }
     if (chord.beats >= BEATS_PER_BAR) {
-      playChord(ctx, out, "piano", at(0), chord.voicing, beat * 1.2);
-      playChord(ctx, out, "piano", at(1.5), chord.voicing, beat * 1.6);
+      playChord(ctx, out, at(0), chord.voicing, beat * 1.2);
+      playChord(ctx, out, at(1.5), chord.voicing, beat * 1.6);
     } else {
-      playChord(ctx, out, "piano", at(0), chord.voicing, chord.beats * beat * 0.85);
+      playChord(ctx, out, at(0), chord.voicing, chord.beats * beat * 0.85);
     }
   }
 
