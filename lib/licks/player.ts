@@ -68,6 +68,20 @@ type Cue = { time: number; end: number; pass: number; index: number };
 const silent: Stop = () => {};
 
 /**
+ * One audio context, mix bus and piano for the whole site, so the piano
+ * loads once rather than on every lick page.
+ */
+let shared: { ctx: AudioContext; bus: GainNode } | null = null;
+
+function sharedAudio() {
+  if (!shared || shared.ctx.state === "closed") {
+    const ctx = new AudioContext();
+    shared = { ctx, bus: createMixBus(ctx) };
+  }
+  return shared;
+}
+
+/**
  * A small Web Audio player for licks. Each pass is planned in beats and
  * scheduled slightly ahead of the audio clock; a frame loop reports which
  * note is sounding so the staff and fretboard can follow along. The tempo
@@ -79,6 +93,7 @@ export class LickPlayer {
   private out: GainNode | null = null;
   private bus: GainNode | null = null;
   private piano: Piano | null = null;
+  private onStateChange: (() => void) | null = null;
   private timer: ReturnType<typeof setInterval> | null = null;
   private frame = 0;
   private options: PlayOptions | null = null;
@@ -91,18 +106,46 @@ export class LickPlayer {
   private lastReported: string | null = null;
 
   private context(): AudioContext {
-    if (!this.ctx) this.ctx = new AudioContext();
-    if (this.ctx.state === "suspended") void this.ctx.resume();
+    if (!this.ctx) {
+      const audio = sharedAudio();
+      this.ctx = audio.ctx;
+      this.bus = audio.bus;
+      // If the browser suspends audio mid-play (tab in the background, a
+      // call on a phone), stop cleanly so the next Play — a user gesture —
+      // can resume it, instead of sitting silently on "Stop".
+      this.onStateChange = () => {
+        if (this.ctx?.state !== "running" && this.options) {
+          const { onEnd, onNote } = this.options;
+          this.stop();
+          onNote(this.pass, null);
+          onEnd();
+        }
+      };
+      this.ctx.addEventListener("statechange", this.onStateChange);
+    }
+    // Safari also has an "interrupted" state, so resume from anything but running.
+    if (this.ctx.state !== "running") void this.ctx.resume();
     return this.ctx;
+  }
+
+  /**
+   * Resumes audio (must be called from a user gesture); resolves to whether
+   * the clock is actually running, giving up after a short wait.
+   */
+  async resume(): Promise<boolean> {
+    const ctx = this.context();
+    if (ctx.state === "running") return true;
+    await Promise.race([ctx.resume().catch(() => {}), new Promise((r) => setTimeout(r, 400))]);
+    // The state may have changed while awaiting.
+    return (ctx.state as AudioContextState) === "running";
   }
 
   private freshOutput(): GainNode {
     const ctx = this.context();
     this.out?.disconnect();
-    this.bus ??= createMixBus(ctx);
     const gain = ctx.createGain();
     gain.gain.value = 0.9;
-    gain.connect(this.bus);
+    gain.connect(this.bus!);
     this.out = gain;
     return gain;
   }
@@ -123,8 +166,7 @@ export class LickPlayer {
   /** Loads the piano (fetching samples the first time). */
   async load(): Promise<void> {
     const ctx = this.context();
-    this.bus ??= createMixBus(ctx);
-    this.piano ??= await loadPiano(ctx, this.bus);
+    this.piano ??= await loadPiano(ctx, this.bus!);
   }
 
   /** Starts playback; call `load()` first. */
@@ -209,9 +251,10 @@ export class LickPlayer {
       });
   }
 
+  /** Stops and detaches; the shared context and piano stay for the next page. */
   dispose() {
     this.stop();
-    void this.ctx?.close();
+    if (this.onStateChange) this.ctx?.removeEventListener("statechange", this.onStateChange);
     this.ctx = null;
     this.bus = null;
     this.piano = null;

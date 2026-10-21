@@ -55,6 +55,7 @@ const messages = defineMessages({
     stop: "Stop",
     loadingPiano: "Loading piano…",
     audioFailed: "Couldn't load the piano sounds. Check your connection and try again.",
+    audioLocked: "The browser kept audio paused. Press Play again to start it.",
     tempo: "Tempo",
     key: "Key",
     original: (k: string) => `Original (${k})`,
@@ -89,6 +90,7 @@ const messages = defineMessages({
     stop: "Parar",
     loadingPiano: "Carregando piano…",
     audioFailed: "Não foi possível carregar o som do piano. Verifique sua conexão e tente de novo.",
+    audioLocked: "O navegador deixou o áudio pausado. Aperte Tocar de novo para começar.",
     tempo: "Andamento",
     key: "Tom",
     original: (k: string) => `Original (${k})`,
@@ -123,6 +125,7 @@ const messages = defineMessages({
     stop: "Parar",
     loadingPiano: "Cargando piano…",
     audioFailed: "No se pudo cargar el sonido del piano. Revisa tu conexión e inténtalo de nuevo.",
+    audioLocked: "El navegador dejó el audio en pausa. Pulsa Tocar de nuevo para empezar.",
     tempo: "Tempo",
     key: "Tonalidad",
     original: (k: string) => `Original (${k})`,
@@ -263,7 +266,7 @@ export function LickPractice({ lick }: { lick: LickDefinition }) {
   const [active, setActive] = React.useState<number | null>(null);
   const [playing, setPlaying] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
-  const [audioFailed, setAudioFailed] = React.useState(false);
+  const [audioIssue, setAudioIssue] = React.useState<"failed" | "locked" | null>(null);
   // Set when Stop is pressed while the piano is still loading.
   const cancelLoad = React.useRef(false);
 
@@ -319,21 +322,29 @@ export function LickPractice({ lick }: { lick: LickDefinition }) {
 
   const start = React.useCallback(async () => {
     const pl = (playerRef.current ??= new LickPlayer());
+    // Unlock audio first, while still inside the click.
+    const resumed = pl.resume();
     if (!pl.ready) {
       // The first play fetches the piano samples.
       cancelLoad.current = false;
       setLoading(true);
-      setAudioFailed(false);
+      setAudioIssue(null);
       try {
         await pl.load();
       } catch {
-        setAudioFailed(true);
+        setAudioIssue("failed");
         return;
       } finally {
         setLoading(false);
       }
       if (cancelLoad.current) return;
     }
+    if (!(await resumed)) {
+      // The browser kept audio locked; the next click will unlock it.
+      setAudioIssue("locked");
+      return;
+    }
+    setAudioIssue(null);
     setCyclePass(0);
     pl.start({
       ...settingsRef.current,
@@ -481,7 +492,9 @@ export function LickPractice({ lick }: { lick: LickDefinition }) {
       <div className="flex flex-wrap items-end gap-x-4 gap-y-3">
         <button
           type="button"
-          onClick={playing || loading ? stop : start}
+          // Extra clicks while the piano loads are ignored (a double click
+          // used to cancel the first play).
+          onClick={loading ? undefined : playing ? stop : start}
           aria-busy={loading}
           className="inline-flex h-10 items-center gap-2 rounded-control bg-accent-9 px-4 text-sm font-medium text-accent-contrast transition-colors hover:bg-accent-10"
         >
@@ -605,9 +618,9 @@ export function LickPractice({ lick }: { lick: LickDefinition }) {
         )}
       </div>
 
-      {audioFailed && (
+      {audioIssue && (
         <p role="alert" className="mt-4 text-sm text-muted-foreground">
-          {t.audioFailed}
+          {audioIssue === "failed" ? t.audioFailed : t.audioLocked}
         </p>
       )}
 
