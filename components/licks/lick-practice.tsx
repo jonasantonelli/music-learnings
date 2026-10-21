@@ -8,7 +8,10 @@ import {
   ListMusic,
   LoaderCircle,
   Metronome,
+  Minus,
+  Pause,
   Play,
+  Plus,
   Repeat,
   Square,
   Star,
@@ -45,14 +48,25 @@ import {
   type ParsedLick,
   type TimedChord,
 } from "@/lib/licks/notation";
-import { LickPlayer, type PlaySequence } from "@/lib/licks/player";
+import { LickPlayer, type PlaySequence, type Position } from "@/lib/licks/player";
 import type { LickDefinition } from "@/lib/licks/catalog";
 import { FAVORITES_KEY, LEARNED_KEY } from "@/lib/licks/storage";
 
 const messages = defineMessages({
   en: {
     play: "Play",
+    pause: "Pause",
     stop: "Stop",
+    stopHint: "Stop (back to the start)",
+    ready: "Ready",
+    playingNow: "Playing",
+    pausedNow: "Paused",
+    bars: (n: number) => `${n} bars`,
+    at: (bar: number, bars: number, beat: number) => `Bar ${bar} of ${bars} · beat ${beat}`,
+    slower: "Slower",
+    faster: "Faster",
+    keys_: { space: "Space", esc: "Esc" },
+    shortcuts: { play: "play/pause", stop: "stop", step: "note by note", tempo: "tempo" },
     loadingPiano: "Loading piano…",
     audioFailed: "Couldn't load the piano sounds. Check your connection and try again.",
     audioLocked: "The browser kept audio paused. Press Play again to start it.",
@@ -87,7 +101,18 @@ const messages = defineMessages({
   },
   pt: {
     play: "Tocar",
+    pause: "Pausar",
     stop: "Parar",
+    stopHint: "Parar (voltar ao início)",
+    ready: "Pronto",
+    playingNow: "Tocando",
+    pausedNow: "Pausado",
+    bars: (n: number) => `${n} compassos`,
+    at: (bar: number, bars: number, beat: number) => `Compasso ${bar} de ${bars} · tempo ${beat}`,
+    slower: "Mais lento",
+    faster: "Mais rápido",
+    keys_: { space: "Espaço", esc: "Esc" },
+    shortcuts: { play: "tocar/pausar", stop: "parar", step: "nota a nota", tempo: "andamento" },
     loadingPiano: "Carregando piano…",
     audioFailed: "Não foi possível carregar o som do piano. Verifique sua conexão e tente de novo.",
     audioLocked: "O navegador deixou o áudio pausado. Aperte Tocar de novo para começar.",
@@ -122,7 +147,18 @@ const messages = defineMessages({
   },
   es: {
     play: "Tocar",
+    pause: "Pausar",
     stop: "Parar",
+    stopHint: "Parar (volver al inicio)",
+    ready: "Listo",
+    playingNow: "Tocando",
+    pausedNow: "En pausa",
+    bars: (n: number) => `${n} compases`,
+    at: (bar: number, bars: number, beat: number) => `Compás ${bar} de ${bars} · tiempo ${beat}`,
+    slower: "Más lento",
+    faster: "Más rápido",
+    keys_: { space: "Espacio", esc: "Esc" },
+    shortcuts: { play: "tocar/pausar", stop: "parar", step: "nota a nota", tempo: "tempo" },
     loadingPiano: "Cargando piano…",
     audioFailed: "No se pudo cargar el sonido del piano. Revisa tu conexión e inténtalo de nuevo.",
     audioLocked: "El navegador dejó el audio en pausa. Pulsa Tocar de nuevo para empezar.",
@@ -265,6 +301,8 @@ export function LickPractice({ lick }: { lick: LickDefinition }) {
   const [positionIndex, setPositionIndex] = React.useState(0);
   const [active, setActive] = React.useState<number | null>(null);
   const [playing, setPlaying] = React.useState(false);
+  // Where a paused lick (or a chosen note) will resume from.
+  const [resumeAt, setResumeAt] = React.useState<Position | null>(null);
   const [loading, setLoading] = React.useState(false);
   const [audioIssue, setAudioIssue] = React.useState<"failed" | "locked" | null>(null);
   // Set when Stop is pressed while the piano is still loading.
@@ -320,59 +358,87 @@ export function LickPractice({ lick }: { lick: LickDefinition }) {
     settingsRef.current = settings;
   });
 
-  const start = React.useCallback(async () => {
-    const pl = (playerRef.current ??= new LickPlayer());
-    // Unlock audio first, while still inside the click.
-    const resumed = pl.resume();
-    if (!pl.ready) {
-      // The first play fetches the piano samples.
-      cancelLoad.current = false;
-      setLoading(true);
-      setAudioIssue(null);
-      try {
-        await pl.load();
-      } catch {
-        setAudioIssue("failed");
-        return;
-      } finally {
-        setLoading(false);
+  const start = React.useCallback(
+    async (from?: Position) => {
+      const pl = (playerRef.current ??= new LickPlayer());
+      // Unlock audio first, while still inside the click or key press.
+      const resumed = pl.resume();
+      if (!pl.ready) {
+        // The first play fetches the piano samples.
+        cancelLoad.current = false;
+        setLoading(true);
+        setAudioIssue(null);
+        try {
+          await pl.load();
+        } catch {
+          setAudioIssue("failed");
+          return;
+        } finally {
+          setLoading(false);
+        }
+        if (cancelLoad.current) return;
       }
-      if (cancelLoad.current) return;
-    }
-    if (!(await resumed)) {
-      // The browser kept audio locked; the next click will unlock it.
-      setAudioIssue("locked");
-      return;
-    }
-    setAudioIssue(null);
-    setCyclePass(0);
-    pl.start({
-      ...settingsRef.current,
-      sequence: (pass) => toSequence(arrangementFor(pcForPass(pass))),
-      onNote: (pass, index) => {
-        setCyclePass(pass);
-        setActive(index);
-      },
-      onEnd: () => {
-        setPlaying(false);
-        setActive(null);
-      },
-    });
-    setPlaying(true);
-  }, [arrangementFor, pcForPass]);
+      if (!(await resumed)) {
+        // The browser kept audio locked; the next click will unlock it.
+        setAudioIssue("locked");
+        return;
+      }
+      setAudioIssue(null);
+      setResumeAt(null);
+      setCyclePass(from?.pass ?? 0);
+      pl.start(
+        {
+          ...settingsRef.current,
+          sequence: (pass) => toSequence(arrangementFor(pcForPass(pass))),
+          onNote: (pass, index) => {
+            setCyclePass(pass);
+            if (index !== null) setActive(index);
+          },
+          onEnd: () => {
+            setPlaying(false);
+            setActive(null);
+            setResumeAt(null);
+          },
+        },
+        from,
+      );
+      setPlaying(true);
+    },
+    [arrangementFor, pcForPass],
+  );
 
+  /** Stops at once and remembers the spot, so Play continues from there. */
+  const pause = React.useCallback(() => {
+    const at = playerRef.current?.pause() ?? null;
+    setPlaying(false);
+    setResumeAt(at);
+  }, []);
+
+  /** Stops at once and goes back to the start. */
   const stop = React.useCallback(() => {
     cancelLoad.current = true;
     playerRef.current?.stop();
     setPlaying(false);
     setActive(null);
+    setResumeAt(null);
     setCyclePass(0);
   }, []);
 
-  // A new key means new notes: restart. (`start` changes only with the key.)
   const playingRef = React.useRef(false);
   React.useEffect(() => {
-    if (playingRef.current) start();
+    playingRef.current = playing;
+  }, [playing]);
+
+  const toggle = React.useCallback(() => {
+    if (loading) return; // extra presses while the piano loads are ignored
+    if (playingRef.current) pause();
+    else void start(resumeAt ?? undefined);
+  }, [loading, pause, start, resumeAt]);
+
+  // A new key means new notes: restart from the top. (`start` changes only
+  // with the key.)
+  React.useEffect(() => {
+    if (playingRef.current) void start();
   }, [start]);
   // Tempo and toggles apply while playing, without restarting.
   React.useEffect(() => {
@@ -381,18 +447,22 @@ export function LickPractice({ lick }: { lick: LickDefinition }) {
   React.useEffect(() => {
     playerRef.current?.update({ loop: loopOn, metronome: p.metronome, comping: p.comping });
   }, [loopOn, p.metronome, p.comping]);
-  React.useEffect(() => {
-    playingRef.current = playing;
-  }, [playing]);
 
+  const displayPass = keyChoice === "cycle" ? cyclePass : 0;
+
+  /** Selects a note: hear it, and make it the place Play starts from. */
   const select = React.useCallback(
     (index: number) => {
-      if (playingRef.current) stop();
+      if (playingRef.current) {
+        playerRef.current?.stop();
+        setPlaying(false);
+      }
       setActive(index);
+      setResumeAt({ pass: displayPass, beat: current.lick.notes[index].start });
       const midi = current.midis[index];
       if (midi !== null) player().preview(midi - 12);
     },
-    [current, stop],
+    [current, displayPass],
   );
 
   const step = React.useCallback(
@@ -408,23 +478,67 @@ export function LickPractice({ lick }: { lick: LickDefinition }) {
     [active, current, select],
   );
 
+  const setTempo = React.useCallback(
+    (bpm: number) => update({ bpm: Math.min(TEMPO_MAX, Math.max(TEMPO_MIN, bpm)) }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [prefs],
+  );
+
+  // Keyboard: Space plays/pauses from anywhere on the page (even with a
+  // button focused, so it never re-presses that button), Esc stops, arrows
+  // step through notes, +/- change the tempo. Text fields and open
+  // dropdowns keep their own keys.
   React.useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement;
-      // Leave keys alone in fields and in dropdowns (their arrows move the list).
-      if (target.closest("input, select, textarea, [contenteditable], [role=listbox], [aria-haspopup]")) return;
-      if (e.key === "ArrowRight") step(1);
-      else if (e.key === "ArrowLeft") step(-1);
-      // Space on a focused button or link already activates it.
-      else if (e.key === " " && !target.closest("button, a")) {
-        if (playingRef.current) stop();
-        else start();
-      } else return;
+    let spaceTaken = false;
+    const ownsKeys = (el: Element) =>
+      el.closest(
+        "textarea, select, [contenteditable], [role=listbox], [aria-haspopup], " +
+          "input:not([type=range]):not([type=checkbox]):not([type=radio])",
+      );
+    const onKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as Element;
+      if (e.metaKey || e.ctrlKey || e.altKey || ownsKeys(target)) return;
+      const onSlider = target.matches("input[type=range]");
+      switch (e.key) {
+        case " ":
+          if (!e.repeat) toggle();
+          spaceTaken = true;
+          break;
+        case "Escape":
+          stop();
+          break;
+        case "ArrowRight":
+        case "ArrowLeft":
+          if (onSlider) return;
+          step(e.key === "ArrowRight" ? 1 : -1);
+          break;
+        case "+":
+        case "=":
+          setTempo(p.bpm + 5);
+          break;
+        case "-":
+        case "_":
+          setTempo(p.bpm - 5);
+          break;
+        default:
+          return;
+      }
       e.preventDefault();
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [step, start, stop]);
+    // A focused button "clicks" on Space key-up; swallow that one.
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.key === " " && spaceTaken) {
+        spaceTaken = false;
+        e.preventDefault();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
+    };
+  }, [toggle, stop, step, setTempo, p.bpm]);
 
   // --- Fretboard markers ---------------------------------------------------
   const soundingOrder = React.useMemo(() => {
@@ -489,39 +603,81 @@ export function LickPractice({ lick }: { lick: LickDefinition }) {
   return (
     <section className="mt-8 rounded-card border border-border bg-card p-4 sm:p-6">
       {/* Transport */}
-      <div className="flex flex-wrap items-end gap-x-4 gap-y-3">
-        <button
-          type="button"
-          // Extra clicks while the piano loads are ignored (a double click
-          // used to cancel the first play).
-          onClick={loading ? undefined : playing ? stop : start}
-          aria-busy={loading}
-          className="inline-flex h-10 items-center gap-2 rounded-control bg-accent-9 px-4 text-sm font-medium text-accent-contrast transition-colors hover:bg-accent-10"
-        >
-          {loading ? (
-            <LoaderCircle className="h-4 w-4 animate-spin" />
-          ) : playing ? (
-            <Square className="h-4 w-4" />
-          ) : (
-            <Play className="h-4 w-4" />
-          )}
-          {loading ? t.loadingPiano : playing ? t.stop : t.play}
-        </button>
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-4">
+        <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={toggle}
+            aria-busy={loading}
+            aria-label={`${loading ? t.loadingPiano : playing ? t.pause : t.play} (${t.keys_.space})`}
+            title={`${playing ? t.pause : t.play} (${t.keys_.space})`}
+            className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent-9 text-accent-contrast shadow-sm transition-[background-color,transform] hover:bg-accent-10 active:scale-95 focus:outline-none focus-visible:ring-4 focus-visible:ring-accent-4"
+          >
+            {loading ? (
+              <LoaderCircle className="h-5 w-5 animate-spin" />
+            ) : playing ? (
+              <Pause className="h-5 w-5" fill="currentColor" strokeWidth={0} />
+            ) : (
+              <Play className="ml-0.5 h-5 w-5" fill="currentColor" strokeWidth={0} />
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={stop}
+            disabled={!playing && !resumeAt && active === null}
+            aria-label={`${t.stopHint} (${t.keys_.esc})`}
+            title={`${t.stopHint} (${t.keys_.esc})`}
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-card text-foreground transition-colors hover:bg-card-hover focus:outline-none focus-visible:ring-4 focus-visible:ring-accent-4 disabled:opacity-40"
+          >
+            <Square className="h-3.5 w-3.5" fill="currentColor" strokeWidth={0} />
+          </button>
+          <div className="ml-1 flex min-w-[9.5rem] flex-col leading-tight" aria-live="polite">
+            <span className="text-sm font-medium">
+              {loading ? t.loadingPiano : playing ? t.playingNow : resumeAt ? t.pausedNow : t.ready}
+            </span>
+            <span className="font-mono text-xs text-muted-foreground">
+              {activeNote
+                ? t.at(activeNote.bar + 1, current.lick.bars, Math.floor(activeNote.start % BEATS_PER_BAR) + 1)
+                : t.bars(current.lick.bars)}
+            </span>
+          </div>
+        </div>
 
-        <label className="flex min-w-[180px] flex-1 flex-col gap-1 text-xs text-muted-foreground sm:flex-none">
-          <span>
-            {t.tempo} · <span className="font-mono text-foreground">{p.bpm} BPM</span>
-          </span>
-          <input
-            type="range"
-            min={40}
-            max={260}
-            step={5}
-            value={p.bpm}
-            onChange={(e) => update({ bpm: Number(e.target.value) })}
-            className="accent-[var(--accent-9)]"
-          />
-        </label>
+        <div className="flex flex-col gap-1">
+          <span className="text-xs text-muted-foreground">{t.tempo}</span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setTempo(p.bpm - 5)}
+              aria-label={`${t.slower} (−)`}
+              className={ROUND_BUTTON}
+            >
+              <Minus className="h-3.5 w-3.5" />
+            </button>
+            <span className="w-[4.5rem] text-center font-mono text-sm">
+              <span className="font-semibold text-foreground">{p.bpm}</span>{" "}
+              <span className="text-xs text-muted-foreground">BPM</span>
+            </span>
+            <button
+              type="button"
+              onClick={() => setTempo(p.bpm + 5)}
+              aria-label={`${t.faster} (+)`}
+              className={ROUND_BUTTON}
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </button>
+            <input
+              type="range"
+              min={TEMPO_MIN}
+              max={TEMPO_MAX}
+              step={5}
+              value={p.bpm}
+              aria-label={t.tempo}
+              onChange={(e) => setTempo(Number(e.target.value))}
+              className="w-24 accent-[var(--accent-9)] sm:w-32"
+            />
+          </div>
+        </div>
 
         <Field label={t.key}>
           <Select
@@ -531,6 +687,7 @@ export function LickPractice({ lick }: { lick: LickDefinition }) {
               setKeyChoice(choice);
               setCyclePass(0);
               setActive(null);
+              setResumeAt(null);
             }}
             className="w-56"
             groups={[
@@ -645,7 +802,7 @@ export function LickPractice({ lick }: { lick: LickDefinition }) {
         />
       )}
 
-      {/* Step through the lick note by note. */}
+      {/* Step through the lick note by note; a selected note is where Play starts. */}
       <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
         <button type="button" onClick={() => step(-1)} aria-label={t.prev} className={ICON_BUTTON}>
           <ChevronLeft className="h-4 w-4" />
@@ -653,7 +810,7 @@ export function LickPractice({ lick }: { lick: LickDefinition }) {
         <button type="button" onClick={() => step(1)} aria-label={t.next} className={ICON_BUTTON}>
           <ChevronRight className="h-4 w-4" />
         </button>
-        {activeOrder && activeNote?.pitch ? (
+        {activeOrder && activeNote?.pitch && (
           <span className="font-mono">
             {t.noteOf(activeOrder, soundingOrder.count)} ·{" "}
             <span className="text-foreground">
@@ -666,15 +823,42 @@ export function LickPractice({ lick }: { lick: LickDefinition }) {
               />
             </span>
           </span>
-        ) : (
-          <span className="font-mono">{t.stepHint}</span>
         )}
       </div>
+
+      {/* Keyboard shortcuts (not shown on touch-size screens). */}
+      <p className="mt-3 hidden flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground sm:flex">
+        <span>
+          <Kbd>{t.keys_.space}</Kbd> {t.shortcuts.play}
+        </span>
+        <span>
+          <Kbd>{t.keys_.esc}</Kbd> {t.shortcuts.stop}
+        </span>
+        <span>
+          <Kbd>←</Kbd> <Kbd>→</Kbd> {t.shortcuts.step}
+        </span>
+        <span>
+          <Kbd>−</Kbd> <Kbd>+</Kbd> {t.shortcuts.tempo}
+        </span>
+      </p>
     </section>
   );
 }
 
 const NECK_FRETS = 15;
+const TEMPO_MIN = 40;
+const TEMPO_MAX = 260;
+
+const ROUND_BUTTON =
+  "inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-card text-foreground transition-colors hover:bg-card-hover focus:outline-none focus-visible:ring-4 focus-visible:ring-accent-4";
+
+function Kbd({ children }: { children: React.ReactNode }) {
+  return (
+    <kbd className="inline-flex min-w-[1.4rem] items-center justify-center rounded-[5px] border border-border bg-muted px-1 font-mono text-[10px] text-foreground">
+      {children}
+    </kbd>
+  );
+}
 
 const ICON_BUTTON =
   "inline-flex h-8 w-8 items-center justify-center rounded-control border border-border bg-card text-foreground transition-colors hover:bg-card-hover";

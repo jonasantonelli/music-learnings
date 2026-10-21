@@ -66,6 +66,9 @@ type Planned = {
 
 type Cue = { time: number; end: number; pass: number; index: number };
 
+/** Where playback is: which pass, and how many beats into it. */
+export type Position = { pass: number; beat: number };
+
 const silent: Stop = () => {};
 
 /**
@@ -172,8 +175,11 @@ export class LickPlayer {
     this.piano ??= await loadPiano(ctx, this.bus!.input);
   }
 
-  /** Starts playback; call `load()` first. */
-  start(options: PlayOptions) {
+  /**
+   * Starts playback; call `load()` first. With `from`, resumes at that pass
+   * and beat (no count-in), e.g. after a pause or from a chosen note.
+   */
+  start(options: PlayOptions, from?: Position) {
     if (!this.piano) throw new Error("LickPlayer.start() before load()");
     this.stop();
     const ctx = this.context();
@@ -181,23 +187,36 @@ export class LickPlayer {
     this.freshOutput();
     this.options = { ...options };
     this.bpm = options.bpm;
-    this.pass = 0;
+    this.pass = from?.pass ?? 0;
     this.cues = [];
     this.lastReported = null;
-    const countIn = options.countIn ? BEATS_PER_BAR : 0;
-    this.passStart = ctx.currentTime + 0.08 + countIn * this.beatSeconds;
+    const countIn = options.countIn && !from ? BEATS_PER_BAR : 0;
+    const fromBeat = from?.beat ?? 0;
+    this.passStart = ctx.currentTime + 0.08 + (countIn - fromBeat) * this.beatSeconds;
     const clicks: Planned[] = Array.from({ length: countIn }, (_, b) => ({
       beat: b - countIn,
       play: (time) => this.click(time, b === 0),
       time: 0,
     }));
-    this.schedulePass(clicks);
+    this.schedulePass(clicks, from ? fromBeat : -Infinity);
     this.timer = setInterval(() => this.tick(), TICK_MS);
     const follow = () => {
       this.report();
       this.frame = requestAnimationFrame(follow);
     };
     this.frame = requestAnimationFrame(follow);
+  }
+
+  /**
+   * Stops at once and returns where it was, so `start(options, position)`
+   * can pick up from the same beat. Returns null if nothing was playing.
+   */
+  pause(): Position | null {
+    if (!this.options || !this.ctx) return null;
+    const beat = (this.ctx.currentTime - this.passStart) / this.beatSeconds;
+    const position = { pass: this.pass, beat: Math.max(0, beat) };
+    this.stop();
+    return position;
   }
 
   /** Changes loop, metronome or comping without restarting (from the next pass). */
@@ -311,7 +330,7 @@ export class LickPlayer {
   }
 
   /** Plans the current pass (plus any extra events, e.g. the count-in) and schedules it. */
-  private schedulePass(extra: Planned[] = []) {
+  private schedulePass(extra: Planned[] = [], fromBeat = -Infinity) {
     const opts = this.options!;
     const piano = this.piano!;
     const seq = opts.sequence(this.pass);
@@ -339,8 +358,9 @@ export class LickPlayer {
       }
     }
 
-    this.plan = plan;
-    for (const item of plan) this.schedule(item);
+    // When resuming mid-pass, skip what came before the resume point.
+    this.plan = plan.filter((item) => item.beat >= fromBeat - 1e-6);
+    for (const item of this.plan) this.schedule(item);
     this.addCues();
   }
 
