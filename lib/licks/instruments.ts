@@ -1,6 +1,6 @@
 /**
  * The playback instrument: a sampled Fender Rhodes — jRhodes3d, a 1977
- * Rhodes Mark I Stage 73 recorded in stereo by Jeff Learman
+ * Rhodes Mark I Stage 73 recorded by Jeff Learman
  * (github.com/sfzinstruments/jlearman.jRhodes3d). The samples are licensed
  * CC BY-NC 4.0: credit the author, non-commercial use only. They are fetched
  * on first play from jsDelivr, pinned to a commit, and only the notes and
@@ -28,7 +28,7 @@ export const SAMPLES_CREDIT = {
 };
 
 const BASE =
-  "https://cdn.jsdelivr.net/gh/sfzinstruments/jlearman.jRhodes3d@aea5b8d3e11e2f7102593789a4e0a0e41b30271a/jRhodes3d-st/";
+  "https://cdn.jsdelivr.net/gh/sfzinstruments/jlearman.jRhodes3d@aea5b8d3e11e2f7102593789a4e0a0e41b30271a/jRhodes3d-mono/";
 
 /**
  * The jRhodes3d regions that cover the licks' range (sounding E2–B5), as in
@@ -48,11 +48,13 @@ const REGIONS = [
 ] as const;
 
 /**
- * Every part plays jRhodes3d's "_4" layer (velocities 48–72; its numbering
- * runs soft = high). Harder layers bring out the tine's bell-like "ping",
- * so the parts differ only in level, which keeps the sound round.
+ * Every part plays jRhodes3d's softest layer, "_5" (velocities 1–47; its
+ * numbering runs soft = high) from the mono set: the Rhodes played gently.
+ * Of the unprocessed options it has the least of the tine's bell-like
+ * "ping" (the stereo set carries about seven times more energy above
+ * 2 kHz). The parts differ only in level.
  */
-const sampleFile = (region: (typeof REGIONS)[number]) => `${region.name}_4-ST.flac`;
+const sampleFile = (region: (typeof REGIONS)[number]) => `${region.name}_5.flac`;
 
 /** MIDI velocities (level only): the lick leads, the comping stays underneath. */
 export const VELOCITY = { lead: 84, chord: 56, bass: 66 } as const;
@@ -158,8 +160,8 @@ export type MixBus = { input: GainNode; dry: GainNode; master: GainNode };
 
 export function createMixBus(ctx: AudioContext): MixBus {
   const input = ctx.createGain();
-  // The Rhodes samples are hot: about -10 dB keeps peaks well clear of clipping.
-  input.gain.value = 0.4;
+  // The Rhodes samples are hot: about -12 dB keeps peaks well clear of clipping.
+  input.gain.value = 0.3;
 
   const comp = ctx.createDynamicsCompressor();
   comp.threshold.value = -18;
