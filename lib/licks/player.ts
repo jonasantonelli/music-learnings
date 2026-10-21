@@ -1,6 +1,14 @@
 "use client";
 
 import { BEATS_PER_BAR } from "./notation";
+import {
+  createMixBus,
+  playBass,
+  playChord,
+  playLead,
+  type CompSound,
+  type LeadSound,
+} from "./instruments";
 
 /** One note to play: sounding MIDI pitch (null = rest), timed in beats. */
 export type PlayNote = {
@@ -13,7 +21,8 @@ export type PlayNote = {
   tied: boolean;
 };
 
-export type PlayChord = { start: number; beats: number; midis: number[] };
+/** A chord span: the voicing to comp with and the bass root (sounding MIDI). */
+export type PlayChord = { start: number; beats: number; voicing: number[]; bass: number | null };
 
 export type PlaySequence = { notes: PlayNote[]; chords: PlayChord[]; beats: number };
 
@@ -23,6 +32,8 @@ export type PlayOptions = {
   countIn: boolean;
   metronome: boolean;
   comping: boolean;
+  lead: LeadSound;
+  comp: CompSound;
   /** Sequence for each pass; lets callers change key between loops. */
   sequence: (pass: number) => PlaySequence;
   /** Current note index (null between notes or during the count-in). */
@@ -43,6 +54,7 @@ type Cue = { time: number; end: number; pass: number; index: number };
 export class LickPlayer {
   private ctx: AudioContext | null = null;
   private out: GainNode | null = null;
+  private bus: GainNode | null = null;
   private timer: ReturnType<typeof setInterval> | null = null;
   private frame = 0;
   private cues: Cue[] = [];
@@ -61,9 +73,10 @@ export class LickPlayer {
   private freshOutput(): GainNode {
     const ctx = this.context();
     this.out?.disconnect();
+    this.bus ??= createMixBus(ctx);
     const gain = ctx.createGain();
-    gain.gain.value = 0.8;
-    gain.connect(ctx.destination);
+    gain.gain.value = 0.9;
+    gain.connect(this.bus);
     this.out = gain;
     return gain;
   }
@@ -112,16 +125,17 @@ export class LickPlayer {
   }
 
   /** Plays a single note now (for stepping through a lick). */
-  preview(midi: number, seconds = 0.6) {
+  preview(midi: number, sound: LeadSound, seconds = 0.8) {
     const ctx = this.context();
     if (!this.out) this.freshOutput();
-    this.pluck(ctx.currentTime + 0.01, midi, seconds);
+    playLead(ctx, this.out!, sound, ctx.currentTime + 0.01, midi, seconds);
   }
 
   dispose() {
     this.stop();
     void this.ctx?.close();
     this.ctx = null;
+    this.bus = null;
   }
 
   private passLength(seq: PlaySequence): number {
@@ -142,11 +156,11 @@ export class LickPlayer {
         // Extend through any tied continuations.
         let length = n.beats;
         for (let k = seq.notes.indexOf(n) + 1; seq.notes[k]?.tied; k++) length += seq.notes[k].beats;
-        this.pluck(time, n.midi, length * beat);
+        playLead(this.ctx!, this.out!, opts.lead, time, n.midi, length * beat);
       }
     }
     if (opts.comping) {
-      for (const c of seq.chords) this.pad(t0 + c.start * beat, c.beats * beat, c.midis);
+      for (const c of seq.chords) this.comp(t0, beat, c, opts.comp);
     }
     if (opts.metronome) {
       for (let b = 0; b < seq.beats; b++) this.click(t0 + b * beat, b % BEATS_PER_BAR === 0);
@@ -190,55 +204,26 @@ export class LickPlayer {
 
   // --- Sounds --------------------------------------------------------------
 
-  private pluck(time: number, midi: number, seconds: number) {
+  /**
+   * Comps one chord span. Piano plays the Charleston (beat 1 and the "and"
+   * of 2) in a bar-long span, one hit in a shorter one; guitar plays short
+   * quarter-note strums, Freddie Green style. The bass takes the root on 1.
+   */
+  private comp(t0: number, beat: number, chord: PlayChord, sound: CompSound) {
     const ctx = this.ctx!;
     const out = this.out!;
-    const freq = 440 * 2 ** ((midi - 69) / 12);
-    const body = ctx.createOscillator();
-    body.type = "triangle";
-    body.frequency.value = freq;
-    const edge = ctx.createOscillator();
-    edge.type = "sawtooth";
-    edge.frequency.value = freq;
-    const edgeGain = ctx.createGain();
-    edgeGain.gain.value = 0.18;
-    const filter = ctx.createBiquadFilter();
-    filter.type = "lowpass";
-    filter.Q.value = 1;
-    filter.frequency.setValueAtTime(Math.min(6000, freq * 8), time);
-    filter.frequency.exponentialRampToValueAtTime(Math.max(400, freq * 2), time + 0.25);
-    const env = ctx.createGain();
-    const release = Math.min(0.12, seconds * 0.3);
-    env.gain.setValueAtTime(0.0001, time);
-    env.gain.exponentialRampToValueAtTime(0.32, time + 0.006);
-    env.gain.exponentialRampToValueAtTime(0.14, time + 0.18);
-    env.gain.setValueAtTime(0.14, Math.max(time + 0.18, time + seconds - release));
-    env.gain.exponentialRampToValueAtTime(0.0001, time + seconds + 0.05);
-    body.connect(filter);
-    edge.connect(edgeGain).connect(filter);
-    filter.connect(env).connect(out);
-    for (const osc of [body, edge]) {
-      osc.start(time);
-      osc.stop(time + seconds + 0.1);
+    const at = (b: number) => t0 + (chord.start + b) * beat;
+    if (chord.bass !== null) playBass(ctx, out, at(0), chord.bass, Math.min(chord.beats, 2) * beat * 0.95);
+    if (chord.voicing.length === 0) return;
+    if (sound === "guitar") {
+      for (let b = 0; b < chord.beats; b++) playChord(ctx, out, "guitar", at(b), chord.voicing, beat * 0.45);
+      return;
     }
-  }
-
-  private pad(time: number, seconds: number, midis: number[]) {
-    const ctx = this.ctx!;
-    const out = this.out!;
-    const env = ctx.createGain();
-    env.gain.setValueAtTime(0.0001, time);
-    env.gain.exponentialRampToValueAtTime(0.05, time + 0.04);
-    env.gain.setTargetAtTime(0.03, time + 0.1, 0.4);
-    env.gain.setTargetAtTime(0.0001, time + seconds - 0.08, 0.03);
-    env.connect(out);
-    for (const midi of midis) {
-      const osc = ctx.createOscillator();
-      osc.type = "sine";
-      osc.frequency.value = 440 * 2 ** ((midi - 69) / 12);
-      osc.connect(env);
-      osc.start(time);
-      osc.stop(time + seconds + 0.2);
+    if (chord.beats >= BEATS_PER_BAR) {
+      playChord(ctx, out, "piano", at(0), chord.voicing, beat * 1.2);
+      playChord(ctx, out, "piano", at(1.5), chord.voicing, beat * 1.6);
+    } else {
+      playChord(ctx, out, "piano", at(0), chord.voicing, chord.beats * beat * 0.85);
     }
   }
 

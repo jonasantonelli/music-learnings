@@ -1,7 +1,21 @@
 "use client";
 
 import * as React from "react";
-import { Check, ChevronLeft, ChevronRight, Play, Square, Star } from "lucide-react";
+import {
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Guitar,
+  ListMusic,
+  Metronome,
+  Piano,
+  Play,
+  Repeat,
+  Square,
+  Star,
+  Timer,
+  type LucideIcon,
+} from "lucide-react";
 import { Fretboard } from "@/components/mdx/fretboard";
 import { NoteText } from "@/components/note-text";
 import { LickStaff, type TabNote } from "@/components/licks/lick-staff";
@@ -32,6 +46,7 @@ import {
   type TimedChord,
 } from "@/lib/licks/notation";
 import { LickPlayer, type PlaySequence } from "@/lib/licks/player";
+import { COMP_SOUNDS, LEAD_SOUNDS, type CompSound, type LeadSound } from "@/lib/licks/instruments";
 import type { LickDefinition } from "@/lib/licks/catalog";
 import { FAVORITES_KEY, LEARNED_KEY } from "@/lib/licks/storage";
 
@@ -49,6 +64,15 @@ const messages = defineMessages({
     countIn: "Count-in",
     metronome: "Metronome",
     comping: "Chords",
+    leadSound: "Lick sound",
+    compSound: "Backing",
+    sounds: {
+      nylon: "Nylon guitar",
+      "jazz-guitar": "Jazz guitar",
+      "electric-piano": "Electric piano",
+      piano: "Piano",
+      guitar: "Guitar",
+    } as Record<LeadSound | CompSound, string>,
     view: "View",
     fretboard: "Fretboard",
     score: "Notation + TAB",
@@ -80,6 +104,15 @@ const messages = defineMessages({
     countIn: "Contagem",
     metronome: "Metrônomo",
     comping: "Acordes",
+    leadSound: "Timbre do lick",
+    compSound: "Acompanhamento",
+    sounds: {
+      nylon: "Violão nylon",
+      "jazz-guitar": "Guitarra jazz",
+      "electric-piano": "Piano elétrico",
+      piano: "Piano",
+      guitar: "Guitarra",
+    } as Record<LeadSound | CompSound, string>,
     view: "Visualização",
     fretboard: "Braço",
     score: "Partitura + TAB",
@@ -111,6 +144,15 @@ const messages = defineMessages({
     countIn: "Cuenta",
     metronome: "Metrónomo",
     comping: "Acordes",
+    leadSound: "Timbre del lick",
+    compSound: "Acompañamiento",
+    sounds: {
+      nylon: "Guitarra de nylon",
+      "jazz-guitar": "Guitarra jazz",
+      "electric-piano": "Piano eléctrico",
+      piano: "Piano",
+      guitar: "Guitarra",
+    } as Record<LeadSound | CompSound, string>,
     view: "Vista",
     fretboard: "Mástil",
     score: "Partitura + TAB",
@@ -141,6 +183,8 @@ type Prefs = {
   countIn: boolean;
   metronome: boolean;
   comping: boolean;
+  lead: LeadSound;
+  comp: CompSound;
 };
 
 const DEFAULT_PREFS: Prefs = {
@@ -151,6 +195,8 @@ const DEFAULT_PREFS: Prefs = {
   countIn: true,
   metronome: false,
   comping: true,
+  lead: "nylon",
+  comp: "piano",
 };
 
 
@@ -182,16 +228,24 @@ function arrange(source: ParsedLick, from: LickKey, chords: TimedChord[], pc: nu
 /** Places a pitch class in the octave starting at `low` (MIDI). */
 const place = (pc: number, low: number) => low + ((((pc - low) % 12) + 12) % 12);
 
-/** Shell voicing for the backing pad: low root, then 3rd and 7th. */
-function compingMidis(symbol: string): number[] {
+/**
+ * Backing for a chord: a rootless voicing as a jazz pianist would play it
+ * (3rd, 7th, 9th, 5th — ♭9 on altered dominants) around middle C, and the
+ * root low for the bass. Diminished chords keep all four tones.
+ */
+function compingVoicing(symbol: string): { voicing: number[]; bass: number | null } {
   const chord = chordQuality(symbol);
-  if (!chord) return [];
-  const [, third, , seventh] = CHORD_FORMULAS[chord.quality];
-  return [
-    place(chord.root, 40),
-    place(chord.root + third, 52),
-    place(chord.root + seventh, 52),
-  ];
+  if (!chord) return { voicing: [], bass: null };
+  const [, third, fifth, seventh] = CHORD_FORMULAS[chord.quality];
+  const ninth = /b9|alt/.test(symbol) ? 1 : 2;
+  const tones =
+    chord.quality === "m7b5" || chord.quality === "dim7"
+      ? [0, third, fifth, seventh]
+      : [third, seventh, ninth, fifth];
+  return {
+    voicing: tones.map((t) => place(chord.root + t, 52)).sort((a, b) => a - b),
+    bass: place(chord.root, 40),
+  };
 }
 
 function toSequence(a: Arrangement): PlaySequence {
@@ -204,7 +258,7 @@ function toSequence(a: Arrangement): PlaySequence {
       midi: a.midis[i] === null ? null : a.midis[i]! - 12,
       tied: i > 0 && a.lick.notes[i - 1].tie,
     })),
-    chords: a.chords.map((c) => ({ start: c.start, beats: c.beats, midis: compingMidis(c.symbol) })),
+    chords: a.chords.map((c) => ({ start: c.start, beats: c.beats, ...compingVoicing(c.symbol) })),
     beats: a.lick.bars * BEATS_PER_BAR,
   };
 }
@@ -281,6 +335,8 @@ export function LickPractice({ lick }: { lick: LickDefinition }) {
       countIn: p.countIn,
       metronome: p.metronome,
       comping: p.comping,
+      lead: p.lead,
+      comp: p.comp,
       sequence: (pass) => toSequence(arrangementFor(pcForPass(pass))),
       onNote: (pass, index) => {
         setCyclePass(pass);
@@ -292,7 +348,7 @@ export function LickPractice({ lick }: { lick: LickDefinition }) {
       },
     });
     setPlaying(true);
-  }, [p.bpm, p.loop, p.countIn, p.metronome, p.comping, keyChoice, arrangementFor, pcForPass]);
+  }, [p.bpm, p.loop, p.countIn, p.metronome, p.comping, p.lead, p.comp, keyChoice, arrangementFor, pcForPass]);
 
   const stop = React.useCallback(() => {
     playerRef.current?.stop();
@@ -315,9 +371,9 @@ export function LickPractice({ lick }: { lick: LickDefinition }) {
       if (playingRef.current) stop();
       setActive(index);
       const midi = current.midis[index];
-      if (midi !== null) player().preview(midi - 12);
+      if (midi !== null) player().preview(midi - 12, p.lead);
     },
-    [current, stop],
+    [current, stop, p.lead],
   );
 
   const step = React.useCallback(
@@ -490,12 +546,32 @@ export function LickPractice({ lick }: { lick: LickDefinition }) {
 
       {/* Options */}
       <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-3 border-t border-border pt-4">
-        <div className="flex flex-wrap gap-1.5">
-          <Chip on={p.loop} onClick={() => update({ loop: !p.loop })}>{t.loop}</Chip>
-          <Chip on={p.countIn} onClick={() => update({ countIn: !p.countIn })}>{t.countIn}</Chip>
-          <Chip on={p.metronome} onClick={() => update({ metronome: !p.metronome })}>{t.metronome}</Chip>
-          <Chip on={p.comping} onClick={() => update({ comping: !p.comping })}>{t.comping}</Chip>
+        <div className="flex divide-x divide-border overflow-hidden rounded-control border border-border">
+          <Toggle on={p.loop} icon={Repeat} label={t.loop} onClick={() => update({ loop: !p.loop })} />
+          <Toggle on={p.countIn} icon={Timer} label={t.countIn} onClick={() => update({ countIn: !p.countIn })} />
+          <Toggle
+            on={p.metronome}
+            icon={Metronome}
+            label={t.metronome}
+            onClick={() => update({ metronome: !p.metronome })}
+          />
+          <Toggle on={p.comping} icon={ListMusic} label={t.comping} onClick={() => update({ comping: !p.comping })} />
         </div>
+        <SoundSelect
+          label={t.leadSound}
+          icon={p.lead === "electric-piano" ? Piano : Guitar}
+          value={p.lead}
+          options={LEAD_SOUNDS.map((s) => [s, t.sounds[s]])}
+          onChange={(lead) => update({ lead })}
+        />
+        <SoundSelect
+          label={t.compSound}
+          icon={p.comp === "piano" ? Piano : Guitar}
+          value={p.comp}
+          disabled={!p.comping}
+          options={COMP_SOUNDS.map((s) => [s, t.sounds[s]])}
+          onChange={(comp) => update({ comp })}
+        />
         <Segmented
           label={t.view}
           value={p.view}
@@ -586,21 +662,72 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) {
+/** One button of the playback toolbar: icon + label, lit when on. */
+function Toggle({
+  on,
+  onClick,
+  icon: Icon,
+  label,
+}: {
+  on: boolean;
+  onClick: () => void;
+  icon: LucideIcon;
+  label: string;
+}) {
   return (
     <button
       type="button"
       aria-pressed={on}
+      aria-label={label}
+      title={label}
       onClick={onClick}
       className={cn(
-        "rounded-full border px-3 py-1 text-xs transition-colors",
+        "inline-flex h-9 items-center gap-1.5 px-3 text-xs transition-colors",
         on
-          ? "border-accent-7 bg-accent-3 text-accent-11"
-          : "border-border text-muted-foreground hover:text-foreground",
+          ? "bg-accent-3 font-medium text-accent-11"
+          : "bg-card text-muted-foreground hover:bg-card-hover hover:text-foreground",
       )}
     >
-      {children}
+      <Icon className="h-4 w-4" strokeWidth={on ? 2.4 : 1.8} />
+      {/* Icons alone on phones, so the toolbar stays on one row. */}
+      <span className="hidden sm:inline">{label}</span>
     </button>
+  );
+}
+
+function SoundSelect<T extends string>({
+  label,
+  icon: Icon,
+  value,
+  options,
+  onChange,
+  disabled = false,
+}: {
+  label: string;
+  icon: LucideIcon;
+  value: T;
+  options: [T, string][];
+  onChange: (v: T) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <label className={cn("relative flex items-center", disabled && "opacity-50")}>
+      <span className="sr-only">{label}</span>
+      <Icon className="pointer-events-none absolute left-2.5 h-4 w-4 text-muted-foreground" />
+      <select
+        value={value}
+        disabled={disabled}
+        title={label}
+        onChange={(e) => onChange(e.target.value as T)}
+        className="h-9 rounded-control border border-border bg-card pl-8 pr-3 text-xs text-foreground focus:outline-none focus:border-accent-7"
+      >
+        {options.map(([v, text]) => (
+          <option key={v} value={v}>
+            {text}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }
 
