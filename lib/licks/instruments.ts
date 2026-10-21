@@ -1,8 +1,10 @@
 /**
  * The playback instrument: a sampled acoustic grand piano, played with
- * smplr. The samples are the Splendid Grand Piano set — public-domain Akai
- * recordings packaged at github.com/sfzinstruments/SplendidGrandPiano — and
- * are fetched on first use. Lick, comping and bass all play it.
+ * smplr and voiced dark and round, toward a Rhodes: soft-layer samples, a
+ * mellow EQ, a slow stereo tremolo and some room. The samples are the
+ * Splendid Grand Piano set — public-domain Akai recordings packaged at
+ * github.com/sfzinstruments/SplendidGrandPiano — fetched on first use.
+ * Lick, comping and bass all play it.
  */
 
 import type { SplendidGrandPiano } from "smplr";
@@ -12,13 +14,17 @@ export type Piano = Pick<SplendidGrandPiano, "start" | "stop">;
 /** Stops what a play call started (no-op once it has ended). */
 export type Stop = (time?: number) => void;
 
-/** MIDI velocities: the lick leads, the comping stays underneath. */
-export const VELOCITY = { lead: 80, chord: 52, bass: 72 } as const;
+/**
+ * MIDI velocities: the lick leads, the comping stays underneath. All sit in
+ * the soft "p" layer (41–67), whose recordings are darker than the harder
+ * ones; the mix makes up the level.
+ */
+export const VELOCITY = { lead: 66, chord: 48, bass: 60 } as const;
 
-// Only what licks use: sounding range of lick, comping and bass, and the two
-// velocity layers ("p" 41–67, "mf" 68–84) the parts above fall in.
+// Only what licks use: the sounding range of lick, comping and bass, in the
+// one velocity layer above.
 const NOTES = Array.from({ length: 53 }, (_, i) => 36 + i);
-const VELOCITY_RANGE: [number, number] = [41, 84];
+const VELOCITY_RANGE: [number, number] = [41, 67];
 
 const pianos = new WeakMap<BaseAudioContext, Promise<Piano>>();
 
@@ -67,24 +73,36 @@ export type MixBus = { input: GainNode; master: GainNode };
  */
 export function createMixBus(ctx: AudioContext): MixBus {
   const input = ctx.createGain();
+  // The soft layer plays quieter; bring it back up.
+  input.gain.value = 1.6;
 
-  // Warmer, less bright piano: a little more body, softer top end, and a
-  // gentle roll-off that rounds the hammer attack.
+  // Rhodes-like voicing: round low-mid body, little top end, and a roll-off
+  // that takes the edge off the hammer.
   const body = ctx.createBiquadFilter();
   body.type = "peaking";
-  body.frequency.value = 250;
+  body.frequency.value = 300;
   body.Q.value = 0.8;
-  body.gain.value = 1.5;
+  body.gain.value = 2;
   const shelf = ctx.createBiquadFilter();
   shelf.type = "highshelf";
-  shelf.frequency.value = 2500;
-  shelf.gain.value = -4;
+  shelf.frequency.value = 1800;
+  shelf.gain.value = -6;
   const rolloff = ctx.createBiquadFilter();
   rolloff.type = "lowpass";
-  rolloff.frequency.value = 4500;
-  rolloff.Q.value = 0.5;
-  input.connect(body).connect(shelf).connect(rolloff);
-  const tone = rolloff;
+  rolloff.frequency.value = 2600;
+  rolloff.Q.value = 0.6;
+
+  // The suitcase Rhodes sway: a slow, shallow left-right tremolo.
+  const pan = ctx.createStereoPanner();
+  const lfo = ctx.createOscillator();
+  lfo.frequency.value = 4.5;
+  const depth = ctx.createGain();
+  depth.gain.value = 0.22;
+  lfo.connect(depth).connect(pan.pan);
+  lfo.start();
+
+  input.connect(body).connect(shelf).connect(rolloff).connect(pan);
+  const tone = pan;
 
   const comp = ctx.createDynamicsCompressor();
   comp.threshold.value = -18;
@@ -93,9 +111,9 @@ export function createMixBus(ctx: AudioContext): MixBus {
   comp.release.value = 0.2;
 
   const reverb = ctx.createConvolver();
-  reverb.buffer = roomImpulse(ctx, 1.6);
+  reverb.buffer = roomImpulse(ctx, 2.2);
   const wet = ctx.createGain();
-  wet.gain.value = 0.18;
+  wet.gain.value = 0.3;
 
   tone.connect(comp);
   tone.connect(reverb).connect(wet).connect(comp);
