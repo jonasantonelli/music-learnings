@@ -48,13 +48,16 @@ const REGIONS = [
 ] as const;
 
 /**
- * Every part plays jRhodes3d's softest layer, "_5" (velocities 1–47; its
- * numbering runs soft = high) from the mono set: the Rhodes played gently.
- * Of the unprocessed options it has the least of the tine's bell-like
- * "ping" (the stereo set carries about seven times more energy above
- * 2 kHz). The parts differ only in level.
+ * Every part plays jRhodes3d's middle layer, "_3" (its numbering runs
+ * soft = high, 1 hardest to 5 softest) from the mono set: more attack and
+ * body than the softest layer, which sounded muffled, without the hard
+ * layers' bark. The parts differ only in level.
  */
-const sampleFile = (region: (typeof REGIONS)[number]) => `${region.name}_5.flac`;
+const sampleFile = (region: (typeof REGIONS)[number]) =>
+  `${region.name}_${NO_LAYER_3.has(region.name) ? 4 : 3}.flac`;
+
+/** Top regions recorded without a layer 3; they use the next softer one. */
+const NO_LAYER_3 = new Set<string>(["A_071__B4", "A_076__E5", "A_081__A5"]);
 
 /** MIDI velocities (level only): the lick leads, the comping stays underneath. */
 export const VELOCITY = { lead: 84, chord: 56, bass: 66 } as const;
