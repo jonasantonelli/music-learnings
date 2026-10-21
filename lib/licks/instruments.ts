@@ -4,7 +4,7 @@
  * (github.com/sfzinstruments/jlearman.jRhodes3d). The samples are licensed
  * CC BY-NC 4.0: credit the author, non-commercial use only. They are fetched
  * on first play from jsDelivr, pinned to a commit, and only the notes and
- * velocity layers licks need are loaded. Lick, comping and bass all play it.
+ * the one velocity layer licks need are loaded. Lick, comping and bass all play it.
  */
 
 /** Stops what a play call started (no-op once it has ended). */
@@ -47,15 +47,13 @@ const REGIONS = [
 ] as const;
 
 /**
- * Velocity layers, numbered as in jRhodes3d (higher number = softer): "_4"
- * plays velocities 48–72 and "_3" 73–95, except that B4 and up reuse "_4".
+ * Every part plays jRhodes3d's "_4" layer (velocities 48–72; its numbering
+ * runs soft = high). Harder layers bring out the tine's bell-like "ping",
+ * so the parts differ only in level, which keeps the sound round.
  */
-type Layer = "soft" | "medium";
-const layerFile = (region: (typeof REGIONS)[number], layer: Layer) =>
-  `${region.name}_${layer === "soft" || region.key >= 71 ? 4 : 3}.flac`;
-const layerFor = (velocity: number): Layer => (velocity <= 72 ? "soft" : "medium");
+const sampleFile = (region: (typeof REGIONS)[number]) => `${region.name}_4.flac`;
 
-/** MIDI velocities: the lick leads, the comping stays underneath. */
+/** MIDI velocities (level only): the lick leads, the comping stays underneath. */
 export const VELOCITY = { lead: 84, chord: 56, bass: 66 } as const;
 
 const instruments = new WeakMap<BaseAudioContext, Promise<Instrument>>();
@@ -73,7 +71,7 @@ export function loadInstrument(ctx: AudioContext, destination: AudioNode): Promi
 }
 
 async function loadRhodes(ctx: AudioContext, destination: AudioNode): Promise<Instrument> {
-  const files = [...new Set(REGIONS.flatMap((r) => [layerFile(r, "soft"), layerFile(r, "medium")]))];
+  const files = REGIONS.map(sampleFile);
   const buffers = new Map<string, AudioBuffer>();
   await Promise.all(
     files.map(async (file) => {
@@ -90,12 +88,14 @@ async function loadRhodes(ctx: AudioContext, destination: AudioNode): Promise<In
       REGIONS.find((r) => note >= r.lo && note <= r.hi) ??
       (note < REGIONS[0].lo ? REGIONS[0] : REGIONS[REGIONS.length - 1]);
     const src = ctx.createBufferSource();
-    src.buffer = buffers.get(layerFile(region, layerFor(velocity)))!;
+    src.buffer = buffers.get(sampleFile(region))!;
     src.playbackRate.value = 2 ** ((note - region.key) / 12);
     const env = ctx.createGain();
     const level = (velocity / 127) ** 1.6;
     const end = time + duration;
-    env.gain.setValueAtTime(level, time);
+    // A few ms of attack rounds off the tine's click.
+    env.gain.setValueAtTime(0, time);
+    env.gain.linearRampToValueAtTime(level, time + 0.008);
     // The damper: fade over the region's release once the key is let go.
     env.gain.setTargetAtTime(0, end, region.release / 4);
     src.connect(env).connect(destination);
@@ -162,16 +162,26 @@ export function createMixBus(ctx: AudioContext): MixBus {
   // The Rhodes samples are hot: about -10 dB keeps peaks well clear of clipping.
   input.gain.value = 0.45;
 
-  // The samples are already round; just a touch of body and a softer top.
+  // Mellow voicing: a little body, a dip where the tine's bell-like ping
+  // sits (~3 kHz), less top end, and a soft roll-off.
   const body = ctx.createBiquadFilter();
   body.type = "peaking";
   body.frequency.value = 250;
   body.Q.value = 0.8;
-  body.gain.value = 1;
+  body.gain.value = 1.5;
+  const tine = ctx.createBiquadFilter();
+  tine.type = "peaking";
+  tine.frequency.value = 3000;
+  tine.Q.value = 1;
+  tine.gain.value = -4;
   const shelf = ctx.createBiquadFilter();
   shelf.type = "highshelf";
-  shelf.frequency.value = 4000;
-  shelf.gain.value = -2;
+  shelf.frequency.value = 2500;
+  shelf.gain.value = -6;
+  const rolloff = ctx.createBiquadFilter();
+  rolloff.type = "lowpass";
+  rolloff.frequency.value = 3500;
+  rolloff.Q.value = 0.5;
 
   // The suitcase Rhodes sway: a slow, shallow left-right tremolo.
   const pan = ctx.createStereoPanner();
@@ -182,7 +192,7 @@ export function createMixBus(ctx: AudioContext): MixBus {
   lfo.connect(depth).connect(pan.pan);
   lfo.start();
 
-  input.connect(body).connect(shelf).connect(pan);
+  input.connect(body).connect(tine).connect(shelf).connect(rolloff).connect(pan);
 
   const comp = ctx.createDynamicsCompressor();
   comp.threshold.value = -18;
