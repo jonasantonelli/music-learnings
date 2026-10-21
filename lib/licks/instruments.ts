@@ -59,6 +59,25 @@ export function playBass(piano: Piano, time: number, midi: number, seconds: numb
  */
 export function createMixBus(ctx: AudioContext): GainNode {
   const input = ctx.createGain();
+
+  // Warmer, less bright piano: a little more body, softer top end, and a
+  // gentle roll-off that rounds the hammer attack.
+  const body = ctx.createBiquadFilter();
+  body.type = "peaking";
+  body.frequency.value = 250;
+  body.Q.value = 0.8;
+  body.gain.value = 1.5;
+  const shelf = ctx.createBiquadFilter();
+  shelf.type = "highshelf";
+  shelf.frequency.value = 2500;
+  shelf.gain.value = -4;
+  const rolloff = ctx.createBiquadFilter();
+  rolloff.type = "lowpass";
+  rolloff.frequency.value = 4500;
+  rolloff.Q.value = 0.5;
+  input.connect(body).connect(shelf).connect(rolloff);
+  const tone = rolloff;
+
   const comp = ctx.createDynamicsCompressor();
   comp.threshold.value = -18;
   comp.ratio.value = 3;
@@ -70,8 +89,8 @@ export function createMixBus(ctx: AudioContext): GainNode {
   const wet = ctx.createGain();
   wet.gain.value = 0.18;
 
-  input.connect(comp);
-  input.connect(reverb).connect(wet).connect(comp);
+  tone.connect(comp);
+  tone.connect(reverb).connect(wet).connect(comp);
   comp.connect(ctx.destination);
   return input;
 }
