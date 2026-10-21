@@ -110,6 +110,8 @@ export class LickPlayer {
   private cues: Cue[] = [];
   private current: PlaySequence | null = null;
   private lastReported: string | null = null;
+  /** Noise burst for the metronome tick (built on first use). */
+  private tick_: AudioBuffer | null = null;
 
   private context(): AudioContext {
     if (!this.ctx) {
@@ -429,18 +431,30 @@ export class LickPlayer {
     return events;
   }
 
+  /**
+   * Metronome tick: a few ms of filtered noise, unpitched, so it reads as a
+   * click and not as a note (a short sine blip sounds like a xylophone).
+   */
   private click(time: number, accent: boolean): Stop {
     const ctx = this.ctx!;
     const out = this.out!;
-    const osc = ctx.createOscillator();
-    osc.frequency.value = accent ? 1600 : 1100;
-    const env = ctx.createGain();
-    env.gain.setValueAtTime(accent ? 0.25 : 0.14, time);
-    env.gain.exponentialRampToValueAtTime(0.0001, time + 0.04);
-    osc.connect(env).connect(out);
-    osc.start(time);
-    osc.stop(time + 0.05);
-    // A click cancelled before it sounds is stopped at (or before) its start.
-    return (at) => osc.stop(Math.max(at ?? ctx.currentTime, ctx.currentTime));
+    if (!this.tick_ || this.tick_.sampleRate !== ctx.sampleRate) {
+      const length = Math.floor(ctx.sampleRate * 0.012);
+      this.tick_ = ctx.createBuffer(1, length, ctx.sampleRate);
+      const data = this.tick_.getChannelData(0);
+      for (let i = 0; i < length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / length) ** 3;
+    }
+    const src = ctx.createBufferSource();
+    src.buffer = this.tick_;
+    const band = ctx.createBiquadFilter();
+    band.type = "bandpass";
+    band.frequency.value = accent ? 3200 : 2400;
+    band.Q.value = 0.9;
+    const level = ctx.createGain();
+    level.gain.value = accent ? 0.9 : 0.55;
+    src.connect(band).connect(level).connect(out);
+    src.start(time);
+    // A tick cancelled before it sounds is stopped at (or before) its start.
+    return (at) => src.stop(Math.max(at ?? ctx.currentTime, ctx.currentTime));
   }
 }

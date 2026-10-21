@@ -1,10 +1,11 @@
 /**
  * The playback instrument: a sampled Fender Rhodes — jRhodes3d, a 1977
- * Rhodes Mark I Stage 73 recorded by Jeff Learman
+ * Rhodes Mark I Stage 73 recorded in stereo by Jeff Learman
  * (github.com/sfzinstruments/jlearman.jRhodes3d). The samples are licensed
  * CC BY-NC 4.0: credit the author, non-commercial use only. They are fetched
  * on first play from jsDelivr, pinned to a commit, and only the notes and
- * the one velocity layer licks need are loaded. Lick, comping and bass all play it.
+ * the one velocity layer licks need are loaded. They play as recorded — no
+ * EQ or modulation, just a light room. Lick, comping and bass all play it.
  */
 
 /** Stops what a play call started (no-op once it has ended). */
@@ -27,7 +28,7 @@ export const SAMPLES_CREDIT = {
 };
 
 const BASE =
-  "https://cdn.jsdelivr.net/gh/sfzinstruments/jlearman.jRhodes3d@aea5b8d3e11e2f7102593789a4e0a0e41b30271a/jRhodes3d-mono/";
+  "https://cdn.jsdelivr.net/gh/sfzinstruments/jlearman.jRhodes3d@aea5b8d3e11e2f7102593789a4e0a0e41b30271a/jRhodes3d-st/";
 
 /**
  * The jRhodes3d regions that cover the licks' range (sounding E2–B5), as in
@@ -51,7 +52,7 @@ const REGIONS = [
  * runs soft = high). Harder layers bring out the tine's bell-like "ping",
  * so the parts differ only in level, which keeps the sound round.
  */
-const sampleFile = (region: (typeof REGIONS)[number]) => `${region.name}_4.flac`;
+const sampleFile = (region: (typeof REGIONS)[number]) => `${region.name}_4-ST.flac`;
 
 /** MIDI velocities (level only): the lick leads, the comping stays underneath. */
 export const VELOCITY = { lead: 84, chord: 56, bass: 66 } as const;
@@ -93,14 +94,12 @@ async function loadRhodes(ctx: AudioContext, destination: AudioNode): Promise<In
     const env = ctx.createGain();
     const level = (velocity / 127) ** 1.6;
     const end = time + duration;
-    // A few ms of attack rounds off the tine's click.
-    env.gain.setValueAtTime(0, time);
-    env.gain.linearRampToValueAtTime(level, time + 0.008);
-    // The damper: fade over the region's release once the key is let go.
-    env.gain.setTargetAtTime(0, end, region.release / 4);
+    env.gain.setValueAtTime(level, time);
+    // The damper: the region's own release once the key is let go.
+    env.gain.setTargetAtTime(0, end, region.release / 3);
     src.connect(env).connect(destination);
     src.start(time);
-    src.stop(end + region.release * 1.5);
+    src.stop(end + region.release * 2.5);
 
     const stop: Stop = (at) => {
       const t = Math.max(at ?? ctx.currentTime, ctx.currentTime);
@@ -151,7 +150,7 @@ export function playBass(instrument: Instrument, time: number, midi: number, sec
 }
 
 /**
- * The mix: `input` is where the Rhodes plays into (tone, tremolo, reverb),
+ * The mix: `input` is where the Rhodes plays into (with a light room),
  * `dry` goes straight to the output (the metronome), and `master` is the
  * final level that Stop pulls to silence.
  */
@@ -160,58 +159,26 @@ export type MixBus = { input: GainNode; dry: GainNode; master: GainNode };
 export function createMixBus(ctx: AudioContext): MixBus {
   const input = ctx.createGain();
   // The Rhodes samples are hot: about -10 dB keeps peaks well clear of clipping.
-  input.gain.value = 0.45;
-
-  // Mellow voicing: a little body, a dip where the tine's bell-like ping
-  // sits (~3 kHz), less top end, and a soft roll-off.
-  const body = ctx.createBiquadFilter();
-  body.type = "peaking";
-  body.frequency.value = 250;
-  body.Q.value = 0.8;
-  body.gain.value = 1.5;
-  const tine = ctx.createBiquadFilter();
-  tine.type = "peaking";
-  tine.frequency.value = 3000;
-  tine.Q.value = 1;
-  tine.gain.value = -4;
-  const shelf = ctx.createBiquadFilter();
-  shelf.type = "highshelf";
-  shelf.frequency.value = 2500;
-  shelf.gain.value = -6;
-  const rolloff = ctx.createBiquadFilter();
-  rolloff.type = "lowpass";
-  rolloff.frequency.value = 3500;
-  rolloff.Q.value = 0.5;
-
-  // The suitcase Rhodes sway: a slow, shallow left-right tremolo.
-  const pan = ctx.createStereoPanner();
-  const lfo = ctx.createOscillator();
-  lfo.frequency.value = 4.5;
-  const depth = ctx.createGain();
-  depth.gain.value = 0.18;
-  lfo.connect(depth).connect(pan.pan);
-  lfo.start();
-
-  input.connect(body).connect(tine).connect(shelf).connect(rolloff).connect(pan);
+  input.gain.value = 0.4;
 
   const comp = ctx.createDynamicsCompressor();
   comp.threshold.value = -18;
-  comp.ratio.value = 3;
+  comp.ratio.value = 2.5;
   comp.attack.value = 0.01;
   comp.release.value = 0.2;
 
+  // The Rhodes as recorded, plus a light room.
   const reverb = ctx.createConvolver();
-  reverb.buffer = roomImpulse(ctx, 2.2);
+  reverb.buffer = roomImpulse(ctx, 2);
   const wet = ctx.createGain();
-  wet.gain.value = 0.3;
-
-  pan.connect(comp);
-  pan.connect(reverb).connect(wet).connect(comp);
+  wet.gain.value = 0.22;
+  input.connect(comp);
+  input.connect(reverb).connect(wet).connect(comp);
 
   const master = ctx.createGain();
   comp.connect(master).connect(ctx.destination);
 
-  // Dry path (metronome): no tone, tremolo or reverb.
+  // Dry path (metronome): straight to the output, no reverb.
   const dry = ctx.createGain();
   dry.connect(master);
   return { input, dry, master };
