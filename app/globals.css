@@ -46,8 +46,8 @@
   --tone-butter-bg: #fff3c4;
   --tone-butter-fg: #6b4f00;
   --tone-butter-border: #ebd57a;
-  /* Note being played in the lick practice views. */
-  --lick-active: #d9480f;
+  /* Note being played in the lick practice views: the app's accent. */
+  --lick-active: var(--accent-dot);
 
   /* Scale-degree roles on diagrams. */
   /* Roots match the selected-key highlight: solid ink here, lilac in dark mode. */
@@ -133,7 +133,6 @@
   --tone-peach-bg: #ffc3a0;
   --tone-peach-fg: #3a1605;
   --tone-peach-border: #ffc3a0;
-  --lick-active: #ffb07a;
   --tone-sky-bg: #a8d4ff;
   --tone-sky-fg: #0b2340;
   --tone-sky-border: #a8d4ff;
@@ -354,7 +353,8 @@ body {
 /* Lick practice: staff + tab printed in black on white in both themes, like
    sheet music; the note being played is highlighted on both staves. */
 .lick-paper {
-  --lick-active: #d9480f;
+  /* The light theme's --accent-dot: the dark one is too pale on white. */
+  --lick-active: #6e56cf;
   background: #ffffff;
   color: #111111;
 }
