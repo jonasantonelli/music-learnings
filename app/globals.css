@@ -46,8 +46,8 @@
   --tone-butter-bg: #fff3c4;
   --tone-butter-fg: #6b4f00;
   --tone-butter-border: #ebd57a;
-  /* Note being played in the lick practice views: the app's accent. */
-  --lick-active: var(--accent-dot);
+  /* Note being played in the lick practice views: the mint tone. */
+  --lick-active: var(--tone-mint-fg);
 
   /* Scale-degree roles on diagrams. */
   /* Roots match the selected-key highlight: solid ink here, lilac in dark mode. */
@@ -130,6 +130,8 @@
   --tone-mint-bg: #9fe8c7;
   --tone-mint-fg: #0c2a1e;
   --tone-mint-border: #9fe8c7;
+  /* Dark-theme mint is the luminous pastel; its ink is too dark here. */
+  --lick-active: var(--tone-mint-bg);
   --tone-peach-bg: #ffc3a0;
   --tone-peach-fg: #3a1605;
   --tone-peach-border: #ffc3a0;
@@ -353,8 +355,10 @@ body {
 /* Lick practice: staff + tab printed in black on white in both themes, like
    sheet music; the note being played is highlighted on both staves. */
 .lick-paper {
-  /* The light theme's --accent-dot: the dark one is too pale on white. */
-  --lick-active: #6e56cf;
+  /* The light theme's mint pair, in both themes: the dark pastel is too
+     pale on white paper. */
+  --lick-active: #1f6b45;
+  --lick-active-bg: #ddf5e8;
   background: #ffffff;
   color: #111111;
 }
@@ -367,4 +371,8 @@ body {
 .lick-staff .lick-note-active text {
   fill: var(--lick-active);
   font-weight: 700;
+}
+/* The tab number sits on a mint chip, like the app's tone tags. */
+.lick-staff .lick-note-active .lick-tab-bg {
+  fill: var(--lick-active-bg);
 }

@@ -182,6 +182,7 @@ function applyFingering(root: HTMLElement, tab: TabNote[]): Element[][] {
     bg.setAttribute("y", String(y - 7));
     bg.setAttribute("width", String(w));
     bg.setAttribute("height", "14");
+    bg.setAttribute("rx", "3");
     bg.setAttribute("class", "lick-tab-bg");
     group.insertBefore(bg, text);
     elements[i!].push(group);
