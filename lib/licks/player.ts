@@ -9,6 +9,7 @@ import {
   playChord,
   playNote,
   type Piano,
+  type Stop,
 } from "./instruments";
 
 /** One note to play: sounding MIDI pitch (null = rest), timed in beats. */
@@ -27,12 +28,16 @@ export type PlayChord = { start: number; beats: number; voicing: number[]; bass:
 
 export type PlaySequence = { notes: PlayNote[]; chords: PlayChord[]; beats: number };
 
-export type PlayOptions = {
-  bpm: number;
+/** Settings that can change while playing; they apply from the next pass. */
+export type LiveSettings = {
   loop: boolean;
-  countIn: boolean;
   metronome: boolean;
   comping: boolean;
+};
+
+export type PlayOptions = LiveSettings & {
+  bpm: number;
+  countIn: boolean;
   /** Sequence for each pass; lets callers change key between loops. */
   sequence: (pass: number) => PlaySequence;
   /** Current note index (null between notes or during the count-in). */
@@ -43,26 +48,47 @@ export type PlayOptions = {
 const LOOKAHEAD = 0.25; // seconds of audio scheduled ahead of the clock
 const TICK_MS = 50;
 
+/**
+ * Something scheduled in the current pass, positioned in beats from the
+ * pass start (the count-in sits at negative beats), so it can be moved
+ * when the tempo changes.
+ */
+type Planned = {
+  beat: number;
+  /** Starts the sound at `time`, given the length of a beat in seconds. */
+  play: (time: number, beatSeconds: number) => Stop;
+  /** Lick note this event highlights, and for how many beats. */
+  cue?: { index: number; beats: number };
+  time: number;
+  stop?: Stop;
+};
+
 type Cue = { time: number; end: number; pass: number; index: number };
 
+const silent: Stop = () => {};
+
 /**
- * A small Web Audio player for licks. Notes are scheduled a pass at a time
- * slightly ahead of the audio clock, and a frame loop reports which note is
- * sounding so the fretboard and staff can follow along.
+ * A small Web Audio player for licks. Each pass is planned in beats and
+ * scheduled slightly ahead of the audio clock; a frame loop reports which
+ * note is sounding so the staff and fretboard can follow along. The tempo
+ * can change mid-pass: whatever hasn't sounded yet is rescheduled from the
+ * current beat, so playback never restarts.
  */
 export class LickPlayer {
   private ctx: AudioContext | null = null;
   private out: GainNode | null = null;
   private bus: GainNode | null = null;
+  private piano: Piano | null = null;
   private timer: ReturnType<typeof setInterval> | null = null;
   private frame = 0;
-  private cues: Cue[] = [];
   private options: PlayOptions | null = null;
+  private bpm = 100;
   private pass = 0;
   private passStart = 0;
-  private lastReported: string | null = null;
+  private plan: Planned[] = [];
+  private cues: Cue[] = [];
   private current: PlaySequence | null = null;
-  private piano: Piano | null = null;
+  private lastReported: string | null = null;
 
   private context(): AudioContext {
     if (!this.ctx) this.ctx = new AudioContext();
@@ -79,6 +105,10 @@ export class LickPlayer {
     gain.connect(this.bus);
     this.out = gain;
     return gain;
+  }
+
+  private get beatSeconds(): number {
+    return 60 / this.bpm;
   }
 
   get playing(): boolean {
@@ -103,24 +133,53 @@ export class LickPlayer {
     this.stop();
     const ctx = this.context();
     this.freshOutput();
-    this.options = options;
+    this.options = { ...options };
+    this.bpm = options.bpm;
     this.pass = 0;
     this.cues = [];
     this.lastReported = null;
-    const beat = 60 / options.bpm;
-    let at = ctx.currentTime + 0.08;
-    if (options.countIn) {
-      for (let b = 0; b < BEATS_PER_BAR; b++) this.click(at + b * beat, b === 0);
-      at += BEATS_PER_BAR * beat;
-    }
-    this.passStart = at;
-    this.schedulePass();
+    const countIn = options.countIn ? BEATS_PER_BAR : 0;
+    this.passStart = ctx.currentTime + 0.08 + countIn * this.beatSeconds;
+    const clicks: Planned[] = Array.from({ length: countIn }, (_, b) => ({
+      beat: b - countIn,
+      play: (time) => this.click(time, b === 0),
+      time: 0,
+    }));
+    this.schedulePass(clicks);
     this.timer = setInterval(() => this.tick(), TICK_MS);
     const follow = () => {
       this.report();
       this.frame = requestAnimationFrame(follow);
     };
     this.frame = requestAnimationFrame(follow);
+  }
+
+  /** Changes loop, metronome or comping without restarting (from the next pass). */
+  update(settings: LiveSettings) {
+    if (this.options) Object.assign(this.options, settings);
+  }
+
+  /**
+   * Changes the tempo without restarting: the pass is re-anchored so the
+   * current beat stays put, and everything not yet sounding is rescheduled.
+   */
+  setBpm(bpm: number) {
+    const ctx = this.ctx;
+    if (!this.options || !ctx || bpm === this.bpm) {
+      this.bpm = bpm;
+      return;
+    }
+    const now = ctx.currentTime;
+    const beat = (now - this.passStart) / this.beatSeconds;
+    this.bpm = bpm;
+    this.passStart = now - beat * this.beatSeconds;
+    for (const item of this.plan) {
+      if (item.time <= now + 0.005) continue;
+      item.stop?.(now);
+      this.schedule(item);
+    }
+    this.cues = this.cues.filter((c) => c.pass !== this.pass);
+    this.addCues();
   }
 
   stop() {
@@ -137,6 +196,7 @@ export class LickPlayer {
     // Lift the dampers on anything still ringing (scheduled notes too).
     this.piano?.stop();
     this.options = null;
+    this.plan = [];
     this.cues = [];
   }
 
@@ -157,40 +217,63 @@ export class LickPlayer {
     this.piano = null;
   }
 
-  private passLength(seq: PlaySequence): number {
-    return seq.beats * (60 / this.options!.bpm);
+  private schedule(item: Planned) {
+    item.time = this.passStart + item.beat * this.beatSeconds;
+    item.stop = item.play(item.time, this.beatSeconds);
   }
 
-  private schedulePass() {
+  private addCues() {
+    for (const item of this.plan) {
+      if (!item.cue) continue;
+      const time = this.passStart + item.beat * this.beatSeconds;
+      this.cues.push({
+        time,
+        end: time + item.cue.beats * this.beatSeconds,
+        pass: this.pass,
+        index: item.cue.index,
+      });
+    }
+  }
+
+  /** Plans the current pass (plus any extra events, e.g. the count-in) and schedules it. */
+  private schedulePass(extra: Planned[] = []) {
     const opts = this.options!;
+    const piano = this.piano!;
     const seq = opts.sequence(this.pass);
     this.current = seq;
-    const beat = 60 / opts.bpm;
-    const t0 = this.passStart;
-    for (const n of seq.notes) {
-      const time = t0 + n.start * beat;
-      const end = time + n.beats * beat;
-      this.cues.push({ time, end, pass: this.pass, index: n.index });
+    const plan: Planned[] = [...extra];
+
+    seq.notes.forEach((n, k) => {
+      let play: Planned["play"] = () => silent;
       if (n.midi !== null && !n.tied) {
         // Extend through any tied continuations.
         let length = n.beats;
-        for (let k = seq.notes.indexOf(n) + 1; seq.notes[k]?.tied; k++) length += seq.notes[k].beats;
-        playNote(this.piano!, time, n.midi, length * beat, VELOCITY.lead);
+        for (let j = k + 1; seq.notes[j]?.tied; j++) length += seq.notes[j].beats;
+        const midi = n.midi;
+        play = (time, b) => playNote(piano, time, midi, length * b, VELOCITY.lead);
       }
-    }
+      plan.push({ beat: n.start, play, cue: { index: n.index, beats: n.beats }, time: 0 });
+    });
+
     if (opts.comping) {
-      for (const c of seq.chords) this.comp(t0, beat, c);
+      for (const c of seq.chords) plan.push(...this.comp(c));
     }
     if (opts.metronome) {
-      for (let b = 0; b < seq.beats; b++) this.click(t0 + b * beat, b % BEATS_PER_BAR === 0);
+      for (let b = 0; b < seq.beats; b++) {
+        plan.push({ beat: b, play: (time) => this.click(time, b % BEATS_PER_BAR === 0), time: 0 });
+      }
     }
+
+    this.plan = plan;
+    for (const item of plan) this.schedule(item);
+    this.addCues();
   }
 
   private tick() {
     const opts = this.options;
     const ctx = this.ctx;
     if (!opts || !ctx || !this.current) return;
-    const passEnd = this.passStart + this.passLength(this.current);
+    const passEnd = this.passStart + this.current.beats * this.beatSeconds;
     if (ctx.currentTime + LOOKAHEAD < passEnd) return;
     if (!opts.loop) {
       if (ctx.currentTime >= passEnd) {
@@ -224,23 +307,32 @@ export class LickPlayer {
   // --- Sounds --------------------------------------------------------------
 
   /**
-   * Comps one chord span: the Charleston (beat 1 and the "and" of 2) in a
-   * bar-long span, one hit in a shorter one, with the root on 1 in the bass.
+   * Comping for one chord span: the Charleston (beat 1 and the "and" of 2)
+   * in a bar-long span, one hit in a shorter one, with the root on 1 in the
+   * bass. Lengths are in beats so they follow tempo changes.
    */
-  private comp(t0: number, beat: number, chord: PlayChord) {
+  private comp(chord: PlayChord): Planned[] {
     const piano = this.piano!;
-    const at = (b: number) => t0 + (chord.start + b) * beat;
-    if (chord.bass !== null) playBass(piano, at(0), chord.bass, Math.min(chord.beats, 2) * beat * 0.95);
-    if (chord.voicing.length === 0) return;
-    if (chord.beats >= BEATS_PER_BAR) {
-      playChord(piano, at(0), chord.voicing, beat * 1.2);
-      playChord(piano, at(1.5), chord.voicing, beat * 1.6);
-    } else {
-      playChord(piano, at(0), chord.voicing, chord.beats * beat * 0.85);
+    const events: Planned[] = [];
+    const hit = (beat: number, beats: number, sound: (time: number, seconds: number) => Stop) =>
+      events.push({ beat: chord.start + beat, time: 0, play: (time, b) => sound(time, beats * b) });
+    if (chord.bass !== null) {
+      const bass = chord.bass;
+      hit(0, Math.min(chord.beats, 2) * 0.95, (t, s) => playBass(piano, t, bass, s));
     }
+    if (chord.voicing.length > 0) {
+      const voicing = chord.voicing;
+      if (chord.beats >= BEATS_PER_BAR) {
+        hit(0, 1.2, (t, s) => playChord(piano, t, voicing, s));
+        hit(1.5, 1.6, (t, s) => playChord(piano, t, voicing, s));
+      } else {
+        hit(0, chord.beats * 0.85, (t, s) => playChord(piano, t, voicing, s));
+      }
+    }
+    return events;
   }
 
-  private click(time: number, accent: boolean) {
+  private click(time: number, accent: boolean): Stop {
     const ctx = this.ctx!;
     const out = this.out!;
     const osc = ctx.createOscillator();
@@ -251,5 +343,7 @@ export class LickPlayer {
     osc.connect(env).connect(out);
     osc.start(time);
     osc.stop(time + 0.05);
+    // A click cancelled before it sounds is stopped at (or before) its start.
+    return (at) => osc.stop(Math.max(at ?? ctx.currentTime, ctx.currentTime));
   }
 }

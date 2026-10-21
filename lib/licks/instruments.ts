@@ -9,6 +9,9 @@ import type { SplendidGrandPiano } from "smplr";
 
 export type Piano = Pick<SplendidGrandPiano, "start" | "stop">;
 
+/** Stops what a play call started (no-op once it has ended). */
+export type Stop = (time?: number) => void;
+
 /** MIDI velocities: the lick leads, the comping stays underneath. */
 export const VELOCITY = { lead: 80, chord: 52, bass: 72 } as const;
 
@@ -39,18 +42,19 @@ export function loadPiano(ctx: AudioContext, destination: AudioNode): Promise<Pi
 }
 
 /** One note; the damper falls after `seconds`. */
-export function playNote(piano: Piano, time: number, midi: number, seconds: number, velocity: number) {
-  piano.start({ note: midi, time, duration: seconds, velocity });
+export function playNote(piano: Piano, time: number, midi: number, seconds: number, velocity: number): Stop {
+  return piano.start({ note: midi, time, duration: seconds, velocity });
 }
 
 /** A chord voicing, rolled a few ms low to high like a pianist's hand. */
-export function playChord(piano: Piano, time: number, midis: number[], seconds: number) {
-  midis.forEach((midi, i) => playNote(piano, time + i * 0.006, midi, seconds, VELOCITY.chord));
+export function playChord(piano: Piano, time: number, midis: number[], seconds: number): Stop {
+  const stops = midis.map((midi, i) => playNote(piano, time + i * 0.006, midi, seconds, VELOCITY.chord));
+  return (at) => stops.forEach((stop) => stop(at));
 }
 
 /** The root under the chords, in the left hand. */
-export function playBass(piano: Piano, time: number, midi: number, seconds: number) {
-  playNote(piano, time, midi, seconds, VELOCITY.bass);
+export function playBass(piano: Piano, time: number, midi: number, seconds: number): Stop {
+  return playNote(piano, time, midi, seconds, VELOCITY.bass);
 }
 
 /**

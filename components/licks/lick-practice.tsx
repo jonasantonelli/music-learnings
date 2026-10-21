@@ -307,6 +307,16 @@ export function LickPractice({ lick }: { lick: LickDefinition }) {
   const player = () => (playerRef.current ??= new LickPlayer());
   React.useEffect(() => () => playerRef.current?.dispose(), []);
 
+  // Latest playback settings, read when playback starts. Tempo and the
+  // loop/metronome/chords toggles are then applied live (below), so changing
+  // them never restarts the lick; only a key change does.
+  const loopOn = p.loop || keyChoice === "cycle";
+  const settings = { bpm: p.bpm, countIn: p.countIn, loop: loopOn, metronome: p.metronome, comping: p.comping };
+  const settingsRef = React.useRef(settings);
+  React.useEffect(() => {
+    settingsRef.current = settings;
+  });
+
   const start = React.useCallback(async () => {
     const pl = (playerRef.current ??= new LickPlayer());
     if (!pl.ready) {
@@ -326,11 +336,7 @@ export function LickPractice({ lick }: { lick: LickDefinition }) {
     }
     setCyclePass(0);
     pl.start({
-      bpm: p.bpm,
-      loop: p.loop || keyChoice === "cycle",
-      countIn: p.countIn,
-      metronome: p.metronome,
-      comping: p.comping,
+      ...settingsRef.current,
       sequence: (pass) => toSequence(arrangementFor(pcForPass(pass))),
       onNote: (pass, index) => {
         setCyclePass(pass);
@@ -342,7 +348,7 @@ export function LickPractice({ lick }: { lick: LickDefinition }) {
       },
     });
     setPlaying(true);
-  }, [p.bpm, p.loop, p.countIn, p.metronome, p.comping, keyChoice, arrangementFor, pcForPass]);
+  }, [arrangementFor, pcForPass]);
 
   const stop = React.useCallback(() => {
     cancelLoad.current = true;
@@ -352,11 +358,18 @@ export function LickPractice({ lick }: { lick: LickDefinition }) {
     setCyclePass(0);
   }, []);
 
-  // Changing a setting mid-play restarts with the new one.
+  // A new key means new notes: restart. (`start` changes only with the key.)
   const playingRef = React.useRef(false);
   React.useEffect(() => {
     if (playingRef.current) start();
   }, [start]);
+  // Tempo and toggles apply while playing, without restarting.
+  React.useEffect(() => {
+    playerRef.current?.setBpm(p.bpm);
+  }, [p.bpm]);
+  React.useEffect(() => {
+    playerRef.current?.update({ loop: loopOn, metronome: p.metronome, comping: p.comping });
+  }, [loopOn, p.metronome, p.comping]);
   React.useEffect(() => {
     playingRef.current = playing;
   }, [playing]);
