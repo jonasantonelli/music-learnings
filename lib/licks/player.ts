@@ -29,7 +29,10 @@ export type PlayChord = { start: number; beats: number; voicing: number[]; bass:
 
 export type PlaySequence = { notes: PlayNote[]; chords: PlayChord[]; beats: number };
 
-/** Settings that can change while playing; they apply from the next pass. */
+/**
+ * Settings that can change while playing: the metronome and comping switch
+ * on or off at once; loop is checked when the pass ends.
+ */
 export type LiveSettings = {
   loop: boolean;
   metronome: boolean;
@@ -56,6 +59,8 @@ const TICK_MS = 50;
  */
 type Planned = {
   beat: number;
+  /** Set on events a live toggle adds or removes (metronome, comping). */
+  kind?: Toggled;
   /** Starts the sound at `time`, given the length of a beat in seconds. */
   play: (time: number, beatSeconds: number) => Stop;
   /** Lick note this event highlights, and for how many beats. */
@@ -63,6 +68,8 @@ type Planned = {
   time: number;
   stop?: Stop;
 };
+
+type Toggled = "click" | "comp";
 
 type Cue = { time: number; end: number; pass: number; index: number };
 
@@ -97,7 +104,7 @@ export class LickPlayer {
   private out: GainNode | null = null;
   private bus: MixBus | null = null;
   /** Stop functions for everything scheduled since Play (pruned as it plays). */
-  private handles: { time: number; stop: Stop }[] = [];
+  private handles: { time: number; stop: Stop; kind?: Toggled }[] = [];
   private piano: Instrument | null = null;
   private onStateChange: (() => void) | null = null;
   private timer: ReturnType<typeof setInterval> | null = null;
@@ -222,9 +229,37 @@ export class LickPlayer {
     return position;
   }
 
-  /** Changes loop, metronome or comping without restarting (from the next pass). */
+  /** Changes loop, metronome or comping without restarting. */
   update(settings: LiveSettings) {
-    if (this.options) Object.assign(this.options, settings);
+    const opts = this.options;
+    if (!opts) return;
+    const { metronome, comping } = opts;
+    Object.assign(opts, settings);
+    if (settings.metronome !== metronome) this.toggle("click", settings.metronome);
+    if (settings.comping !== comping) this.toggle("comp", settings.comping);
+  }
+
+  /**
+   * Switches the metronome or comping mid-pass: off cancels what is queued
+   * and damps what rings; on schedules the rest of the pass from this beat.
+   */
+  private toggle(kind: Toggled, on: boolean) {
+    const ctx = this.ctx;
+    const seq = this.current;
+    if (!ctx || !seq) return;
+    const now = ctx.currentTime;
+    if (!on) {
+      for (const h of this.handles) if (h.kind === kind) h.stop(now);
+      this.handles = this.handles.filter((h) => h.kind !== kind);
+      this.plan = this.plan.filter((item) => item.kind !== kind);
+      return;
+    }
+    // A little margin so nothing is scheduled in the past.
+    const beat = (now + 0.02 - this.passStart) / this.beatSeconds;
+    const all = kind === "click" ? this.clicks(seq) : seq.chords.flatMap((c) => this.comp(c));
+    const events = all.filter((item) => item.beat >= beat);
+    for (const item of events) this.schedule(item);
+    this.plan.push(...events);
   }
 
   /**
@@ -306,7 +341,7 @@ export class LickPlayer {
   private schedule(item: Planned) {
     item.time = this.passStart + item.beat * this.beatSeconds;
     item.stop = item.play(item.time, this.beatSeconds);
-    this.handles.push({ time: item.time, stop: item.stop });
+    this.handles.push({ time: item.time, stop: item.stop, kind: item.kind });
   }
 
   /** Brings the master back up (after a Stop pulled it to silence). */
@@ -355,11 +390,7 @@ export class LickPlayer {
     if (opts.comping) {
       for (const c of seq.chords) plan.push(...this.comp(c));
     }
-    if (opts.metronome) {
-      for (let b = 0; b < seq.beats; b++) {
-        plan.push({ beat: b, play: (time) => this.click(time, b % BEATS_PER_BAR === 0), time: 0 });
-      }
-    }
+    if (opts.metronome) plan.push(...this.clicks(seq));
 
     // When resuming mid-pass, skip what came before the resume point.
     this.plan = plan.filter((item) => item.beat >= fromBeat - 1e-6);
@@ -405,6 +436,16 @@ export class LickPlayer {
 
   // --- Sounds --------------------------------------------------------------
 
+  /** A metronome tick on every beat of the pass, accented on each downbeat. */
+  private clicks(seq: PlaySequence): Planned[] {
+    return Array.from({ length: seq.beats }, (_, b) => ({
+      beat: b,
+      kind: "click",
+      play: (time) => this.click(time, b % BEATS_PER_BAR === 0),
+      time: 0,
+    }));
+  }
+
   /**
    * Comping for one chord span: the Charleston (beat 1 and the "and" of 2)
    * in a bar-long span, one hit in a shorter one, with the root on 1 in the
@@ -414,7 +455,7 @@ export class LickPlayer {
     const piano = this.piano!;
     const events: Planned[] = [];
     const hit = (beat: number, beats: number, sound: (time: number, seconds: number) => Stop) =>
-      events.push({ beat: chord.start + beat, time: 0, play: (time, b) => sound(time, beats * b) });
+      events.push({ beat: chord.start + beat, kind: "comp", time: 0, play: (time, b) => sound(time, beats * b) });
     if (chord.bass !== null) {
       const bass = chord.bass;
       hit(0, Math.min(chord.beats, 2) * 0.95, (t, s) => playBass(piano, t, bass, s));
