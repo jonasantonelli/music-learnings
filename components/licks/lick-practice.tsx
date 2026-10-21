@@ -49,6 +49,7 @@ import {
   type TimedChord,
 } from "@/lib/licks/notation";
 import { LickPlayer, type PlaySequence, type Position } from "@/lib/licks/player";
+import { SAMPLES_CREDIT } from "@/lib/licks/instruments";
 import type { LickDefinition } from "@/lib/licks/catalog";
 import { FAVORITES_KEY, LEARNED_KEY } from "@/lib/licks/storage";
 
@@ -67,8 +68,9 @@ const messages = defineMessages({
     faster: "Faster",
     keys_: { space: "Space", esc: "Esc" },
     shortcuts: { play: "play/pause", stop: "stop", step: "note by note", tempo: "tempo" },
-    loadingPiano: "Loading piano…",
-    audioFailed: "Couldn't load the piano sounds. Check your connection and try again.",
+    soundBy: "Rhodes sound:",
+    loadingPiano: "Loading sound…",
+    audioFailed: "Couldn't load the Rhodes sounds. Check your connection and try again.",
     audioLocked: "The browser kept audio paused. Press Play again to start it.",
     tempo: "Tempo",
     key: "Key",
@@ -113,8 +115,9 @@ const messages = defineMessages({
     faster: "Mais rápido",
     keys_: { space: "Espaço", esc: "Esc" },
     shortcuts: { play: "tocar/pausar", stop: "parar", step: "nota a nota", tempo: "andamento" },
-    loadingPiano: "Carregando piano…",
-    audioFailed: "Não foi possível carregar o som do piano. Verifique sua conexão e tente de novo.",
+    soundBy: "Som de Rhodes:",
+    loadingPiano: "Carregando som…",
+    audioFailed: "Não foi possível carregar o som do Rhodes. Verifique sua conexão e tente de novo.",
     audioLocked: "O navegador deixou o áudio pausado. Aperte Tocar de novo para começar.",
     tempo: "Andamento",
     key: "Tom",
@@ -159,8 +162,9 @@ const messages = defineMessages({
     faster: "Más rápido",
     keys_: { space: "Espacio", esc: "Esc" },
     shortcuts: { play: "tocar/pausar", stop: "parar", step: "nota a nota", tempo: "tempo" },
-    loadingPiano: "Cargando piano…",
-    audioFailed: "No se pudo cargar el sonido del piano. Revisa tu conexión e inténtalo de nuevo.",
+    soundBy: "Sonido de Rhodes:",
+    loadingPiano: "Cargando sonido…",
+    audioFailed: "No se pudo cargar el sonido del Rhodes. Revisa tu conexión e inténtalo de nuevo.",
     audioLocked: "El navegador dejó el audio en pausa. Pulsa Tocar de nuevo para empezar.",
     tempo: "Tempo",
     key: "Tonalidad",
@@ -305,7 +309,7 @@ export function LickPractice({ lick }: { lick: LickDefinition }) {
   const [resumeAt, setResumeAt] = React.useState<Position | null>(null);
   const [loading, setLoading] = React.useState(false);
   const [audioIssue, setAudioIssue] = React.useState<"failed" | "locked" | null>(null);
-  // Set when Stop is pressed while the piano is still loading.
+  // Set when Stop is pressed while the samples are still loading.
   const cancelLoad = React.useRef(false);
 
   const cache = React.useRef(new Map<string, Arrangement>());
@@ -364,7 +368,7 @@ export function LickPractice({ lick }: { lick: LickDefinition }) {
       // Unlock audio first, while still inside the click or key press.
       const resumed = pl.resume();
       if (!pl.ready) {
-        // The first play fetches the piano samples.
+        // The first play fetches the Rhodes samples.
         cancelLoad.current = false;
         setLoading(true);
         setAudioIssue(null);
@@ -430,7 +434,7 @@ export function LickPractice({ lick }: { lick: LickDefinition }) {
   }, [playing]);
 
   const toggle = React.useCallback(() => {
-    if (loading) return; // extra presses while the piano loads are ignored
+    if (loading) return; // extra presses while the samples load are ignored
     if (playingRef.current) pause();
     else void start(resumeAt ?? undefined);
   }, [loading, pause, start, resumeAt]);
@@ -840,6 +844,15 @@ export function LickPractice({ lick }: { lick: LickDefinition }) {
         <span>
           <Kbd>−</Kbd> <Kbd>+</Kbd> {t.shortcuts.tempo}
         </span>
+      </p>
+
+      {/* The samples are CC BY-NC: credit the author. */}
+      <p className="mt-3 text-[11px] text-muted-foreground">
+        {t.soundBy}{" "}
+        <a href={SAMPLES_CREDIT.url} target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-foreground">
+          {SAMPLES_CREDIT.name}
+        </a>
+        , {SAMPLES_CREDIT.author} ({SAMPLES_CREDIT.license})
       </p>
     </section>
   );

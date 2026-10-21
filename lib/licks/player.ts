@@ -4,12 +4,12 @@ import { BEATS_PER_BAR } from "./notation";
 import {
   VELOCITY,
   createMixBus,
-  loadPiano,
+  loadInstrument,
   playBass,
   playChord,
   playNote,
   type MixBus,
-  type Piano,
+  type Instrument,
   type Stop,
 } from "./instruments";
 
@@ -72,7 +72,7 @@ export type Position = { pass: number; beat: number };
 const silent: Stop = () => {};
 
 /**
- * One audio context, mix bus and piano for the whole site, so the piano
+ * One audio context, mix bus and instrument for the whole site, so the samples
  * loads once rather than on every lick page.
  */
 let shared: { ctx: AudioContext; bus: MixBus } | null = null;
@@ -98,7 +98,7 @@ export class LickPlayer {
   private bus: MixBus | null = null;
   /** Stop functions for everything scheduled since Play (pruned as it plays). */
   private handles: { time: number; stop: Stop }[] = [];
-  private piano: Piano | null = null;
+  private piano: Instrument | null = null;
   private onStateChange: (() => void) | null = null;
   private timer: ReturnType<typeof setInterval> | null = null;
   private frame = 0;
@@ -151,7 +151,8 @@ export class LickPlayer {
     this.out?.disconnect();
     const gain = ctx.createGain();
     gain.gain.value = 0.9;
-    gain.connect(this.bus!.input);
+    // Only the metronome plays here: straight to the output, no reverb.
+    gain.connect(this.bus!.dry);
     this.out = gain;
     return gain;
   }
@@ -164,15 +165,15 @@ export class LickPlayer {
     return this.options !== null;
   }
 
-  /** True once the piano samples are loaded. */
+  /** True once the instrument's samples are loaded. */
   get ready(): boolean {
     return this.piano !== null;
   }
 
-  /** Loads the piano (fetching samples the first time). */
+  /** Loads the instrument (fetching samples the first time). */
   async load(): Promise<void> {
     const ctx = this.context();
-    this.piano ??= await loadPiano(ctx, this.bus!.input);
+    this.piano ??= await loadInstrument(ctx, this.bus!.input);
   }
 
   /**
@@ -263,9 +264,9 @@ export class LickPlayer {
       setTimeout(() => out.disconnect(), 200);
       this.out = null;
     }
-    // smplr queues future notes and its stop() only reaches voices already
-    // sounding, so cancel every scheduled note through its own stop function,
-    // then damp what rings and pull the master down (reverb tail included).
+    // Cancel every scheduled note through its own stop function (those not
+    // started yet never sound), damp what rings, and pull the master down so
+    // the reverb tail goes too.
     const now = this.ctx?.currentTime;
     if (!ringOut) for (const h of this.handles) h.stop(now);
     this.handles = [];
@@ -291,7 +292,7 @@ export class LickPlayer {
       });
   }
 
-  /** Stops and detaches; the shared context and piano stay for the next page. */
+  /** Stops and detaches; the shared context and instrument stay for the next page. */
   dispose() {
     this.stop();
     if (this.onStateChange) this.ctx?.removeEventListener("statechange", this.onStateChange);
