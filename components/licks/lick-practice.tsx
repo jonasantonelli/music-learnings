@@ -803,6 +803,7 @@ export function LickPractice({ lick }: { lick: LickDefinition }) {
           startFret={0}
           frets={neckFrets}
           caption={t.fretboardCaption(keyLabel(current.key), fingering.position)}
+          fill
         />
       )}
 

@@ -350,6 +350,7 @@ export function SuperimpositionExplorer({
             labelMode,
           )}
           caption={t.captionFull(arpName, baseName)}
+          fill
         />
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
