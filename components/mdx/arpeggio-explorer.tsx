@@ -173,6 +173,7 @@ export function ArpeggioExplorer({ mode }: ArpeggioExplorerProps) {
             showNotes,
           )}
           caption={t.captionFull(`${rootName}${suffix}`)}
+          fill
         />
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

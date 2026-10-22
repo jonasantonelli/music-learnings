@@ -1,7 +1,7 @@
 "use client";
 
 import { NoteText } from "@/components/note-text";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { noteName, STRING_MIDI, type Spelling } from "@/lib/music";
 import {
@@ -142,12 +142,22 @@ type BoardLayout = {
   fretNumber: (fret: number) => Point & { anchor: "middle" | "end" };
 };
 
-const HORIZONTAL_LAYOUT: BoardLayout = (() => {
-  const cellW = 30;
+const H_NUT_X = 66; // string label + open/mute status column, left of the nut
+const H_PAD_R = 16;
+const H_MIN_CELL_W = 30;
+
+/**
+ * Horizontal board stretched to `containerWidth`: only the fret spacing grows,
+ * so the board spans the container without getting taller.
+ */
+function horizontalLayout(containerWidth: number | null): BoardLayout {
+  const cellW = containerWidth
+    ? Math.max(H_MIN_CELL_W, (containerWidth - H_NUT_X - H_PAD_R) / FRETS_SHOWN)
+    : H_MIN_CELL_W;
   const cellH = 34;
-  const nutX = 66; // string label + open/mute status column, left of the nut
+  const nutX = H_NUT_X;
   const padY = 22;
-  const padR = 16;
+  const padR = H_PAD_R;
   const height = padY + cellH * (STRINGS - 1) + 28;
   const rowY = (stringIdx: number) => padY + (STRINGS - 1 - stringIdx) * cellH;
   return {
@@ -163,7 +173,7 @@ const HORIZONTAL_LAYOUT: BoardLayout = (() => {
       anchor: "middle",
     }),
   };
-})();
+}
 
 const VERTICAL_LAYOUT: BoardLayout = (() => {
   const cellW = 46;
@@ -344,10 +354,23 @@ function FretboardInput({
   onStringToggle: (stringIdx: number) => void;
 }) {
   const props = { frets, roles, spelling, onCellClick, onStringToggle };
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState<number | null>(null);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(([entry]) => setContainerWidth(entry.contentRect.width));
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const horizontal = useMemo(() => horizontalLayout(containerWidth), [containerWidth]);
+
   return (
-    <div className="@container">
+    <div ref={containerRef} className="@container">
       <div className="hidden @min-[480px]:block">
-        <FretboardSvg layout={HORIZONTAL_LAYOUT} {...props} />
+        <FretboardSvg layout={horizontal} {...props} />
       </div>
       <div className="@min-[480px]:hidden">
         <FretboardSvg layout={VERTICAL_LAYOUT} {...props} />

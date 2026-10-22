@@ -112,6 +112,7 @@ export function DimOverDominants() {
         startFret={0}
         markers={buildMarkers(root)}
         caption={caption}
+        fill
       />
     </div>
   );
