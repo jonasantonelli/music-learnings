@@ -266,6 +266,9 @@ const T = {
  * Four voices hold only one tension with the root, so names like m11, maj13
  * and 13 mean R–3–7–11/13 here (the 9 is left out).
  *
+ * The "(9)" colors (id "r9", e.g. m7(9)) are the same voicing as the 9 color
+ * (m9), offered under the other common chord-symbol spelling.
+ *
  * Exception: when an altered 5th defines the chord (maj7♯5, 7♯5, 7♭5, m7♭5)
  * the 5th can't go, so the 9 takes the root's place — a rootless voicing.
  */
@@ -279,19 +282,31 @@ export type ChordColor = {
 export const CHORD_COLORS: Partial<Record<ChordQuality, ChordColor[]>> = {
   maj7: [
     { id: "9", suffix: "maj9", replace: { 2: T.n9 } },
+    { id: "r9", suffix: "maj7(9)", replace: { 2: T.n9 } },
     { id: "13", suffix: "maj13", replace: { 2: T.n13 } },
     { id: "#11", suffix: "maj7(♯11)", replace: { 2: T.s11 } },
   ],
-  "6": [{ id: "9", suffix: "6/9", replace: { 2: T.n9 } }],
+  "6": [
+    { id: "9", suffix: "6/9", replace: { 2: T.n9 } },
+    { id: "r9", suffix: "6(9)", replace: { 2: T.n9 } },
+  ],
   "maj7#5": [{ id: "9", suffix: "maj9♯5", replace: { 0: T.n9 } }],
   m7: [
     { id: "9", suffix: "m9", replace: { 2: T.n9 } },
+    { id: "r9", suffix: "m7(9)", replace: { 2: T.n9 } },
     { id: "11", suffix: "m11", replace: { 2: T.n11 } },
   ],
-  m6: [{ id: "9", suffix: "m6/9", replace: { 2: T.n9 } }],
-  mMaj7: [{ id: "9", suffix: "m(maj9)", replace: { 2: T.n9 } }],
+  m6: [
+    { id: "9", suffix: "m6/9", replace: { 2: T.n9 } },
+    { id: "r9", suffix: "m6(9)", replace: { 2: T.n9 } },
+  ],
+  mMaj7: [
+    { id: "9", suffix: "m(maj9)", replace: { 2: T.n9 } },
+    { id: "r9", suffix: "m(maj7)(9)", replace: { 2: T.n9 } },
+  ],
   "7": [
     { id: "9", suffix: "9", replace: { 2: T.n9 } },
+    { id: "r9", suffix: "7(9)", replace: { 2: T.n9 } },
     { id: "13", suffix: "13", replace: { 2: T.n13 } },
     { id: "b9", suffix: "7♭9", replace: { 2: T.b9 } },
     { id: "#9", suffix: "7♯9", replace: { 2: T.s9 } },
@@ -300,6 +315,7 @@ export const CHORD_COLORS: Partial<Record<ChordQuality, ChordColor[]>> = {
   ],
   "7sus4": [
     { id: "9", suffix: "9sus4", replace: { 2: T.n9 } },
+    { id: "r9", suffix: "7sus4(9)", replace: { 2: T.n9 } },
     { id: "13", suffix: "13sus4", replace: { 2: T.n13 } },
     { id: "b9", suffix: "7sus4(♭9)", replace: { 2: T.b9 } },
   ],
