@@ -138,7 +138,7 @@ export function Drop2Explorer() {
             label={t.color}
             options={[
               { label: t.basic, value: BASIC },
-              ...colors.map((c) => ({ label: c.suffix, value: c.id })),
+              ...colors.map((c) => ({ label: c.chip, value: c.id })),
             ]}
             value={color}
             onChange={setColor}

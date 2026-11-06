@@ -263,72 +263,64 @@ const T = {
  * chord tone that adds the least: the root and the guide tones (3rd and 7th)
  * always stay, so every colored chord is R–3–7 + one tension.
  *
- * Four voices hold only one tension with the root, so names like m11, maj13
- * and 13 mean R–3–7–11/13 here (the 9 is left out).
+ * Chord names spell the tension out — Dm7(9), G7(13), Cmaj7(♯11) — because
+ * four voices hold only one tension with the root: Dm11 would imply a 9 that
+ * isn't there, and Dm9 reads as "no 7th" in Brazilian chord notation.
  *
- * The "(9)" colors (id "r9", e.g. m7(9)) are the same voicing as the 9 color
- * (m9), offered under the other common chord-symbol spelling.
+ * add9 is the one color that drops the 7th instead (R–3–5–9).
  *
  * Exception: when an altered 5th defines the chord (maj7♯5, 7♯5, 7♭5, m7♭5)
  * the 5th can't go, so the 9 takes the root's place — a rootless voicing.
  */
 export type ChordColor = {
   id: string;
+  /** Appended to the root in chord names, e.g. "m7(9)". */
   suffix: string;
+  /** Short label for the color picker, e.g. "9". */
+  chip: string;
   /** formula slot → replacement tension */
   replace: Partial<Record<0 | 1 | 2 | 3, Tension>>;
 };
 
 export const CHORD_COLORS: Partial<Record<ChordQuality, ChordColor[]>> = {
   maj7: [
-    { id: "9", suffix: "maj9", replace: { 2: T.n9 } },
-    { id: "r9", suffix: "maj7(9)", replace: { 2: T.n9 } },
-    { id: "13", suffix: "maj13", replace: { 2: T.n13 } },
-    { id: "#11", suffix: "maj7(♯11)", replace: { 2: T.s11 } },
+    { id: "9", chip: "9", suffix: "maj7(9)", replace: { 2: T.n9 } },
+    { id: "13", chip: "13", suffix: "maj7(13)", replace: { 2: T.n13 } },
+    { id: "#11", chip: "♯11", suffix: "maj7(♯11)", replace: { 2: T.s11 } },
+    { id: "add9", chip: "add9", suffix: "(add9)", replace: { 3: T.n9 } },
   ],
-  "6": [
-    { id: "9", suffix: "6/9", replace: { 2: T.n9 } },
-    { id: "r9", suffix: "6(9)", replace: { 2: T.n9 } },
-  ],
-  "maj7#5": [{ id: "9", suffix: "maj9♯5", replace: { 0: T.n9 } }],
+  "6": [{ id: "9", chip: "9", suffix: "6(9)", replace: { 2: T.n9 } }],
+  "maj7#5": [{ id: "9", chip: "9", suffix: "maj7♯5(9)", replace: { 0: T.n9 } }],
   m7: [
-    { id: "9", suffix: "m9", replace: { 2: T.n9 } },
-    { id: "r9", suffix: "m7(9)", replace: { 2: T.n9 } },
-    { id: "11", suffix: "m11", replace: { 2: T.n11 } },
+    { id: "9", chip: "9", suffix: "m7(9)", replace: { 2: T.n9 } },
+    { id: "11", chip: "11", suffix: "m7(11)", replace: { 2: T.n11 } },
+    { id: "add9", chip: "add9", suffix: "m(add9)", replace: { 3: T.n9 } },
   ],
-  m6: [
-    { id: "9", suffix: "m6/9", replace: { 2: T.n9 } },
-    { id: "r9", suffix: "m6(9)", replace: { 2: T.n9 } },
-  ],
-  mMaj7: [
-    { id: "9", suffix: "m(maj9)", replace: { 2: T.n9 } },
-    { id: "r9", suffix: "m(maj7)(9)", replace: { 2: T.n9 } },
-  ],
+  m6: [{ id: "9", chip: "9", suffix: "m6(9)", replace: { 2: T.n9 } }],
+  mMaj7: [{ id: "9", chip: "9", suffix: "m(maj7)(9)", replace: { 2: T.n9 } }],
   "7": [
-    { id: "9", suffix: "9", replace: { 2: T.n9 } },
-    { id: "r9", suffix: "7(9)", replace: { 2: T.n9 } },
-    { id: "13", suffix: "13", replace: { 2: T.n13 } },
-    { id: "b9", suffix: "7♭9", replace: { 2: T.b9 } },
-    { id: "#9", suffix: "7♯9", replace: { 2: T.s9 } },
-    { id: "#11", suffix: "7♯11", replace: { 2: T.s11 } },
-    { id: "b13", suffix: "7♭13", replace: { 2: T.b13 } },
+    { id: "9", chip: "9", suffix: "7(9)", replace: { 2: T.n9 } },
+    { id: "13", chip: "13", suffix: "7(13)", replace: { 2: T.n13 } },
+    { id: "b9", chip: "♭9", suffix: "7(♭9)", replace: { 2: T.b9 } },
+    { id: "#9", chip: "♯9", suffix: "7(♯9)", replace: { 2: T.s9 } },
+    { id: "#11", chip: "♯11", suffix: "7(♯11)", replace: { 2: T.s11 } },
+    { id: "b13", chip: "♭13", suffix: "7(♭13)", replace: { 2: T.b13 } },
   ],
   "7sus4": [
-    { id: "9", suffix: "9sus4", replace: { 2: T.n9 } },
-    { id: "r9", suffix: "7sus4(9)", replace: { 2: T.n9 } },
-    { id: "13", suffix: "13sus4", replace: { 2: T.n13 } },
-    { id: "b9", suffix: "7sus4(♭9)", replace: { 2: T.b9 } },
+    { id: "9", chip: "9", suffix: "7sus4(9)", replace: { 2: T.n9 } },
+    { id: "13", chip: "13", suffix: "7sus4(13)", replace: { 2: T.n13 } },
+    { id: "b9", chip: "♭9", suffix: "7sus4(♭9)", replace: { 2: T.b9 } },
   ],
   "7#5": [
-    { id: "9", suffix: "9♯5", replace: { 0: T.n9 } },
-    { id: "b9", suffix: "7♯5♭9", replace: { 0: T.b9 } },
+    { id: "9", chip: "9", suffix: "7♯5(9)", replace: { 0: T.n9 } },
+    { id: "b9", chip: "♭9", suffix: "7♯5(♭9)", replace: { 0: T.b9 } },
   ],
   "7b5": [
-    { id: "9", suffix: "9♭5", replace: { 0: T.n9 } },
-    { id: "b9", suffix: "7♭5♭9", replace: { 0: T.b9 } },
+    { id: "9", chip: "9", suffix: "7♭5(9)", replace: { 0: T.n9 } },
+    { id: "b9", chip: "♭9", suffix: "7♭5(♭9)", replace: { 0: T.b9 } },
   ],
   m7b5: [
-    { id: "9", suffix: "m9♭5", replace: { 0: T.n9 } },
+    { id: "9", chip: "9", suffix: "m7♭5(9)", replace: { 0: T.n9 } },
   ],
 };
 
