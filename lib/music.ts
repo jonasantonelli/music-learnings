@@ -258,63 +258,69 @@ const T = {
 } satisfies Record<string, Tension>;
 
 /**
- * A color swaps chord tones for tensions while keeping four voices — the
- * standard way to extend a drop-2 shape. The root gives way to a 9 (♭9, ♯9)
- * and the 5th to a 13 (♭13, ♯11, 11); each tension sits a step from the tone
- * it replaces, so the shape barely changes. The 3rd and 7th — the guide
- * tones that define the chord — always stay.
+ * A color swaps a chord tone for a tension while keeping four voices — the
+ * standard way to extend a drop-2 shape. The tension takes the 5th's slot, the
+ * chord tone that adds the least: the root and the guide tones (3rd and 7th)
+ * always stay, so every colored chord is R–3–7 + one tension.
+ *
+ * Chord names spell the tension out — Dm7(9), G7(13), Cmaj7(♯11) — because
+ * four voices hold only one tension with the root: Dm11 would imply a 9 that
+ * isn't there, and Dm9 reads as "no 7th" in Brazilian chord notation.
+ *
+ * add9 is the one color that drops the 7th instead (R–3–5–9).
+ *
+ * Exception: when an altered 5th defines the chord (maj7♯5, 7♯5, 7♭5, m7♭5)
+ * the 5th can't go, so the 9 takes the root's place — a rootless voicing.
  */
 export type ChordColor = {
   id: string;
+  /** Appended to the root in chord names, e.g. "m7(9)". */
   suffix: string;
+  /** Short label for the color picker, e.g. "9". */
+  chip: string;
   /** formula slot → replacement tension */
   replace: Partial<Record<0 | 1 | 2 | 3, Tension>>;
 };
 
 export const CHORD_COLORS: Partial<Record<ChordQuality, ChordColor[]>> = {
   maj7: [
-    { id: "9", suffix: "maj9", replace: { 0: T.n9 } },
-    { id: "13", suffix: "maj7(13)", replace: { 2: T.n13 } },
-    { id: "9-13", suffix: "maj13", replace: { 0: T.n9, 2: T.n13 } },
-    { id: "#11", suffix: "maj7(♯11)", replace: { 2: T.s11 } },
-    { id: "9-#11", suffix: "maj9(♯11)", replace: { 0: T.n9, 2: T.s11 } },
+    { id: "9", chip: "9", suffix: "maj7(9)", replace: { 2: T.n9 } },
+    { id: "13", chip: "13", suffix: "maj7(13)", replace: { 2: T.n13 } },
+    { id: "#11", chip: "♯11", suffix: "maj7(♯11)", replace: { 2: T.s11 } },
+    { id: "add9", chip: "add9", suffix: "(add9)", replace: { 3: T.n9 } },
   ],
-  "6": [{ id: "9", suffix: "6/9", replace: { 0: T.n9 } }],
-  "maj7#5": [{ id: "9", suffix: "maj9♯5", replace: { 0: T.n9 } }],
+  "6": [{ id: "9", chip: "9", suffix: "6(9)", replace: { 2: T.n9 } }],
+  "maj7#5": [{ id: "9", chip: "9", suffix: "maj7♯5(9)", replace: { 0: T.n9 } }],
   m7: [
-    { id: "9", suffix: "m9", replace: { 0: T.n9 } },
-    { id: "11", suffix: "m7(11)", replace: { 2: T.n11 } },
-    { id: "9-11", suffix: "m11", replace: { 0: T.n9, 2: T.n11 } },
+    { id: "9", chip: "9", suffix: "m7(9)", replace: { 2: T.n9 } },
+    { id: "11", chip: "11", suffix: "m7(11)", replace: { 2: T.n11 } },
+    { id: "add9", chip: "add9", suffix: "m(add9)", replace: { 3: T.n9 } },
   ],
-  m6: [{ id: "9", suffix: "m6/9", replace: { 0: T.n9 } }],
-  mMaj7: [{ id: "9", suffix: "m(maj9)", replace: { 0: T.n9 } }],
+  m6: [{ id: "9", chip: "9", suffix: "m6(9)", replace: { 2: T.n9 } }],
+  mMaj7: [{ id: "9", chip: "9", suffix: "m(maj7)(9)", replace: { 2: T.n9 } }],
   "7": [
-    { id: "9", suffix: "9", replace: { 0: T.n9 } },
-    { id: "13", suffix: "13", replace: { 2: T.n13 } },
-    { id: "9-13", suffix: "13(9)", replace: { 0: T.n9, 2: T.n13 } },
-    { id: "b9", suffix: "7♭9", replace: { 0: T.b9 } },
-    { id: "#9", suffix: "7♯9", replace: { 0: T.s9 } },
-    { id: "#11", suffix: "7♯11", replace: { 2: T.s11 } },
-    { id: "b13", suffix: "7♭13", replace: { 2: T.b13 } },
-    { id: "b9-13", suffix: "13♭9", replace: { 0: T.b9, 2: T.n13 } },
-    { id: "b9-b13", suffix: "7♭9♭13", replace: { 0: T.b9, 2: T.b13 } },
-    { id: "alt", suffix: "7alt", replace: { 0: T.s9, 2: T.b13 } },
+    { id: "9", chip: "9", suffix: "7(9)", replace: { 2: T.n9 } },
+    { id: "13", chip: "13", suffix: "7(13)", replace: { 2: T.n13 } },
+    { id: "b9", chip: "♭9", suffix: "7(♭9)", replace: { 2: T.b9 } },
+    { id: "#9", chip: "♯9", suffix: "7(♯9)", replace: { 2: T.s9 } },
+    { id: "#11", chip: "♯11", suffix: "7(♯11)", replace: { 2: T.s11 } },
+    { id: "b13", chip: "♭13", suffix: "7(♭13)", replace: { 2: T.b13 } },
   ],
   "7sus4": [
-    { id: "9", suffix: "9sus4", replace: { 0: T.n9 } },
-    { id: "13", suffix: "13sus4", replace: { 2: T.n13 } },
-    { id: "b9", suffix: "7sus4(♭9)", replace: { 0: T.b9 } },
+    { id: "9", chip: "9", suffix: "7sus4(9)", replace: { 2: T.n9 } },
+    { id: "13", chip: "13", suffix: "7sus4(13)", replace: { 2: T.n13 } },
+    { id: "b9", chip: "♭9", suffix: "7sus4(♭9)", replace: { 2: T.b9 } },
   ],
   "7#5": [
-    { id: "9", suffix: "9♯5", replace: { 0: T.n9 } },
-    { id: "b9", suffix: "7♯5♭9", replace: { 0: T.b9 } },
+    { id: "9", chip: "9", suffix: "7♯5(9)", replace: { 0: T.n9 } },
+    { id: "b9", chip: "♭9", suffix: "7♯5(♭9)", replace: { 0: T.b9 } },
   ],
   "7b5": [
-    { id: "9", suffix: "9♭5", replace: { 0: T.n9 } },
-    { id: "b9", suffix: "7♭5♭9", replace: { 0: T.b9 } },
+    { id: "9", chip: "9", suffix: "7♭5(9)", replace: { 0: T.n9 } },
+    { id: "b9", chip: "♭9", suffix: "7♭5(♭9)", replace: { 0: T.b9 } },
   ],
   m7b5: [
-    { id: "9", suffix: "m9♭5", replace: { 0: T.n9 } },
+    { id: "9", chip: "9", suffix: "m7♭5(9)", replace: { 0: T.n9 } },
   ],
 };
 
@@ -419,7 +425,12 @@ export function computeDrop2Voicing(
   colorId?: string,
 ): Voicing {
   const { intervals: formula, labels: toneLabels } = resolveChordTones(quality, colorId);
-  const voices = DROP2_VOICES[inversionIndex];
+  // DROP2_VOICES indexes positions in the close stack. A tension can move a
+  // slot within that stack (a 9 replacing the 5th sits between R and 3), so
+  // order the slots by pitch class first; the inversion stays named after the
+  // slot in the bass (slot 2 in the bass = "2nd inversion", whatever fills it).
+  const closeOrder = [0, 1, 2, 3].sort((a, b) => (formula[a] % 12) - (formula[b] % 12));
+  const voices = DROP2_VOICES[closeOrder.indexOf(inversionIndex)].map((pos) => closeOrder[pos]);
   const stringSet = STRING_SETS[stringSetIndex];
 
   // Build candidate frets for each voice (no open strings, max fret 19)
@@ -614,7 +625,7 @@ export const PROGRESSIONS: {
     label: "Minor ii–V–i",
     steps: (tonic) => [
       { offset: 2, quality: "m7b5", degree: "iiø", ext: "9" },
-      { offset: 7, quality: "7", degree: "V", ext: "b9-b13" },
+      { offset: 7, quality: "7", degree: "V", ext: "b9" },
       { offset: 0, quality: tonic, degree: "i", ext: "9" },
     ],
   },
@@ -643,7 +654,7 @@ export const PROGRESSIONS: {
     label: "iii–VI7–ii–V–I",
     steps: () => [
       { offset: 4, quality: "m7", degree: "iii", ext: "11" },
-      { offset: 9, quality: "7", degree: "VI7", ext: "b9-b13" },
+      { offset: 9, quality: "7", degree: "VI7", ext: "b9" },
       { offset: 2, quality: "m7", degree: "ii", ext: "9" },
       { offset: 7, quality: "7", degree: "V", ext: "13" },
       { offset: 0, quality: "maj7", degree: "I", ext: "9" },
