@@ -617,7 +617,7 @@ export const PROGRESSIONS: {
     label: "Minor ii–V–i",
     steps: (tonic) => [
       { offset: 2, quality: "m7b5", degree: "iiø", ext: "9" },
-      { offset: 7, quality: "7", degree: "V", ext: "b13" },
+      { offset: 7, quality: "7", degree: "V", ext: "b9" },
       { offset: 0, quality: tonic, degree: "i", ext: "9" },
     ],
   },
@@ -646,7 +646,7 @@ export const PROGRESSIONS: {
     label: "iii–VI7–ii–V–I",
     steps: () => [
       { offset: 4, quality: "m7", degree: "iii", ext: "11" },
-      { offset: 9, quality: "7", degree: "VI7", ext: "b13" },
+      { offset: 9, quality: "7", degree: "VI7", ext: "b9" },
       { offset: 2, quality: "m7", degree: "ii", ext: "9" },
       { offset: 7, quality: "7", degree: "V", ext: "13" },
       { offset: 0, quality: "maj7", degree: "I", ext: "9" },
