@@ -263,6 +263,10 @@ const T = {
  * and the 5th to a 13 (♭13, ♯11, 11); each tension sits a step from the tone
  * it replaces, so the shape barely changes. The 3rd and 7th — the guide
  * tones that define the chord — always stay.
+ *
+ * The "(9)" colors (id "r9") keep the root instead: the 9 takes the 5th's
+ * slot, giving R–3–7–9 — the 5th is the most dispensable chord tone. Qualities
+ * whose altered 5th defines them (7♯5, 7♭5, m7♭5) don't get this option.
  */
 export type ChordColor = {
   id: string;
@@ -274,22 +278,34 @@ export type ChordColor = {
 export const CHORD_COLORS: Partial<Record<ChordQuality, ChordColor[]>> = {
   maj7: [
     { id: "9", suffix: "maj9", replace: { 0: T.n9 } },
+    { id: "r9", suffix: "maj7(9)", replace: { 2: T.n9 } },
     { id: "13", suffix: "maj7(13)", replace: { 2: T.n13 } },
     { id: "9-13", suffix: "maj13", replace: { 0: T.n9, 2: T.n13 } },
     { id: "#11", suffix: "maj7(♯11)", replace: { 2: T.s11 } },
     { id: "9-#11", suffix: "maj9(♯11)", replace: { 0: T.n9, 2: T.s11 } },
   ],
-  "6": [{ id: "9", suffix: "6/9", replace: { 0: T.n9 } }],
+  "6": [
+    { id: "9", suffix: "6/9", replace: { 0: T.n9 } },
+    { id: "r9", suffix: "6(9)", replace: { 2: T.n9 } },
+  ],
   "maj7#5": [{ id: "9", suffix: "maj9♯5", replace: { 0: T.n9 } }],
   m7: [
     { id: "9", suffix: "m9", replace: { 0: T.n9 } },
+    { id: "r9", suffix: "m7(9)", replace: { 2: T.n9 } },
     { id: "11", suffix: "m7(11)", replace: { 2: T.n11 } },
     { id: "9-11", suffix: "m11", replace: { 0: T.n9, 2: T.n11 } },
   ],
-  m6: [{ id: "9", suffix: "m6/9", replace: { 0: T.n9 } }],
-  mMaj7: [{ id: "9", suffix: "m(maj9)", replace: { 0: T.n9 } }],
+  m6: [
+    { id: "9", suffix: "m6/9", replace: { 0: T.n9 } },
+    { id: "r9", suffix: "m6(9)", replace: { 2: T.n9 } },
+  ],
+  mMaj7: [
+    { id: "9", suffix: "m(maj9)", replace: { 0: T.n9 } },
+    { id: "r9", suffix: "m(maj7)(9)", replace: { 2: T.n9 } },
+  ],
   "7": [
     { id: "9", suffix: "9", replace: { 0: T.n9 } },
+    { id: "r9", suffix: "7(9)", replace: { 2: T.n9 } },
     { id: "13", suffix: "13", replace: { 2: T.n13 } },
     { id: "9-13", suffix: "13(9)", replace: { 0: T.n9, 2: T.n13 } },
     { id: "b9", suffix: "7♭9", replace: { 0: T.b9 } },
@@ -302,6 +318,7 @@ export const CHORD_COLORS: Partial<Record<ChordQuality, ChordColor[]>> = {
   ],
   "7sus4": [
     { id: "9", suffix: "9sus4", replace: { 0: T.n9 } },
+    { id: "r9", suffix: "7sus4(9)", replace: { 2: T.n9 } },
     { id: "13", suffix: "13sus4", replace: { 2: T.n13 } },
     { id: "b9", suffix: "7sus4(♭9)", replace: { 0: T.b9 } },
   ],
@@ -419,7 +436,12 @@ export function computeDrop2Voicing(
   colorId?: string,
 ): Voicing {
   const { intervals: formula, labels: toneLabels } = resolveChordTones(quality, colorId);
-  const voices = DROP2_VOICES[inversionIndex];
+  // DROP2_VOICES indexes positions in the close stack. A tension can move a
+  // slot within that stack (a 9 replacing the 5th sits between R and 3), so
+  // order the slots by pitch class first; the inversion stays named after the
+  // slot in the bass (slot 2 in the bass = "2nd inversion", whatever fills it).
+  const closeOrder = [0, 1, 2, 3].sort((a, b) => (formula[a] % 12) - (formula[b] % 12));
+  const voices = DROP2_VOICES[closeOrder.indexOf(inversionIndex)].map((pos) => closeOrder[pos]);
   const stringSet = STRING_SETS[stringSetIndex];
 
   // Build candidate frets for each voice (no open strings, max fret 19)
