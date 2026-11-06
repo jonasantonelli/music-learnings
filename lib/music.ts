@@ -258,15 +258,16 @@ const T = {
 } satisfies Record<string, Tension>;
 
 /**
- * A color swaps chord tones for tensions while keeping four voices — the
- * standard way to extend a drop-2 shape. The root gives way to a 9 (♭9, ♯9)
- * and the 5th to a 13 (♭13, ♯11, 11); each tension sits a step from the tone
- * it replaces, so the shape barely changes. The 3rd and 7th — the guide
- * tones that define the chord — always stay.
+ * A color swaps a chord tone for a tension while keeping four voices — the
+ * standard way to extend a drop-2 shape. The tension takes the 5th's slot, the
+ * chord tone that adds the least: the root and the guide tones (3rd and 7th)
+ * always stay, so every colored chord is R–3–7 + one tension.
  *
- * The "(9)" colors (id "r9") keep the root instead: the 9 takes the 5th's
- * slot, giving R–3–7–9 — the 5th is the most dispensable chord tone. Qualities
- * whose altered 5th defines them (7♯5, 7♭5, m7♭5) don't get this option.
+ * Four voices hold only one tension with the root, so names like m11, maj13
+ * and 13 mean R–3–7–11/13 here (the 9 is left out).
+ *
+ * Exception: when an altered 5th defines the chord (maj7♯5, 7♯5, 7♭5, m7♭5)
+ * the 5th can't go, so the 9 takes the root's place — a rootless voicing.
  */
 export type ChordColor = {
   id: string;
@@ -277,50 +278,30 @@ export type ChordColor = {
 
 export const CHORD_COLORS: Partial<Record<ChordQuality, ChordColor[]>> = {
   maj7: [
-    { id: "9", suffix: "maj9", replace: { 0: T.n9 } },
-    { id: "r9", suffix: "maj7(9)", replace: { 2: T.n9 } },
-    { id: "13", suffix: "maj7(13)", replace: { 2: T.n13 } },
-    { id: "9-13", suffix: "maj13", replace: { 0: T.n9, 2: T.n13 } },
+    { id: "9", suffix: "maj9", replace: { 2: T.n9 } },
+    { id: "13", suffix: "maj13", replace: { 2: T.n13 } },
     { id: "#11", suffix: "maj7(♯11)", replace: { 2: T.s11 } },
-    { id: "9-#11", suffix: "maj9(♯11)", replace: { 0: T.n9, 2: T.s11 } },
   ],
-  "6": [
-    { id: "9", suffix: "6/9", replace: { 0: T.n9 } },
-    { id: "r9", suffix: "6(9)", replace: { 2: T.n9 } },
-  ],
+  "6": [{ id: "9", suffix: "6/9", replace: { 2: T.n9 } }],
   "maj7#5": [{ id: "9", suffix: "maj9♯5", replace: { 0: T.n9 } }],
   m7: [
-    { id: "9", suffix: "m9", replace: { 0: T.n9 } },
-    { id: "r9", suffix: "m7(9)", replace: { 2: T.n9 } },
-    { id: "11", suffix: "m7(11)", replace: { 2: T.n11 } },
-    { id: "9-11", suffix: "m11", replace: { 0: T.n9, 2: T.n11 } },
+    { id: "9", suffix: "m9", replace: { 2: T.n9 } },
+    { id: "11", suffix: "m11", replace: { 2: T.n11 } },
   ],
-  m6: [
-    { id: "9", suffix: "m6/9", replace: { 0: T.n9 } },
-    { id: "r9", suffix: "m6(9)", replace: { 2: T.n9 } },
-  ],
-  mMaj7: [
-    { id: "9", suffix: "m(maj9)", replace: { 0: T.n9 } },
-    { id: "r9", suffix: "m(maj7)(9)", replace: { 2: T.n9 } },
-  ],
+  m6: [{ id: "9", suffix: "m6/9", replace: { 2: T.n9 } }],
+  mMaj7: [{ id: "9", suffix: "m(maj9)", replace: { 2: T.n9 } }],
   "7": [
-    { id: "9", suffix: "9", replace: { 0: T.n9 } },
-    { id: "r9", suffix: "7(9)", replace: { 2: T.n9 } },
+    { id: "9", suffix: "9", replace: { 2: T.n9 } },
     { id: "13", suffix: "13", replace: { 2: T.n13 } },
-    { id: "9-13", suffix: "13(9)", replace: { 0: T.n9, 2: T.n13 } },
-    { id: "b9", suffix: "7♭9", replace: { 0: T.b9 } },
-    { id: "#9", suffix: "7♯9", replace: { 0: T.s9 } },
+    { id: "b9", suffix: "7♭9", replace: { 2: T.b9 } },
+    { id: "#9", suffix: "7♯9", replace: { 2: T.s9 } },
     { id: "#11", suffix: "7♯11", replace: { 2: T.s11 } },
     { id: "b13", suffix: "7♭13", replace: { 2: T.b13 } },
-    { id: "b9-13", suffix: "13♭9", replace: { 0: T.b9, 2: T.n13 } },
-    { id: "b9-b13", suffix: "7♭9♭13", replace: { 0: T.b9, 2: T.b13 } },
-    { id: "alt", suffix: "7alt", replace: { 0: T.s9, 2: T.b13 } },
   ],
   "7sus4": [
-    { id: "9", suffix: "9sus4", replace: { 0: T.n9 } },
-    { id: "r9", suffix: "7sus4(9)", replace: { 2: T.n9 } },
+    { id: "9", suffix: "9sus4", replace: { 2: T.n9 } },
     { id: "13", suffix: "13sus4", replace: { 2: T.n13 } },
-    { id: "b9", suffix: "7sus4(♭9)", replace: { 0: T.b9 } },
+    { id: "b9", suffix: "7sus4(♭9)", replace: { 2: T.b9 } },
   ],
   "7#5": [
     { id: "9", suffix: "9♯5", replace: { 0: T.n9 } },
@@ -636,7 +617,7 @@ export const PROGRESSIONS: {
     label: "Minor ii–V–i",
     steps: (tonic) => [
       { offset: 2, quality: "m7b5", degree: "iiø", ext: "9" },
-      { offset: 7, quality: "7", degree: "V", ext: "b9-b13" },
+      { offset: 7, quality: "7", degree: "V", ext: "b13" },
       { offset: 0, quality: tonic, degree: "i", ext: "9" },
     ],
   },
@@ -665,7 +646,7 @@ export const PROGRESSIONS: {
     label: "iii–VI7–ii–V–I",
     steps: () => [
       { offset: 4, quality: "m7", degree: "iii", ext: "11" },
-      { offset: 9, quality: "7", degree: "VI7", ext: "b9-b13" },
+      { offset: 9, quality: "7", degree: "VI7", ext: "b13" },
       { offset: 2, quality: "m7", degree: "ii", ext: "9" },
       { offset: 7, quality: "7", degree: "V", ext: "13" },
       { offset: 0, quality: "maj7", degree: "I", ext: "9" },
