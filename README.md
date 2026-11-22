@@ -34,3 +34,21 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Desktop app
+
+The site also ships as an Electron desktop app (`electron/main.cjs`). It runs
+Next's standalone server on a free localhost port inside the app, so routing,
+the locale proxy and cookies behave exactly as on the web.
+
+```bash
+npm run desktop:dev     # Electron window over `npm run dev` (start that first)
+npm run desktop:build   # build the standalone server into .next/standalone
+npm run desktop:start   # open Electron over the built server
+npm run desktop:dist    # build + package installers into dist-desktop/
+```
+
+`desktop:dist` builds for the current OS (macOS: `.dmg` + `.zip`). Builds are
+unsigned unless signing credentials are configured — see
+https://www.electron.build/code-signing. Licks audio samples still load from
+jsDelivr, so playback needs a network connection the first time.
