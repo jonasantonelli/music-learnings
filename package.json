@@ -10,7 +10,8 @@
     "desktop:dev": "ELECTRON_START_URL=http://localhost:3000 electron .",
     "desktop:build": "node scripts/build-desktop.mjs",
     "desktop:start": "electron .",
-    "desktop:dist": "npm run desktop:build && electron-builder"
+    "desktop:dist": "npm run desktop:build && electron-builder",
+    "desktop:icon": "electron scripts/render-icon.cjs"
   },
   "dependencies": {
     "@mdx-js/loader": "^3.1.1",
@@ -53,7 +54,8 @@
     "appId": "com.musiclearnings.desktop",
     "productName": "Music Learnings",
     "directories": {
-      "output": "dist-desktop"
+      "output": "dist-desktop",
+      "buildResources": "desktop"
     },
     "files": [
       "electron/**",
